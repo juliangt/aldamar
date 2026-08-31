@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aldamar"
+version = "0.1.0"
+description = "Aventura de fantasía épica original para la terminal: el Corazón de Ceniza."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Julián Garcia Tuñón" }]
+keywords = ["fantasia", "aventura", "terminal", "juego", "texto"]
+
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+aldamar = "aldamar.juego:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aldamar"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
