@@ -65,6 +65,26 @@ def test_enter_confirma_la_opcion_actual(monkeypatch):
     assert "↑/↓" in texto  # y hay pista de teclas
 
 
+def test_la_descripcion_va_al_lado_de_su_opcion(monkeypatch):
+    _clave, salida = elegir_con_teclas(monkeypatch, ["\r"])
+    assert any("2) Dos" in linea and "el segundo" in linea for linea in salida)
+
+
+def test_al_avanzar_se_limpia_la_pantalla(monkeypatch):
+    _clave, salida = elegir_con_teclas(monkeypatch, ["\r"])
+    assert "\x1b[2J\x1b[H" in salida  # el contenido nuevo se ve solo
+
+
+def test_un_atajo_tambien_limpia(monkeypatch):
+    _clave, salida = elegir_con_teclas(monkeypatch, ["2"])
+    assert "\x1b[2J\x1b[H" in salida
+
+
+def test_esc_no_limpia_la_pantalla(monkeypatch):
+    _clave, salida = elegir_con_teclas(monkeypatch, ["\x1b"])
+    assert "\x1b[2J\x1b[H" not in salida  # volver deja la vista como estaba
+
+
 def test_flecha_abajo_mueve_la_seleccion(monkeypatch):
     clave, salida = elegir_con_teclas(monkeypatch, ["\x1b[B", "\r"])
     assert clave == "b"

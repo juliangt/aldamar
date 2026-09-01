@@ -13,12 +13,15 @@ from __future__ import annotations
 
 import os
 import select
+import shutil
 import sys
 from contextlib import contextmanager
 
 from .mundo import normaliza
 
 TITULO, SELECCION, AMARILLO, DIM = "1;36", "1;36", "33", "2"
+
+LIMPIAR = "\x1b[2J\x1b[H"  # pantalla nueva para lo que venga después
 
 FLECHA_ARRIBA = {"\x1b[A", "\x00H", "\xe0H"}
 FLECHA_ABAJO = {"\x1b[B", "\x00P", "\xe0P"}
@@ -140,14 +143,24 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 # ── render ───────────────────────────────────────────────────────────────
 
 def _lineas_menu(opciones: list[tuple[str, str, str]], sel: int, color: bool) -> list[str]:
+    ancho = shutil.get_terminal_size().columns
+    rotulados = [f"{i+1}) {etiqueta}" for i, (_c, etiqueta, _d) in enumerate(opciones)]
+    columna = max(map(len, rotulados))  # las descripciones arrancan alineadas
     lineas: list[str] = []
-    for i, (_clave, etiqueta, desc) in enumerate(opciones):
+    for i, (_clave, _etiqueta, desc) in enumerate(opciones):
+        rotulo = rotulados[i]
         if i == sel:
-            lineas.append(_c(f"  ❯ {i+1}) {etiqueta}", color, SELECCION))
+            linea = _c(f"  ❯ {rotulo}", color, SELECCION)
         else:
-            lineas.append(f"    {i+1}) {etiqueta}")
+            linea = f"    {rotulo}"
         if desc:
-            lineas.append(_c(f"        {desc}", color, DIM))
+            hueco = " " * (columna - len(rotulo) + 3)
+            margen = ancho - 1 - (4 + len(rotulo) + len(hueco)) - 1  # sitio para "…"
+            if margen >= 1:
+                if len(desc) > margen:  # una línea larga rompería el redibujo en sitio
+                    desc = desc[: margen - 1].rstrip() + "…"
+                linea += _c(f"{hueco}{desc}", color, DIM)
+        lineas.append(linea)
     lineas.append(_c("  ↑/↓ mover · Enter elegir · 1-9 atajo · Esc volver", color, DIM))
     return lineas
 
@@ -183,8 +196,10 @@ def _elegir_con_flechas(
                 elif tecla in FLECHA_ARRIBA:
                     sel = (sel - 1) % len(opciones)
                 elif tecla in ("\r", "\n"):
+                    salida(LIMPIAR)  # al avanzar, el contenido nuevo se ve solo
                     return opciones[sel][0]
                 elif tecla.isdigit() and tecla != "0" and int(tecla) <= len(opciones):
+                    salida(LIMPIAR)
                     return opciones[int(tecla) - 1][0]
                 elif tecla in ("\x1b", "q", "Q", "\x04"):  # Esc, q o Ctrl-D: volver
                     return None
@@ -236,8 +251,9 @@ def elegir_opcion(
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
     Con teclado real (o `flechas=True`) navega con ↑/↓ y Enter; los
-    dígitos eligen al vuelo y Esc vuelve (None). En modo tipeado acepta
-    número o nombre. Sin opciones, devuelve None.
+    dígitos eligen al vuelo y Esc vuelve (None). Al elegir, la pantalla
+    se limpia: lo que se pinte después se ve solo. En modo tipeado
+    acepta número o nombre. Sin opciones, devuelve None.
     """
     if not opciones:
         return None
