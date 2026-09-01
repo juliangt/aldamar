@@ -1,7 +1,16 @@
 """Combate determinista con semilla fija."""
 
-from aldamar.datos import crear_enemigo
+from __future__ import annotations
+
+import pytest
+
 from aldamar.personajes import Combatiente
+
+from conftest import AVENTURA, CAMINO
+
+
+def crear_enemigo(clave: str):
+    return AVENTURA.crear_enemigo(clave, CAMINO)
 
 
 def test_recibir_aplica_la_defensa():
@@ -64,3 +73,9 @@ def test_el_cuerno_no_impresiona_a_los_guardianes(fabrica):
     capitan = crear_enemigo("capitan")  # sin_huida
     assert juego._duelo(capitan) == "victoria"
     assert juego.jugador.vivo
+
+
+@pytest.mark.parametrize("clave", list(AVENTURA.enemigos))
+def test_todos_los_enemigos_se_pueden_crear(clave):
+    enemigo = crear_enemigo(clave)
+    assert enemigo.vida > 0 and enemigo.ataque > 0

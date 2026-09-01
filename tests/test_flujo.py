@@ -1,5 +1,14 @@
 """Partida completa scripted: de Vegaverde a la cumbre del Monte Umbak."""
 
+from __future__ import annotations
+
+import json
+
+from aldamar.dificultad import obtener_dificultad
+from aldamar.juego import Juego, main
+
+from conftest import EntradaTipeada
+
 RUTA_BASE = [
     "Tilo",
     "tomar todo",  # vegaverde: provisiones, capa gris, monedas
@@ -107,3 +116,43 @@ def test_guardar_y_cargar_preserva_el_estado(tmp_path, fabrica):
     assert juego2.jugador.inventario == juego.jugador.inventario
     assert juego2.jugador.monedas == juego.jugador.monedas
     assert juego2.jugador.corrupcion == juego.jugador.corrupcion
+
+    # el guardado recuerda en qué aventura y con qué dificultad se juega
+    guardado = json.loads((tmp_path / "partida.json").read_text(encoding="utf-8"))
+    assert guardado["aventura"] == "corazon_ceniza"
+    assert guardado["dificultad"] == "camino"
+    assert guardado["personaje"] == "tilo"
+
+
+def test_cargar_recupera_aventura_y_dificultad(tmp_path, fabrica):
+    ruta = str(tmp_path / "ceniza.json")
+    juego, _ = fabrica(
+        ["", "guardar " + ruta, "salir"],
+        semilla=3,
+        dificultad=obtener_dificultad("ceniza"),
+    )
+    juego.ciclo()
+
+    juego2 = Juego.desde_archivo(
+        ruta,
+        entrada=EntradaTipeada([]),
+        salida=lambda _t: None,
+        color=False,
+    )
+    assert juego2.av.id == "corazon_ceniza"
+    assert juego2.dificultad.clave == "ceniza"
+    assert juego2.personaje == "tilo"
+    assert juego2.jugador.vida == juego.jugador.vida
+    assert juego2.reanudada
+
+
+def test_partida_completa_a_traves_del_menu_de_arranque():
+    """E2E: menú principal (nueva → aventura → dificultad) y victoria."""
+    salida: list[str] = []
+    lineas = ["1", "1", "2"] + RUTA_BASE + ["destruir"]  # camino = opción 2
+    main(["--semilla", "7", "--sin-color"], entrada=EntradaTipeada(lineas), salida=salida.append)
+    texto = "\n".join(salida)
+    assert "A L D A M A R" in texto  # la portada del menú apareció
+    assert "¿A qué ritmo quieres caminar?" in texto
+    assert "— FIN —" in texto
+    assert "El Jardín que venció a la Sombra" in " ".join(texto.split())

@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from aldamar import aventuras  # noqa: F401  (registra el contenido)
+from aldamar.aventura import obtener_aventura
+from aldamar.dificultad import obtener_dificultad
 from aldamar.juego import Juego
+
+AVENTURA = obtener_aventura("corazon_ceniza")
+CAMINO = obtener_dificultad("camino")
 
 
 class EntradaTipeada:
@@ -26,9 +32,17 @@ class EntradaTipeada:
 def fabrica():
     """Devuelve una función (lineas, semilla) -> (juego, salida)."""
 
-    def hacer(lineas: list[str], semilla: int = 7) -> tuple[Juego, list[str]]:
+    def hacer(
+        lineas: list[str],
+        semilla: int = 7,
+        dificultad=None,
+        personaje: str | None = None,
+    ) -> tuple[Juego, list[str]]:
         salida: list[str] = []
         juego = Juego(
+            AVENTURA,
+            dificultad=dificultad,
+            personaje=personaje,
             semilla=semilla,
             entrada=EntradaTipeada(lineas),
             salida=salida.append,
