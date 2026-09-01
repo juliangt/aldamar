@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 
 import pytest
@@ -153,3 +154,33 @@ def test_con_entrada_inyectada_se_detecta_modo_tipeado():
         salida=lambda _t: None,
     )
     assert clave == "c"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="os.openpty no existe en Windows")
+def test_el_modo_sin_buffer_conserva_el_salto_de_linea(monkeypatch):
+    """Sin búfer de línea pero con salida intacta: el \\n devuelve el carro.
+
+    Un modo raw completo dejaba los prints del menú en escalera (cada
+    línea empezaba donde acabó la anterior) porque apagaba el
+    post-procesado del terminal.
+    """
+    import sys
+    import termios
+
+    maestro, esclavo = os.openpty()
+
+    class Teclado:
+        def fileno(self):
+            return esclavo
+
+    monkeypatch.setattr(sys, "stdin", Teclado())
+    try:
+        with opciones_mod._modo_crudo():
+            lflag = termios.tcgetattr(esclavo)[3]
+            assert not lflag & termios.ICANON  # tecla a tecla, sin esperar Enter
+            assert lflag & termios.OPOST  # pero el \n sigue devolviendo el carro
+        lflag = termios.tcgetattr(esclavo)[3]
+        assert lflag & termios.ICANON  # al salir, el terminal como estaba
+    finally:
+        os.close(maestro)
+        os.close(esclavo)

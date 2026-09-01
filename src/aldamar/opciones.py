@@ -50,12 +50,17 @@ _en_crudo = 0  # profundidad de modo crudo activo
 
 @contextmanager
 def _modo_crudo():
-    """Teclado en modo crudo durante el bloque.
+    """Teclado sin búfer de línea durante el bloque.
 
     Se entra una sola vez, no por tecla: en darwin cualquier tcsetattr
     descarta la entrada pendiente, así que tocar el terminal entre teclas
-    traga pulsaciones (p. ej. flechas pulsadas seguidas). En no-terminales
-    — tests, tuberías — es un bloque sin efecto.
+    traga pulsaciones (p. ej. flechas pulsadas seguidas).
+
+    El modo es cbreak, no raw: solo apaga eco y búfer de línea. El
+    post-procesado de salida sigue activo (el `\n` sigue devolviendo el
+    carro) y Ctrl-C sigue interrumpiendo; un raw completo deja los
+    prints del menú en escalera. En no-terminales — tests, tuberías — es
+    un bloque sin efecto.
     """
     global _en_crudo
     if os.name == "nt":
@@ -70,7 +75,7 @@ def _modo_crudo():
     except (OSError, ValueError, termios.error):
         yield
         return
-    tty.setraw(fd)
+    tty.setcbreak(fd)
     _en_crudo += 1
     try:
         yield
