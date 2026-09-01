@@ -1,8 +1,9 @@
 # Aldamar · El Corazón de Ceniza
 
 Aventura de fantasía épica original para la terminal, en español.
-Un jardinero hereda un amuleto que no debería existir y cruza medio
-continente para devolverlo al fuego que lo vio nacer.
+El amuleto que durmió veinte generaciones acaba de despertar: elígete
+un héroe, crúzate medio continente y devuélvelo al fuego que lo vio
+nacer.
 
 > **Nota sobre derechos.** Aldamar es una obra de fantasía original:
 > mundo, nombres, razas, textos y mecánicas son propios y están
@@ -64,6 +65,15 @@ la Aguja Pálida) → Monte Umbak.
 
 ## Mecánicas
 
+- **Héroes**: cuatro héroes jugables, cada uno con estadísticas,
+  inventario, prólogo y **rasgo** propios. **Tilo**, falro jardinero de
+  Vegaverde (equilibrado); **Ithel**, arquera sylva del Bosque Umbrío
+  (*Ojo de halcón*: +1 de daño contra enemigos enteros, pero frágil);
+  **Dagna Escudagris**, guerrera goran de Barrok (*Piel de piedra*:
+  recibe 1 punto menos de daño; mucha vida, poco ataque) y **Ruy**,
+  errante proscrito de Valoria (*Lengua de mercado*: paga 1 moneda
+  menos en cada compra; viaja con provisiones y antorcha). Belthar y
+  los textos saben a quién le hablan.
 - **Grupo**: puedes reclutar a **Sylvana** (arquera sylva), **Sir
   Aldric** (caballero valoriano) y **Torkan Hachagris** (herrera goran).
   Pelean solos, reciben golpes y pueden caer.
@@ -113,7 +123,7 @@ sobre cada aventura registrada.
 
 ```
 src/aldamar/
-├── personajes.py          # jugador, compañeros, enemigos, corrupción
+├── personajes.py          # jugador, compañeros, enemigos, rasgos, corrupción
 ├── mundo.py               # primitivas: Lugar, normaliza, alcanzables
 ├── dificultad.py          # presets de balance (paseo / camino / ceniza)
 ├── aventura.py            # el contrato Aventura + registro de aventuras
@@ -139,10 +149,13 @@ y ciérralo con `registrar(AVENTURA)`. Importa el módulo en
 lugar son funciones `(juego, lugar)`; el evento llamado `final` se
 dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
 
-**Un héroe nuevo.** Agrega una entrada a `PERSONAJES` de la aventura
-(vida, ataque, monedas, inventario y presentación): el menú lo ofrece
-automáticamente cuando hay más de uno. Para acompañantes reclutables,
-otra entrada en `RECLUTAS` más su diálogo y su lugar en el mapa.
+**Un héroe nuevo.** Agrega una entrada a `PERSONAJES` de la aventura:
+nombre, título, estadísticas, inventario, presentación y, si quieres,
+un `rasgo` (clave de `RASGOS`), `prologo` y `texto_nombre` propios y
+los apodos con los que los textos le hablan (`trato`, `quien`). El
+menú lo ofrece automáticamente cuando hay más de un héroe. Para
+acompañantes reclutables, otra entrada en `RECLUTAS` más su diálogo y
+su lugar en el mapa.
 
 **Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
 `dificultad.py` con sus multiplicadores (vida, ataque, monedas,

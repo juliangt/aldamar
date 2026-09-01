@@ -147,12 +147,28 @@ def test_cargar_recupera_aventura_y_dificultad(tmp_path, fabrica):
 
 
 def test_partida_completa_a_traves_del_menu_de_arranque():
-    """E2E: menú principal (nueva → aventura → dificultad) y victoria."""
+    """E2E: menú principal (nueva → aventura → héroe → dificultad) y victoria."""
     salida: list[str] = []
-    lineas = ["1", "1", "2"] + RUTA_BASE + ["destruir"]  # camino = opción 2
+    lineas = ["1", "1", "1", "2"] + RUTA_BASE + ["destruir"]  # tilo; camino = opción 2
     main(["--semilla", "7", "--sin-color"], entrada=EntradaTipeada(lineas), salida=salida.append)
     texto = "\n".join(salida)
     assert "A L D A M A R" in texto  # la portada del menú apareció
+    assert "¿Quién será tu héroe?" in texto
     assert "¿A qué ritmo quieres caminar?" in texto
     assert "— FIN —" in texto
     assert "El Jardín que venció a la Sombra" in " ".join(texto.split())
+
+
+def test_partida_completa_con_ruy_el_errante(fabrica):
+    """Otro héroe, otra voz, misma suerte: la aventura se puede acabar igual."""
+    # primera línea: se conserva el nombre de la ficha (Ruy); luego, Belthar
+    lineas = ["", "hablar belthar"] + RUTA_BASE[1:] + ["destruir"]
+    juego, salida = fabrica(lineas, semilla=7, personaje="ruy")
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert juego.fin
+    assert juego.final and "victoria" in juego.final
+    # el prólogo y el trato de Belthar son los del errante
+    assert "el pliego de un viejo falro" in texto
+    assert "escúchame, errante" in texto
+    assert "— FIN —" in texto

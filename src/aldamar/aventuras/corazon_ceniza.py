@@ -20,9 +20,10 @@ if TYPE_CHECKING:  # solo anotaciones
     from ..juego import Juego
     from ..personajes import Enemigo
 
-# ── Prólogo y héroe ──────────────────────────────────────────────────────
+# ── Prólogo y héroes ─────────────────────────────────────────────────────
 
-PROLOGO = """Hace mil lunas, el hechicero Morvath forjó en el corazón ardiente del
+# El mito compartido: cómo nació el Corazón y por qué no supo morir.
+PROLOGO_BASE = """Hace mil lunas, el hechicero Morvath forjó en el corazón ardiente del
 Monte Umbak un amuleto al que llamó el Corazón de Ceniza. Con su aliento
 oscuro doblegó a los reinos del oeste, y solo la alianza de las razas
 libres —humanos, sylvos, goran y falros— logró arrancárselo.
@@ -30,13 +31,47 @@ libres —humanos, sylvos, goran y falros— logró arrancárselo.
 Morvath cayó, pero su obra no supo morir: solo la Forja Eterna que lo
 vio nacer puede devolverlo al fuego. Los consejeros de antaño lo
 escondieron y juraron olvidar. El olvido cumplió.
+"""
 
-Durante veinte generaciones el amuleto durmió en un baúl de jardinería,
+# El arranque de cada héroe: cómo llegó hasta él la guarda del amuleto.
+PROLOGOS: dict[str, str] = {
+    "tilo": """Durante veinte generaciones el amuleto durmió en un baúl de jardinería,
 en la aldea falra de Vegaverde, herencia de tu tío Oldo Panverde.
 
 Esta noche los cuervos vuelan hacia el este. Belthar el Errante,
 último mago del viejo consejo, acaba de tocar tu puerta.
-"""
+""",
+    "ithel": """Hace una luna llegó a los Faroles una carta de plumas verdes: el viejo
+Oldo Panverde, a quien el bosque debe tres siembras de paz, pedía a su
+mejor ojo para una última guarda. Fuiste, porque el bosque no pide dos
+veces, y llegaste a Vegaverde con el alba de hoy.
+
+Esta noche los cuervos vuelan hacia el este. En la casa-redil, Belthar
+el Errante, último mago del viejo consejo, cierra la puerta a su espalda
+y asiente hacia ti.
+""",
+    "dagna": """La carta de un falro subió a Barrok con la última caravana de tomillas:
+cien inviernos llevaba el carbón goran calentando Vegaverde, y entre
+clanes las deudas no caducan. Oldo Panverde pedía una guardiana para lo
+más pesado que ha existido. Bajaste de las minas con tu hacha al hombro.
+
+Esta noche los cuervos vuelan hacia el este. En la casa-redil, Belthar
+el Errante, último mago del viejo consejo, cierra la puerta a su espalda
+y asiente hacia ti.
+""",
+    "ruy": """Dos cartas te alcanzaron la misma semana: el bando de Valoria que te
+destierra para siempre, y el pliego de un viejo falro que te dio cobijo
+un invierno sin preguntar tu nombre. Solo una se contesta caminando.
+Llegaste a Vegaverde con el polvo del camino todavía en la capa.
+
+Esta noche los cuervos vuelan hacia el este. En la casa-redil, Belthar
+el Errante, último mago del viejo consejo, cierra la puerta a su espalda
+y te busca a ti con la mirada.
+""",
+}
+
+# El prólogo por defecto de la aventura: el del héroe inicial.
+PROLOGO = PROLOGO_BASE + PROLOGOS["tilo"]
 
 PERSONAJES: dict[str, PersonajeInicial] = {
     "tilo": PersonajeInicial(
@@ -51,6 +86,70 @@ PERSONAJES: dict[str, PersonajeInicial] = {
         ataque=4,
         monedas=10,
         inventario=["corazon"],
+        trato="jardinero",
+        quien="el jardinero",
+    ),
+    "ithel": PersonajeInicial(
+        clave="ithel",
+        nombre="Ithel",
+        titulo="arquera sylva del Bosque Umbrío",
+        presentacion=(
+            "Oldo no te pide fuerza: te cuelga el Corazón con manos de hoja seca\n"
+            "y te confía el tiro que nadie más puede hacer. «Tú que no fallas un\n"
+            "blanco en vuelo, no falles este.» Belthar asiente: el este espera.\n"
+            "Rasgo · Ojo de halcón: +1 de daño mientras la bestia conserve más\n"
+            "de la mitad de su vida. Golpes certeros, viajeros ligeros."
+        ),
+        vida=36,
+        ataque=4,
+        monedas=12,
+        inventario=["corazon", "hoja_sylva"],
+        rasgos=["ojo_halcon"],
+        prologo=PROLOGO_BASE + PROLOGOS["ithel"],
+        texto_nombre="¿Cómo te llamas, arquera de los Faroles? ({nombre}): ",
+        trato="arquera",
+        quien="la arquera",
+    ),
+    "dagna": PersonajeInicial(
+        clave="dagna",
+        nombre="Dagna Escudagris",
+        titulo="guerrera goran de las Profundidades de Barrok",
+        presentacion=(
+            "Oldo apenas logra levantar el Corazón: tú lo recibes como se recibe\n"
+            "una deuda entre clanes, a dos manos y sin gestos. «Cien inviernos de\n"
+            "carbón, viejo. Con esto quedamos en paz.» Belthar asiente: el este espera.\n"
+            "Rasgo · Piel de piedra: recibes 1 punto menos de daño de cualquier golpe."
+        ),
+        vida=60,
+        ataque=3,
+        monedas=5,
+        inventario=["corazon", "capa_gris"],
+        rasgos=["piel_piedra"],
+        prologo=PROLOGO_BASE + PROLOGOS["dagna"],
+        texto_nombre="¿Cómo te llamas, hija de Barrok? ({nombre}): ",
+        trato="guerrera",
+        quien="la guerrera",
+    ),
+    "ruy": PersonajeInicial(
+        clave="ruy",
+        nombre="Ruy",
+        titulo="errante proscrito de Valoria",
+        presentacion=(
+            "Sin título ni blasón llegas a Vegaverde, pero Oldo te reconoce: se lo\n"
+            "debes, y los proscritos pagan sus deudas. Te cuelga el Corazón mirándote\n"
+            "a los ojos, como se paga. Belthar asiente: el este espera.\n"
+            "Rasgo · Lengua de mercado: pagas 1 moneda menos en cada compra. Un\n"
+            "proscrito aprende a hacer que el oro rinda."
+        ),
+        vida=45,
+        ataque=4,
+        monedas=12,
+        inventario=["corazon", "provisiones", "antorcha"],
+        rasgos=["lengua_mercado"],
+        prologo=PROLOGO_BASE + PROLOGOS["ruy"],
+        texto_nombre="¿Cómo te llamas, errante? ({nombre}): ",
+        trato="errante",
+        quien="el errante",
     ),
 }
 
@@ -178,13 +277,13 @@ TIENDAS: dict[str, list[str]] = {
 DIALOGOS: dict[str, str] = {
     "belthar_vegaverde": (
         "Belthar apoya el bastón en el umbral y no pide permiso para entrar.\n"
-        "  «No vine por té. Tu tío Oldo guardaba en su baúl algo que no era\n"
-        "   suyo, ni de tu familia, ni de nadie de por aquí: el Corazón de\n"
-        "   Ceniza. Mil lunas durmió bajo las tomillas y esta noche despertó.»\n"
+        "  «No vine por té. El viejo Oldo guardaba en su baúl algo que no era\n"
+        "   suyo, ni de nadie de por aquí: el Corazón de Ceniza. Mil lunas\n"
+        "   durmió bajo las tomillas y esta noche despertó.»\n"
         "  «Morvath murió, pero su obra no sabe morir. Solo la Forja Eterna,\n"
         "   en la cumbre del Monte Umbak, puede devolverlo al fuego que lo vio\n"
         "   nacer. Es un viaje largo y yo ya soy demasiado viejo para él.»\n"
-        "  «Lévatelo al cuello y camina hacia el este. Y escúchame, jardinero:\n"
+        "  «Lévatelo al cuello y camina hacia el este. Y escúchame, {trato}:\n"
         "   no lo uses. Cada vez que susurra, deja una grieta. La montaña lo\n"
         "   destruirá; tú solo tienes que llegar.»"
     ),
@@ -272,8 +371,8 @@ EPILogo_RECLAMO = (
     "ojo que entiende todo: nadie destruirá lo que ya no quiere destruirse.\n"
     "\n"
     "Del otro lado de la ceniza, en la Aguja Pálida, un trono vacío se\n"
-    "endereza solo. Morvath tuvo un amuleto; tú tienes un huerto, un nombre\n"
-    "y veinte generaciones de espera.\n"
+    "endereza solo. Morvath tuvo un amuleto; tú tienes un trono que nadie\n"
+    "te pidió y todo el tiempo del mundo.\n"
     "El norte aprende a decir tu nombre con la puerta cerrada."
 )
 
@@ -281,16 +380,16 @@ EPILogo_CAIDA = (
     "La grieta se abre del todo. Ya no llevas el Corazón: el Corazón te lleva.\n"
     "\n"
     "Los cuervos del este cambian de dirección y van a tu encuentro. En\n"
-    "Vegaverde dejan de sembrar tu silla a la mesa, y el viento lleva tu\n"
-    "nombre hacia la Aguja Pálida como quien devuelve una carta."
+    "Vegaverde apagan la lámpara de la casa que te abrió, y el viento lleva\n"
+    "tu nombre hacia la Aguja Pálida como quien devuelve una carta."
 )
 
 EPILogo_MUERTE = (
     "La vista se llena de ceniza. Lo último que ves es el cielo de Aldamar,\n"
     "que sigue ahí, indiferente y hermoso.\n"
     "\n"
-    "Los que viajaban contigo cargan la historia de vuelta al oeste: el\n"
-    "jardinero que se atrevió. El Corazón, en su cadena, espera a otro."
+    "Los que viajaban contigo cargan la historia de vuelta al oeste: {quien}\n"
+    "que se atrevió. El Corazón, en su cadena, espera a otro."
 )
 
 # ── El mapa ──────────────────────────────────────────────────────────────
@@ -299,7 +398,7 @@ LUGARES: dict[str, Lugar] = {
         "vegaverde",
         "Vegaverde",
         "Hileras de huertos, tolvaneras mecidas por el viento y la casa-redil de\n"
-        "tu tío Oldo. El aire huele a tierra mojada y a pan. Hacia el este, el\n"
+        "Oldo Panverde. El aire huele a tierra mojada y a pan. Hacia el este, el\n"
         "camino del molino se escabulle entre los cercos.",
         salidas={"este": "molino", "molino": "molino", "camino": "molino"},
         objetos=["provisiones", "capa_gris"],
@@ -525,8 +624,8 @@ AVENTURA = Aventura(
     id="corazon_ceniza",
     titulo="El Corazón de Ceniza",
     descripcion=(
-        "Un jardinero hereda un amuleto que no debería existir y cruza medio "
-        "continente para devolverlo al fuego que lo vio nacer."
+        "El amuleto que durmió veinte generaciones acaba de despertar: cruza "
+        "medio continente para devolverlo al fuego que lo vio nacer."
     ),
     prologo=PROLOGO,
     texto_nombre="¿Cómo te llamas, heredero de Vegaverde? ({nombre}): ",
