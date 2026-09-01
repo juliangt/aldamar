@@ -1,7 +1,7 @@
 """Primitivas de mundo: lugares, conexiones y utilidades de texto.
 
-El mapa concreto de cada aventura vive en su módulo de contenido
-(`aventuras/...`); aquí solo está la geometría genérica.
+El mapa concreto de cada aventura vive en su JSON de contenido
+(`aventuras/*.json`); aquí solo está la geometría genérica.
 """
 
 from __future__ import annotations

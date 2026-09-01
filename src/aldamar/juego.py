@@ -2,8 +2,9 @@
 
 El motor es agnóstico de la aventura: todo el contenido llega en el
 objeto `Aventura` y el balance en la `Dificultad` elegida. Los eventos
-narrativos de cada lugar y el golpe especial de combate son funciones
-definidas por la aventura.
+narrativos de cada lugar y el golpe especial de combate son efectos del
+vocabulario declarativo (`eventos.py`) que cada aventura declara en su
+JSON (que `cargador.py` valida y convierte en funciones).
 """
 
 from __future__ import annotations
