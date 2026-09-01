@@ -24,7 +24,7 @@ from .opciones import (
     elegir_opcion,
     pantalla_completa,
 )
-from .personajes import CORRUPCION_MAXIMA, Combatiente, Companero, Enemigo, Jugador
+from .personajes import CORRUPCION_MAXIMA, RASGOS, Combatiente, Companero, Enemigo, Jugador
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 
@@ -92,6 +92,11 @@ class Juego:
     def tenue(self, texto: str) -> None:
         self.escribir(texto, DIM)
 
+    def _texto_heroe(self, texto: str) -> str:
+        """Sustituye {trato} y {quien} por los apodos del héroe en marcha."""
+        ficha = self.av.personajes[self.personaje]
+        return texto.format(trato=ficha.trato, quien=ficha.quien)
+
     # ── equipo derivado ──────────────────────────────────────────────
     def _mejor(self, tipo: str) -> dict | None:
         candidatos = [self.av.items[k] for k in self.jugador.inventario if self.av.items[k]["tipo"] == tipo]
@@ -136,7 +141,7 @@ class Juego:
         elif delta < 0:
             self.exito(f"El agua y la distancia alivian la grieta ({delta} corrupción).")
         if self.jugador.corrupcion >= CORRUPCION_MAXIMA:
-            self.aviso("\n" + self.av.epilogo_caida)
+            self.aviso("\n" + self._texto_heroe(self.av.epilogo_caida))
             self.fin = True
             self.final = "caida"
 
@@ -178,10 +183,11 @@ class Juego:
         self.salida(f"\x1b[H{linea1}\n{linea2}")
 
     def _prologo(self) -> None:
-        self.epico(self.av.prologo)
         ficha = self.av.personajes[self.personaje]
+        self.epico(ficha.prologo or self.av.prologo)
         try:
-            nombre = self.entrada(self.av.texto_nombre.format(nombre=ficha.nombre)).strip()
+            pregunta = ficha.texto_nombre or self.av.texto_nombre
+            nombre = self.entrada(pregunta.format(nombre=ficha.nombre)).strip()
         except EOFError:
             nombre = ""
         if nombre:
@@ -390,6 +396,11 @@ class Juego:
         ficha = self.av.personajes[self.personaje]
         self.epico(f"\n— {j.nombre} · {ficha.titulo} —")
         self.escribir(f"Vida: {j.vida}/{j.vida_max}   Corrupción: {j.recepcion()} {j.corrupcion}%")
+        if j.rasgos:
+            self.escribir(
+                "Rasgos: "
+                + " · ".join(f"{RASGOS[r].nombre} ({RASGOS[r].descripcion})" for r in j.rasgos)
+            )
         arma = self._mejor("arma")
         armadura = self._mejor("armadura")
         texto_arma = f"{arma['nombre']} (+{arma['bonus']})" if arma else "tus propias manos"
@@ -476,6 +487,8 @@ class Juego:
             self.tenue("No venden eso aquí.")
             return
         precio = self.av.items[clave]["precio"] or 0
+        if self.jugador.tiene("lengua_mercado"):
+            precio = max(1, precio - 1)
         if self.jugador.monedas < precio:
             self.aviso(f"Te faltan monedas: cuesta {precio} y llevas {self.jugador.monedas}.")
             return
@@ -505,7 +518,7 @@ class Juego:
         t = normaliza(arg)
         for npc, clave in l.npcs.items():
             if t and (t in normaliza(npc) or t in normaliza(clave)):
-                self.epico("\n" + self.av.dialogos[clave])
+                self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
                 return
         self.tenue("Aquí no hay nadie con ese nombre.")
 
@@ -595,13 +608,23 @@ class Juego:
     def _recibe(self, objetivo: Combatiente | Jugador, dano: int) -> int:
         """Aplica daño a un combatiente o al jugador (defensa según armadura)."""
         if isinstance(objetivo, Jugador):
-            efectivo = max(1, dano - self.bonus_armadura())
+            mitigacion = self.bonus_armadura()
+            if self.jugador.tiene("piel_piedra"):
+                mitigacion += 1
+            efectivo = max(1, dano - mitigacion)
             self.jugador.vida = max(0, self.jugador.vida - efectivo)
             return efectivo
         return objetivo.recibir(dano)
 
     def _golpea(self, atacante: Combatiente, objetivo: Combatiente, extra: int = 3) -> int:
-        dano = self.rng.randint(max(1, atacante.ataque), atacante.ataque + extra)
+        ataque = self.ataque_total() if atacante is self.jugador else atacante.ataque
+        dano = self.rng.randint(max(1, ataque), ataque + extra)
+        if (
+            atacante is self.jugador
+            and self.jugador.tiene("ojo_halcon")
+            and objetivo.vida > objetivo.vida_max // 2
+        ):
+            dano += 1
         return self._recibe(objetivo, dano)
 
     def _duelo(self, enemigo: Enemigo) -> str:
@@ -633,7 +656,7 @@ class Juego:
                     f"{enemigo.nombre} te golpea: −{efectivo} ({self.jugador.vida}/{self.jugador.vida_max})."
                 )
                 if not self.jugador.vivo:
-                    self.aviso("\n" + self.av.epilogo_muerte)
+                    self.aviso("\n" + self._texto_heroe(self.av.epilogo_muerte))
                     self.fin = True
                     self.final = "muerte"
                     return "muerte"

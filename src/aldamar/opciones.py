@@ -15,6 +15,7 @@ import os
 import select
 import shutil
 import sys
+import textwrap
 from contextlib import contextmanager
 
 from .mundo import normaliza
@@ -142,6 +143,15 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 
 # ── render ───────────────────────────────────────────────────────────────
 
+def _renglones_desc(desc: str, ancho: int) -> list[str]:
+    """Reengloniza una descripción extensa al ancho de la terminal."""
+    ancho = max(1, ancho)
+    renglones: list[str] = []
+    for trozo in desc.strip().splitlines():
+        renglones.extend(textwrap.wrap(trozo, width=ancho) or [""])
+    return renglones
+
+
 def _lineas_menu(opciones: list[tuple[str, str, str]], sel: int, color: bool) -> list[str]:
     ancho = shutil.get_terminal_size().columns
     rotulados = [f"{i+1}) {etiqueta}" for i, (_c, etiqueta, _d) in enumerate(opciones)]
@@ -153,6 +163,12 @@ def _lineas_menu(opciones: list[tuple[str, str, str]], sel: int, color: bool) ->
             linea = _c(f"  ❯ {rotulo}", color, SELECCION)
         else:
             linea = f"    {rotulo}"
+        if desc and "\n" in desc:
+            # descripción extensa (ficha de héroe): renglones propios debajo
+            lineas.append(linea)
+            for renglon in _renglones_desc(desc, ancho - 8):
+                lineas.append(_c(f"     {renglon}", color, DIM))
+            continue
         if desc:
             hueco = " " * (columna - len(rotulo) + 3)
             margen = ancho - 1 - (4 + len(rotulo) + len(hueco)) - 1  # sitio para "…"
@@ -227,8 +243,8 @@ def _elegir_tipeando(
     salida(_c(f"\n{titulo}", color, TITULO))
     for i, (_clave, etiqueta, desc) in enumerate(opciones, 1):
         salida(f"  {i}) {etiqueta}")
-        if desc:
-            salida(_c(f"     {desc}", color, DIM))
+        for renglon in (desc.strip().splitlines() if desc else []):
+            salida(_c(f"     {renglon}", color, DIM))
     while True:
         try:
             linea = entrada(f"\nElige una opción (1-{len(opciones)}): ").strip()
@@ -259,12 +275,13 @@ def elegir_opcion(
 ) -> str | None:
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
-    Con teclado real (o `flechas=True`) navega con ↑/↓ y Enter; los
-    dígitos eligen al vuelo y Esc vuelve (None). Al elegir, la pantalla
-    se limpia: lo que se pinte después se ve solo. Con `aviso_esc`,
-    Esc no saca del menú: el aviso queda escrito bajo las opciones y se
-    sigue eligiendo. En modo tipeado acepta número o nombre. Sin
-    opciones, devuelve None.
+    La descripción puede ocupar varios renglones (se muestran todos,
+    debajo de su opción). Con teclado real (o `flechas=True`) navega con
+    ↑/↓ y Enter; los dígitos eligen al vuelo y Esc vuelve (None). Al
+    elegir, la pantalla se limpia: lo que se pinte después se ve solo.
+    Con `aviso_esc`, Esc no saca del menú: el aviso queda escrito bajo
+    las opciones y se sigue eligiendo. En modo tipeado acepta número o
+    nombre. Sin opciones, devuelve None.
     """
     if not opciones:
         return None

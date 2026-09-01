@@ -145,7 +145,7 @@ def menu_principal(
             if len(av.personajes) > 1:
                 per = elegir_opcion(
                     "¿Quién será tu héroe?",
-                    [(p.clave, f"{p.nombre}, {p.titulo}", p.presentacion.splitlines()[0]) for p in av.personajes.values()],
+                    [(p.clave, f"{p.nombre}, {p.titulo}", p.presentacion) for p in av.personajes.values()],
                     entrada=entrada,
                     salida=salida,
                     color=color,

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Callable
 
 from .dificultad import Dificultad, ajusta
 from .mundo import Lugar
-from .personajes import Companero, Enemigo, Jugador
+from .personajes import RASGOS, Companero, Enemigo, Jugador
 
 if TYPE_CHECKING:  # solo para anotaciones; evita import circular en runtime
     from .juego import Juego
@@ -25,7 +25,12 @@ AtaqueEspecial = Callable[["Juego", Enemigo], None]
 
 @dataclass
 class PersonajeInicial:
-    """Ficha de un héroe con el que se puede empezar la aventura."""
+    """Ficha de un héroe con el que se puede empezar la aventura.
+
+    Además de las estadísticas, cada héroe puede traer rasgos (claves de
+    `RASGOS`) y su propia voz: prólogo, pregunta del nombre y los apodos
+    con los que los textos se dirigen a él o hablan de él.
+    """
 
     clave: str
     nombre: str
@@ -35,6 +40,11 @@ class PersonajeInicial:
     ataque: int = 4
     monedas: int = 10
     inventario: list[str] = field(default_factory=list)  # claves de items
+    rasgos: list[str] = field(default_factory=list)  # claves de RASGOS
+    prologo: str | None = None  # None = el prólogo de la aventura
+    texto_nombre: str | None = None  # None = el de la aventura ({nombre})
+    trato: str = "caminante"  # cómo te hablan: "jardinero", "arquera"…
+    quien: str = "el caminante"  # cómo dicen de ti en los cantares, con artículo
 
 
 @dataclass
@@ -55,6 +65,8 @@ class Aventura:
     jugador_inicial: str
     epilogo_muerte: str  # lo que el motor muestra si caes en combate
     epilogo_caida: str  # lo que muestra si la corrupción te consume
+    # Los textos de prólogo, diálogos y epílogos pueden usar {trato} y
+    # {quien}: se sustituyen por los apodos del héroe elegido.
     comando_especial: str | None = None  # p.ej. "corazon"; None = sin especial
     texto_especial_fuera: str = ""
     ataque_especial: AtaqueEspecial | None = None
@@ -82,6 +94,12 @@ class Aventura:
                 f"disponibles: {', '.join(self.personajes)}"
             )
         f = self.personajes[clave]
+        desconocidos = [r for r in f.rasgos if r not in RASGOS]
+        if desconocidos:
+            raise ValueError(
+                f"{f.nombre} tiene rasgos desconocidos: {', '.join(desconocidos)}; "
+                f"válidos: {', '.join(RASGOS)}"
+            )
         return Jugador(
             nombre=f.nombre,
             vida=ajusta(f.vida, dif.vida_jugador),
@@ -89,6 +107,7 @@ class Aventura:
             ataque=ajusta(f.ataque, dif.ataque_jugador),
             monedas=ajusta(f.monedas, dif.monedas),
             inventario=list(f.inventario),
+            rasgos=list(f.rasgos),
         )
 
 

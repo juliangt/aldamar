@@ -8,6 +8,36 @@ CORRUPCION_MAXIMA = 100
 CORRUPCION_TENTADO = 60
 
 
+@dataclass(frozen=True)
+class Rasgo:
+    """El don de un héroe: nombre y efecto mecánico, documentado en su ficha."""
+
+    clave: str
+    nombre: str
+    descripcion: str
+
+
+# Los dones que el motor sabe aplicar. Sumar uno = agregar la entrada y
+# darle efecto en `juego.py` (son mecánicas simples y compartidas).
+RASGOS: dict[str, Rasgo] = {
+    "ojo_halcon": Rasgo(
+        clave="ojo_halcon",
+        nombre="Ojo de halcón",
+        descripcion="+1 de daño mientras el enemigo conserve más de la mitad de su vida",
+    ),
+    "piel_piedra": Rasgo(
+        clave="piel_piedra",
+        nombre="Piel de piedra",
+        descripcion="recibes 1 punto menos de daño de cualquier golpe",
+    ),
+    "lengua_mercado": Rasgo(
+        clave="lengua_mercado",
+        nombre="Lengua de mercado",
+        descripcion="pagas 1 moneda menos en cada compra",
+    ),
+}
+
+
 @dataclass
 class Combatiente:
     """Base de todo el que puede pelear."""
@@ -67,7 +97,7 @@ class Companero:
 
 @dataclass
 class Jugador:
-    """El héroe: un falro jardinero heredero de un secreto muy pesado."""
+    """El héroe elegido: lleva los rasgos de su ficha sobre sus hombros."""
 
     nombre: str
     vida: int = 45
@@ -77,10 +107,14 @@ class Jugador:
     monedas: int = 10
     inventario: list[str] = field(default_factory=list)
     companeros: list[Companero] = field(default_factory=list)
+    rasgos: list[str] = field(default_factory=list)  # claves de RASGOS
 
     @property
     def vivo(self) -> bool:
         return self.vida > 0
+
+    def tiene(self, rasgo: str) -> bool:
+        return rasgo in self.rasgos
 
     def companeras_vivas(self) -> list[Companero]:
         return [c for c in self.companeros if c.viva]
