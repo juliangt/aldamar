@@ -93,6 +93,16 @@ src/aldamar/
 tests/             # mapa, combate determinista y partida completa
 ```
 
+## El error que lo empezó todo
+
+Este juego nació de una equivocación. Lo único que se le pidió a un
+LLM fue un resumen de un libro —sin infringir copyright, pues serviría
+como ejemplo en otro proyecto— y, en lugar del resumen, devolvió un
+juego creado desde cero. Aldamar es ese accidente hecho obra.
+
+Veremos qué camino sigue tomando: la partida, por ahora, apenas
+comienza.
+
 ## Licencia
 
 MIT.
