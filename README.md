@@ -32,6 +32,16 @@ acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
 un comando…» abre el modo tipeado de siempre. Al elegir cualquier
 opción la pantalla se limpia: el contenido nuevo se ve solo.
 
+También el arranque: si `uv` (o el lanzador de turno) contó su build
+en pantalla —«Building aldamar…», «Installed N packages…»—, el juego
+limpia la terminal al empezar y ese informe no queda en medio del
+relato. En modo debug sí se conserva, para diagnosticar el arranque:
+
+```bash
+uv run aldamar --debug            # no limpiar: deja visible el informe del build
+ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
+```
+
 Atajos para saltar el menú:
 
 ```bash
