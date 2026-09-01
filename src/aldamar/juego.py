@@ -18,12 +18,18 @@ from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, obtener_dificultad
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
-from .opciones import _es_interactivo, elegir_opcion, pantalla_completa
+from .opciones import (
+    LIMPIAR,
+    _es_interactivo,
+    elegir_opcion,
+    pantalla_completa,
+)
 from .personajes import CORRUPCION_MAXIMA, Combatiente, Companero, Enemigo, Jugador
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 
 ESCRIBIR = "\x00texto"  # clave del menú que abre el modo tipeado clásico
+OTRAS = "\x00otras"  # clave del menú que abre el submenú de gestiones
 
 
 class Juego:
@@ -173,17 +179,27 @@ class Juego:
 
     def _pista(self) -> str:
         if self._usa_flechas():
-            return "(Elige qué hacer con ↑/↓ y Enter; Esc descarta.)"
+            return "(Elige qué hacer con ↑/↓ y Enter; las gestiones están en «Otras acciones…».)"
         return "(Escribe  ayuda  para ver los comandos.)"
 
-    def _leer_orden(self, titulo: str, prompt: str, opciones: list[tuple[str, str, str]]) -> str:
+    def _leer_orden(
+        self,
+        titulo: str,
+        prompt: str,
+        opciones: list[tuple[str, str, str]],
+        aviso_esc: str | None = "No hay vuelta atrás: elige una acción de la lista.",
+    ) -> str:
         """La próxima orden del jugador.
 
-        Con teclado real se elige en un menú navegable; Esc devuelve ""
-        (no hace nada) y "Escribir un comando…" abre el modo tipeado de
-        siempre. Sin teclado real, se lee una línea, como toda la vida.
+        Con teclado real se elige en menús navegables. En el menú del
+        juego Esc no lleva a ningún sitio: queda un aviso y se sigue
+        eligiendo; «Otras acciones…» abre el submenú de gestiones, de
+        donde sí se vuelve con Esc. Sin teclado real, se lee una línea,
+        como toda la vida.
         """
-        if self._usa_flechas():
+        if not self._usa_flechas():
+            return self.entrada(prompt).strip()
+        while True:
             clave = elegir_opcion(
                 titulo,
                 opciones,
@@ -191,16 +207,22 @@ class Juego:
                 salida=self.salida,
                 color=self.color,
                 flechas=True,
+                aviso_esc=aviso_esc,
             )
-            if clave is None:
+            if clave is None:  # solo sale así del submenú: de vuelta al juego
+                self.salida(LIMPIAR)
                 return ""
+            if clave == OTRAS:
+                titulo = "Otras acciones"
+                opciones = self._opciones_otras()
+                aviso_esc = None  # aquí sí hay vuelta atrás
+                continue
             if clave == ESCRIBIR:
                 return self.entrada(prompt).strip()
             return clave
-        return self.entrada(prompt).strip()
 
     def _opciones_juego(self) -> list[tuple[str, str, str]]:
-        """Lo que se puede hacer ahora mismo, según el lugar y el momento."""
+        """Las acciones del mundo aquí y ahora; las gestiones van aparte."""
         l = self.aqui()
         ops: list[tuple[str, str, str]] = [
             ("mirar", "Mirar alrededor", "El lugar, lo que hay y a dónde ir"),
@@ -239,7 +261,12 @@ class Juego:
         ]
         if l.descanso:
             ops.append(("descansar", "Descansar", "Curarte del todo aquí mismo"))
-        ops += [
+        ops.append((OTRAS, "Otras acciones…", "Estado, inventario, partida y ayuda"))
+        return ops
+
+    def _opciones_otras(self) -> list[tuple[str, str, str]]:
+        """Las gestiones que no son del mundo: ficha, partida y ayuda."""
+        return [
             ("estado", "Estado", "Vida, corrupción y equipo"),
             ("inventario", "Inventario", "Lo que llevas"),
             ("guardar", "Guardar partida", f"En {ARCHIVO_PARTIDA}"),
@@ -248,7 +275,6 @@ class Juego:
             (ESCRIBIR, "Escribir un comando…", "Órdenes a mano, como siempre"),
             ("salir", "Salir del juego", "Dejar de jugar"),
         ]
-        return ops
 
     def _opciones_combate(self, enemigo: Enemigo) -> list[tuple[str, str, str]]:
         ops: list[tuple[str, str, str]] = [("atacar", "Atacar", "Golpe a golpe")]
@@ -601,6 +627,7 @@ class Juego:
                     f"¡{enemigo.nombre}! ¿Qué haces?",
                     self._c("combate> ", DIM),
                     self._opciones_combate(enemigo),
+                    aviso_esc="En combate no hay vuelta atrás: lucha, usa algo o huye.",
                 )
             except EOFError:
                 # se acabó la entrada: suspendemos la partida en vez de colgarnos

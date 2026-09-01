@@ -170,14 +170,18 @@ def _elegir_con_flechas(
     opciones: list[tuple[str, str, str]],
     salida,
     color: bool,
+    aviso_esc: str | None = None,
 ) -> str | None:
     sel = 0
+    aviso: str | None = None
     salida(_c(f"\n{titulo}", color, TITULO))
     dibujadas = 0  # líneas del bloque; el cursor queda justo debajo
     try:
         with _modo_crudo():
             while True:
                 lineas = _lineas_menu(opciones, sel, color)
+                if aviso:
+                    lineas.append(_c(f"  {aviso}", color, AMARILLO))
                 if not dibujadas:
                     # ocultar el cursor mientras se elige, sin gastar una línea
                     # propia: si el primer bloque midiera más, el último renglón
@@ -202,7 +206,11 @@ def _elegir_con_flechas(
                     salida(LIMPIAR)
                     return opciones[int(tecla) - 1][0]
                 elif tecla in ("\x1b", "q", "Q", "\x04"):  # Esc, q o Ctrl-D: volver
-                    return None
+                    if aviso_esc is None:
+                        return None
+                    # no hay a dónde volver: el menú se queda, el aviso queda
+                    # dicho y nada se vuelve a imprimir (el bloque no se apila)
+                    aviso = aviso_esc
                 elif tecla == "\x03":  # Ctrl-C en modo crudo llega como byte
                     raise KeyboardInterrupt
     finally:
@@ -247,16 +255,19 @@ def elegir_opcion(
     salida,
     color: bool = False,
     flechas: bool | None = None,
+    aviso_esc: str | None = None,
 ) -> str | None:
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
     Con teclado real (o `flechas=True`) navega con ↑/↓ y Enter; los
     dígitos eligen al vuelo y Esc vuelve (None). Al elegir, la pantalla
-    se limpia: lo que se pinte después se ve solo. En modo tipeado
-    acepta número o nombre. Sin opciones, devuelve None.
+    se limpia: lo que se pinte después se ve solo. Con `aviso_esc`,
+    Esc no saca del menú: el aviso queda escrito bajo las opciones y se
+    sigue eligiendo. En modo tipeado acepta número o nombre. Sin
+    opciones, devuelve None.
     """
     if not opciones:
         return None
     if flechas or (flechas is None and _es_interactivo(entrada, salida)):
-        return _elegir_con_flechas(titulo, opciones, salida, color)
+        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc)
     return _elegir_tipeando(titulo, opciones, entrada, salida, color)

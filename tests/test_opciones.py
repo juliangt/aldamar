@@ -85,6 +85,24 @@ def test_esc_no_limpia_la_pantalla(monkeypatch):
     assert "\x1b[2J\x1b[H" not in salida  # volver deja la vista como estaba
 
 
+def test_con_aviso_esc_se_queda_dentro_del_menu(monkeypatch):
+    pendientes = ["\x1b", "\r"]
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))
+    salida: list[str] = []
+    clave = elegir_opcion(
+        "Prueba",
+        OPCIONES,
+        entrada=input,
+        salida=salida.append,
+        flechas=True,
+        aviso_esc="Aquí no hay vuelta atrás.",
+    )
+    texto = "\n".join(salida)
+    assert clave == "a"  # Esc no sacó del menú: siguió eligiendo
+    assert "Aquí no hay vuelta atrás." in texto  # y quedó dicho por qué
+    assert texto.count("Prueba") == 1  # sin apilar un bloque nuevo
+
+
 def test_flecha_abajo_mueve_la_seleccion(monkeypatch):
     clave, salida = elegir_con_teclas(monkeypatch, ["\x1b[B", "\r"])
     assert clave == "b"

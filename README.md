@@ -23,10 +23,13 @@ Con teclado y pantalla reales, las listas se navegan con **↑/↓** y se
 confirman con **Enter** (los dígitos eligen al vuelo y **Esc** vuelve
 atrás); en tuberías o tests, el mismo menú se responde a texto, como
 siempre. Dentro del juego ocurre lo mismo: cada turno ofrece un menú
-con lo que se puede hacer aquí y ahora — viajar, tomar, hablar,
+con las acciones del mundo aquí y ahora — viajar, tomar, hablar,
 comprar, luchar… — y `ayuda` se abre a pantalla completa; **Esc** la
-cierra y devuelve la vista anterior. Si prefieres la tecla a la flecha,
-la opción «Escribir un comando…» abre el modo tipeado de siempre.
+cierra y devuelve la vista anterior. Las gestiones (estado,
+inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
+acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
+un comando…» abre el modo tipeado de siempre. Al elegir cualquier
+opción la pantalla se limpia: el contenido nuevo se ve solo.
 
 Atajos para saltar el menú:
 
