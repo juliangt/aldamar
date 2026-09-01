@@ -78,6 +78,27 @@ def test_menu_principal_ofrece_a_los_cuatro_heroes():
     assert eleccion.personaje == "dagna"
 
 
+def test_la_lista_de_heroes_muestra_la_ficha_completa():
+    salida: list[str] = []
+    menu_principal(
+        entrada=EntradaTipeada(["1", "1"]),
+        salida=salida.append,
+        aventura="corazon_ceniza",
+        dificultad="camino",
+    )
+    texto = "\n".join(salida)
+    assert "¿Quién será tu héroe?" in texto
+    # el texto completo de cada héroe, hasta su último renglón
+    for cierre in (
+        "a quien ya está de viaje",  # Tilo
+        "viajeros ligeros",  # Ithel
+        "un punto menos de vida",  # Dagna
+        "en cada compra",  # Ruy
+    ):
+        assert cierre in texto, f"falta el cierre de ficha «{cierre}»"
+    assert texto.count("Rasgo ·") == 3  # y los tres rasgos documentados
+
+
 def test_menu_principal_con_presets_solo_pregunta_lo_que_falta():
     # con aventura y dificultad prefijadas, "1" (nueva) y "1" (Tilo) llegan directo a jugar
     eleccion = menu_principal(

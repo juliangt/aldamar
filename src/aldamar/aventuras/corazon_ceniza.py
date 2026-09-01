@@ -79,8 +79,8 @@ PERSONAJES: dict[str, PersonajeInicial] = {
         nombre="Tilo",
         titulo="falro jardinero de Vegaverde",
         presentacion=(
-            "Oldo te cuelga el Corazón al cuello con dedos temblorosos y te abraza\n"
-            "como se abraza a quien ya está de viaje. Belthar asiente: el este espera."
+            "Oldo te cuelga el Corazón con dedos temblorosos y te abraza como se\n"
+            "abraza a quien ya está de viaje. Belthar asiente: el este espera."
         ),
         vida=45,
         ataque=4,
@@ -117,8 +117,9 @@ PERSONAJES: dict[str, PersonajeInicial] = {
         presentacion=(
             "Oldo apenas logra levantar el Corazón: tú lo recibes como se recibe\n"
             "una deuda entre clanes, a dos manos y sin gestos. «Cien inviernos de\n"
-            "carbón, viejo. Con esto quedamos en paz.» Belthar asiente: el este espera.\n"
-            "Rasgo · Piel de piedra: recibes 1 punto menos de daño de cualquier golpe."
+            "carbón, viejo. Con esto quedamos en paz.»\n"
+            "Belthar asiente: el este espera.\n"
+            "Rasgo · Piel de piedra: cada golpe te quita un punto menos de vida."
         ),
         vida=60,
         ataque=3,
@@ -136,10 +137,9 @@ PERSONAJES: dict[str, PersonajeInicial] = {
         titulo="errante proscrito de Valoria",
         presentacion=(
             "Sin título ni blasón llegas a Vegaverde, pero Oldo te reconoce: se lo\n"
-            "debes, y los proscritos pagan sus deudas. Te cuelga el Corazón mirándote\n"
-            "a los ojos, como se paga. Belthar asiente: el este espera.\n"
-            "Rasgo · Lengua de mercado: pagas 1 moneda menos en cada compra. Un\n"
-            "proscrito aprende a hacer que el oro rinda."
+            "debes, y los proscritos pagan sus deudas. Te cuelga el Corazón\n"
+            "mirándote a los ojos, como se paga. Belthar asiente: el este espera.\n"
+            "Rasgo · Lengua de mercado: pagas 1 moneda menos en cada compra."
         ),
         vida=45,
         ataque=4,

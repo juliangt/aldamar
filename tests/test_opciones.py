@@ -70,6 +70,43 @@ def test_la_descripcion_va_al_lado_de_su_opcion(monkeypatch):
     assert any("2) Dos" in linea and "el segundo" in linea for linea in salida)
 
 
+LARGA = [
+    ("a", "Uno", "primera linea de la ficha\nsegunda linea\ntercera linea"),
+    ("b", "Dos", "corta"),
+]
+
+
+def test_las_descripciones_extensas_se_muestran_completas(monkeypatch):
+    clave, salida = elegir_con_teclas(monkeypatch, ["\r"], lista=LARGA)
+    texto = "\n".join(salida)
+    assert clave == "a"
+    for linea in ("primera linea de la ficha", "segunda linea", "tercera linea"):
+        assert linea in texto, f"falta «{linea}» en el menú"
+    # las descripciones cortas siguen al lado de su opción
+    assert any("2) Dos" in linea and "corta" in linea for linea in salida)
+
+
+def test_la_descripcion_extensa_se_reengloniza_al_ancho(monkeypatch):
+    terminal = os.terminal_size((40, 24))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    lista = [("a", "Uno", " ".join(["palabra"] * 30) + "\nfinal")]
+    lineas = opciones_mod._lineas_menu(lista, 0, color=False)
+    assert lineas[-2].rstrip().endswith("final")  # el segundo párrafo también está
+    de_desc = [linea for linea in lineas if "palabra" in linea or linea.endswith("final")]
+    assert len(de_desc) > 3  # el párrafo se partió en varios renglones
+    assert all(len(linea) <= 41 for linea in de_desc)  # nada se sale de la terminal
+
+
+def test_el_modo_tipeado_tambien_muestra_toda_la_descripcion():
+    salida: list[str] = []
+    elegir_opcion(
+        "Prueba", LARGA, entrada=EntradaTipeada(["2"]), salida=salida.append
+    )
+    texto = "\n".join(salida)
+    assert "primera linea de la ficha" in texto
+    assert "tercera linea" in texto
+
+
 def test_al_avanzar_se_limpia_la_pantalla(monkeypatch):
     _clave, salida = elegir_con_teclas(monkeypatch, ["\r"])
     assert "\x1b[2J\x1b[H" in salida  # el contenido nuevo se ve solo
