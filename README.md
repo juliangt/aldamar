@@ -123,39 +123,62 @@ sobre cada aventura registrada.
 
 ```
 src/aldamar/
-├── personajes.py          # jugador, compañeros, enemigos, rasgos, corrupción
-├── mundo.py               # primitivas: Lugar, normaliza, alcanzables
-├── dificultad.py          # presets de balance (paseo / camino / ceniza)
-├── aventura.py            # el contrato Aventura + registro de aventuras
-├── opciones.py            # selector de opciones: flechas ↑/↓ o texto
-├── menu.py                # menú principal interactivo y ayuda
-├── juego.py               # motor: bucle, comandos, combate, guardado
+├── personajes.py             # jugador, compañeros, enemigos, rasgos, corrupción
+├── mundo.py                  # primitivas: Lugar, normaliza, alcanzables
+├── dificultad.py             # presets de balance (paseo / camino / ceniza)
+├── aventura.py               # el contrato Aventura + registro de aventuras
+├── eventos.py                # vocabulario declarativo de eventos y golpes especiales
+├── cargador.py               # lee y valida los JSON de aventura
+├── opciones.py               # selector de opciones: flechas ↑/↓ o texto
+├── menu.py                   # menú principal interactivo y ayuda
+├── juego.py                  # motor: bucle, comandos, combate, guardado
 └── aventuras/
-    └── corazon_ceniza.py  # todo el contenido de la primera aventura
-tests/                     # mapa, combate, menú, dificultades y partida completa
+    └── corazon_ceniza.json   # toda la primera aventura, en datos
+tests/                        # mapa, combate, cargador, menú y partida completa
 ```
 
 El motor no sabe nada de ninguna aventura en concreto: lee el mapa, los
 objetos, los textos y los eventos desde un objeto `Aventura`. El
-contenido de "El Corazón de Ceniza" vive entero en su propio módulo.
+contenido de "El Corazón de Ceniza" vive entero en su propio JSON y los
+eventos se declaran con el vocabulario de `eventos.py` (el cargador los
+convierte en funciones del motor).
 
 ## Cómo sumar contenido
 
-**Una aventura nueva.** Crea `src/aldamar/aventuras/mi_aventura.py`:
-define tu mapa de `Lugar`, tus `ITEMS`, `ENEMIGOS`, `RECLUTAS`,
-`TIENDAS`, `DIALOGOS`, prólogo, héroes y eventos, arma un `Aventura(...)`
-y ciérralo con `registrar(AVENTURA)`. Importa el módulo en
-`aventuras/__init__.py` y aparecerá solo en el menú. Los eventos de
-lugar son funciones `(juego, lugar)`; el evento llamado `final` se
-dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
+**Una aventura nueva.** Crea `src/aldamar/aventuras/mi_aventura.json`:
+un objeto con `id`, `titulo`, `descripcion`, `prologo_base`,
+`texto_nombre`, `lugar_inicial`, `jugador_inicial`, `epilogos`
+(`muerte` y `caida`) y las secciones `personajes`, `items`, `enemigos`,
+`reclutas`, `tiendas`, `dialogos`, `lugares` y `eventos`. Al soltarlo en
+el directorio se descubre, valida y registra solo: aparece en el menú.
+El cargador verifica referencias (salidas, objetos, enemigos, diálogos,
+tiendas, eventos) y ante un JSON roto nombra archivo y campo.
 
-**Un héroe nuevo.** Agrega una entrada a `PERSONAJES` de la aventura:
+Los **eventos** de lugar se declaran con el vocabulario de
+`eventos.py`, sin código:
+
+| Tipo           | Para qué                                                                 |
+| -------------- | ------------------------------------------------------------------------ |
+| `otorgar`      | Entrega un objeto, una sola vez si declara `una_vez` (flag)               |
+| `curar_grupo`  | Cura al héroe, resucita y cura a los compañeros; `corrupcion` opcional    |
+| `corrupcion`   | Un `aviso` y `puntos` de corrupción, cada vez que se entra                |
+| `final`        | Un texto, `opciones` de elección y el desenlace según corrupción          |
+
+Cada lugar referencia su evento por clave; el evento llamado `final` se
+dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
+El **golpe especial** de combate (si la aventura quiere uno) se declara
+en `comando_especial`: comando, `texto_fuera` y un `efecto` con
+`dano_base`, `dano_por_corrupcion`, `corrupcion_coste` y `mensaje`.
+Si algún día hace falta un efecto nuevo, se suma al vocabulario en
+`eventos.py`: el JSON sigue siendo puro dato.
+
+**Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,
-un `rasgo` (clave de `RASGOS`), `prologo` y `texto_nombre` propios y
-los apodos con los que los textos le hablan (`trato`, `quien`). El
-menú lo ofrece automáticamente cuando hay más de un héroe. Para
-acompañantes reclutables, otra entrada en `RECLUTAS` más su diálogo y
-su lugar en el mapa.
+un `rasgo` (clave de `RASGOS`), `prologo_extra` y `texto_nombre`
+propios y los apodos con los que los textos le hablan (`trato`,
+`quien`). El menú lo ofrece automáticamente cuando hay más de un héroe.
+Para acompañantes reclutables, otra entrada en `reclutas` más su
+diálogo y su lugar en el mapa.
 
 **Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
 `dificultad.py` con sus multiplicadores (vida, ataque, monedas,

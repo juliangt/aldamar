@@ -2,7 +2,8 @@
 
 El motor (`juego.py`) no conoce ninguna aventura concreta: lee mapa,
 objetos, criaturas, textos y eventos desde aquí. Sumar una aventura
-nueva = definir un `Aventura` en `aventuras/` y registrarlo.
+nueva = soltar su JSON en `aventuras/` (lo carga y registra
+`cargador.py`).
 """
 
 from __future__ import annotations

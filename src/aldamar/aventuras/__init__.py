@@ -1,12 +1,13 @@
-"""Paquete de aventuras conocidas.
+"""Paquete de aventuras: cada `*.json` de este directorio es una aventura.
 
-Importar un módulo de aquí lo autorregistra en
-`aldamar.aventura.AVENTURAS`. Sumar una aventura al juego = crear su
-módulo e importarlo en esta lista.
+Al importar el paquete, `cargar_todas` (en `aldamar.cargador`) descubre
+los archivos, los valida y los registra solos. Sumar una aventura al
+juego = soltar su JSON aquí; aparece en el menú sin tocar nada más.
 """
 
 from ..aventura import AVENTURAS
+from ..cargador import cargar_todas
 
-from . import corazon_ceniza  # noqa: F401  (se registra al importarse)
+cargar_todas()
 
-__all__ = ["corazon_ceniza", "AVENTURAS"]
+__all__ = ["AVENTURAS"]
