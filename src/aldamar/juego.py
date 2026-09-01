@@ -166,6 +166,9 @@ class Juego:
             nombre = ""
         if nombre:
             self.jugador.nombre = nombre
+        if self._usa_flechas():
+            # el nombre también es "avanzar": la historia se ve sola
+            self.salida(LIMPIAR)
         self.escribir("\n" + ficha.presentacion)
         self._mirar()
         self.tenue(self._pista())

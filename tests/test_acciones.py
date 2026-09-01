@@ -76,6 +76,16 @@ def test_esc_avisa_y_el_menu_no_se_apila(monkeypatch):
     assert texto.count("¿Qué haces?") == 1  # el menú no se vuelve a pintar
 
 
+def test_tras_el_nombre_se_limpia_la_pantalla(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()
+    texto = "\n".join(salida)
+    presentacion = AVENTURA.personajes[AVENTURA.jugador_inicial].presentacion
+    assert texto.count("\x1b[2J\x1b[H") == 1  # una limpieza, la del nombre
+    # el prólogo queda antes y la presentación después: se ve sola
+    assert texto.index(AVENTURA.prologo[:15]) < texto.index("\x1b[2J\x1b[H") < texto.index(presentacion)
+
+
 def test_las_otras_acciones_son_un_submenu_de_ida_y_vuelta(monkeypatch):
     opciones = [("mirar", "Mirar alrededor", ""), (OTRAS, "Otras acciones…", "")]
     juego, salida = juego_flechas(monkeypatch, ["2", "\x1b", "2", "7"], opciones=opciones)
