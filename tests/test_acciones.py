@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import aldamar.opciones as opciones_mod
+from aldamar import __version__
 from aldamar.juego import ESCRIBIR, OTRAS, Juego
 
 from conftest import AVENTURA, EntradaTipeada
@@ -84,6 +85,25 @@ def test_tras_el_nombre_se_limpia_la_pantalla(monkeypatch):
     assert texto.count("\x1b[2J\x1b[H") == 1  # una limpieza, la del nombre
     # el prólogo queda antes y la presentación después: se ve sola
     assert texto.index(AVENTURA.prologo[:15]) < texto.index("\x1b[2J\x1b[H") < texto.index(presentacion)
+
+
+def test_la_cabecera_abre_cada_pantalla(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["\x1b", "3"], opciones=MENU_MINIMO)
+    juego._prologo()
+    juego.ciclo()
+    texto = "\n".join(salida)
+    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
+    assert f"Aldamar {__version__}" in texto  # primera línea: juego y versión
+    cabecera = next(l for l in salida if l.startswith(juego.jugador.nombre) and "Vida" in l)
+    assert f"Vida {juego.jugador.vida}/{juego.jugador.vida_max}" in cabecera
+    assert f"{juego.jugador.monedas} monedas" in cabecera
+    assert lugar in cabecera  # segunda línea: quién, cómo, cuánto y dónde
+
+
+def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
+    juego, salida = fabrica(["", "ayuda", "salir"])
+    juego.ciclo()
+    assert not any("Aldamar " in l and __version__ in l for l in salida)
 
 
 def test_las_otras_acciones_son_un_submenu_de_ida_y_vuelta(monkeypatch):

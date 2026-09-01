@@ -149,6 +149,7 @@ class Juego:
         else:
             self._prologo()
         while not self.fin:
+            self._cabecera()
             try:
                 linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
             except EOFError:
@@ -156,6 +157,21 @@ class Juego:
             self._ejecutar(linea)
         if self.final:
             self.epico(f"\n— FIN —  (final: {self.final})")
+
+    def _cabecera(self) -> None:
+        """Dos líneas que abren cada pantalla: el juego y tu estado.
+
+        Se pinta al quedar en espera de una acción, después de lo que
+        acabas de hacer, así que nunca cuenta una situación vieja. Solo
+        en modo navegable: el modo tipeado es un relato, sin marco.
+        """
+        if not self._usa_flechas():
+            return
+        self.escribir(f"\nAldamar {__version__}", TITULO)
+        j = self.jugador
+        self.tenue(
+            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
+        )
 
     def _prologo(self) -> None:
         self.epico(self.av.prologo)
@@ -625,6 +641,7 @@ class Juego:
         """
         especial = normaliza(self.av.comando_especial) if self.av.comando_especial else None
         while True:
+            self._cabecera()
             try:
                 linea = self._leer_orden(
                     f"¡{enemigo.nombre}! ¿Qué haces?",
