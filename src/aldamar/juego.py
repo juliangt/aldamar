@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import sys
 
@@ -902,11 +903,23 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
         "--dificultad", choices=sorted(DIFICULTADES), default=None, help="dificultad del balance"
     )
     parser.add_argument("--personaje", default=None, help="héroe inicial de la aventura")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="conservar lo que el lanzador escribió antes del juego (informe del build de uv, avisos)",
+    )
     parser.add_argument("--version", action="version", version=f"aldamar {__version__}")
     args = parser.parse_args(argv)
     color = False if args.sin_color else None
     flechas = False if args.sin_flechas else None
     color_menu = bool(color) if color is not None else hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+    # El lanzador (uv y compañía) cuenta su build en pantalla antes de que
+    # el juego empiece, y el informe queda mezclado con el relato. Salvo
+    # en modo debug, arrancamos limpios; en tuberías y tests, sin códigos.
+    debug = args.debug or os.environ.get("ALDAMAR_DEBUG", "") not in ("", "0")
+    if not debug and _es_interactivo(entrada, salida):
+        salida(LIMPIAR)
 
     try:
         if args.cargar:
