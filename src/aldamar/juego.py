@@ -143,35 +143,39 @@ class Juego:
     # ── ciclo principal ──────────────────────────────────────────────
     def ciclo(self) -> None:
         if self.reanudada:
+            self._cabecera()
             self._mirar()
             self.tenue("(Partida recuperada.) " + self._pista())
             self.reanudada = False
         else:
             self._prologo()
         while not self.fin:
-            self._cabecera()
             try:
                 linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
             except EOFError:
                 linea = "salir"
+            self._cabecera()
             self._ejecutar(linea)
         if self.final:
             self.epico(f"\n— FIN —  (final: {self.final})")
 
     def _cabecera(self) -> None:
-        """Dos líneas que abren cada pantalla: el juego y tu estado.
+        """Dos líneas ancladas a la primera fila: el juego y tu estado.
 
-        Se pinta al quedar en espera de una acción, después de lo que
-        acabas de hacer, así que nunca cuenta una situación vieja. Solo
-        en modo navegable: el modo tipeado es un relato, sin marco.
+        Se pinta justo después de cada limpieza de pantalla —que es el
+        único momento en que se abre pantalla—, así que siempre está
+        arriba del todo y cuenta la situación fresca. Solo en modo
+        navegable: el modo tipeado es un relato, sin marco.
         """
         if not self._usa_flechas():
             return
-        self.escribir(f"\nAldamar {__version__}", TITULO)
+        linea1 = self._c(f"Aldamar {__version__}", TITULO)
         j = self.jugador
-        self.tenue(
-            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
+        linea2 = self._c(
+            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}",
+            DIM,
         )
+        self.salida(f"\x1b[H{linea1}\n{linea2}")
 
     def _prologo(self) -> None:
         self.epico(self.av.prologo)
@@ -185,6 +189,7 @@ class Juego:
         if self._usa_flechas():
             # el nombre también es "avanzar": la historia se ve sola
             self.salida(LIMPIAR)
+            self._cabecera()
         self.escribir("\n" + ficha.presentacion)
         self._mirar()
         self.tenue(self._pista())
@@ -641,7 +646,6 @@ class Juego:
         """
         especial = normaliza(self.av.comando_especial) if self.av.comando_especial else None
         while True:
-            self._cabecera()
             try:
                 linea = self._leer_orden(
                     f"¡{enemigo.nombre}! ¿Qué haces?",
@@ -659,6 +663,7 @@ class Juego:
             arg = partes[1] if len(partes) > 1 else ""
             if not cmd:
                 continue  # Esc en el menú: se espera otra orden
+            self._cabecera()  # la elección limpió la pantalla: arriba, lo nuevo
 
             if cmd == "atacar":
                 efectivo = self._golpea(self.jugador, enemigo)

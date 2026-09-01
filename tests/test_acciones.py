@@ -94,10 +94,13 @@ def test_la_cabecera_abre_cada_pantalla(monkeypatch):
     texto = "\n".join(salida)
     lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
     assert f"Aldamar {__version__}" in texto  # primera línea: juego y versión
-    cabecera = next(l for l in salida if l.startswith(juego.jugador.nombre) and "Vida" in l)
-    assert f"Vida {juego.jugador.vida}/{juego.jugador.vida_max}" in cabecera
-    assert f"{juego.jugador.monedas} monedas" in cabecera
-    assert lugar in cabecera  # segunda línea: quién, cómo, cuánto y dónde
+    i = salida.index("\x1b[2J\x1b[H")  # la limpieza abre pantalla...
+    anclada = salida[i + 1]
+    assert anclada.startswith("\x1b[H")  # ...y la cabecera queda en la primera fila
+    assert f"Aldamar {__version__}\n" in anclada
+    assert f"Vida {juego.jugador.vida}/{juego.jugador.vida_max}" in anclada
+    assert f"{juego.jugador.monedas} monedas" in anclada
+    assert lugar in anclada  # quién, cómo, cuánto y dónde
 
 
 def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
