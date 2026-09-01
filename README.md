@@ -13,12 +13,36 @@ continente para devolverlo al fuego que lo vio nacer.
 
 ```bash
 uv sync
-uv run aldamar            # partida nueva
-uv run aldamar --cargar   # retomar partida.json
-uv run aldamar --semilla 7 --sin-color
+uv run aldamar            # arranca el menú principal
+uv run aldamar --cargar   # retomar partida.json sin pasar por el menú
 ```
 
-También funciona sin instalar: `uv run python -m aldamar`.
+El menú de arranque te deja elegir **aventura**, **héroe** (si hay
+varios) y **dificultad**, cargar una partida guardada o leer la ayuda.
+Con teclado y pantalla reales, las listas se navegan con **↑/↓** y se
+confirman con **Enter** (los dígitos eligen al vuelo y **Esc** vuelve
+atrás); en tuberías o tests, el mismo menú se responde a texto, como
+siempre. Dentro del juego ocurre lo mismo: cada turno ofrece un menú
+con las acciones del mundo aquí y ahora — viajar, tomar, hablar,
+comprar, luchar… — y `ayuda` se abre a pantalla completa; **Esc** la
+cierra y devuelve la vista anterior. Las gestiones (estado,
+inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
+acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
+un comando…» abre el modo tipeado de siempre. Al elegir cualquier
+opción la pantalla se limpia: el contenido nuevo se ve solo.
+
+Atajos para saltar el menú:
+
+```bash
+uv run aldamar --semilla 7 --sin-color
+uv run aldamar --aventura corazon_ceniza --dificultad ceniza
+uv run aldamar --sin-flechas      # menús respondiendo a texto
+uv run python -m aldamar          # también funciona sin instalar
+```
+
+Dificultades: **Paseo por el huerto** (fácil), **El camino** (normal, el
+balance original) y **Yermos de Ceniza** (difícil). La partida guardada
+recuerda aventura, héroe y dificultad.
 
 ## El mundo
 
@@ -49,6 +73,9 @@ la Aguja Pálida) → Monte Umbak.
 - **Comercio y campaña**: monedas repartidas por el mapa, tiendas en
   Ríoclaro y Valoria, y dos llaves de paso: antorcha para las minas,
   estandarte del consejo para los Yermos.
+- **Dificultades**: tres ritmos de viaje — *Paseo por el huerto*, *El
+  camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas y
+  corrupción sin tocar la historia.
 - **Cinco finales**: victoria pura, victoria con cicatriz, la Sombra
   nueva, la caída en pleno camino… y la muerte.
 
@@ -79,19 +106,47 @@ uv run python -m aldamar --semilla 7
 ```
 
 La semilla hace el juego reproducible: los tests usan una partida
-completa scripted de Vegaverde a la cumbre.
+completa scripted de Vegaverde a la cumbre, y la sanidad del mapa corre
+sobre cada aventura registrada.
 
 ### Estructura
 
 ```
 src/aldamar/
-├── datos.py       # objetos, criaturas, diálogos, finales
-├── mundo.py       # mapa, lugares y conexiones
-├── personajes.py  # jugador, compañeros, enemigos, corrupción
-├── juego.py       # bucle, comandos, combate, guardado
-└── __main__.py
-tests/             # mapa, combate determinista y partida completa
+├── personajes.py          # jugador, compañeros, enemigos, corrupción
+├── mundo.py               # primitivas: Lugar, normaliza, alcanzables
+├── dificultad.py          # presets de balance (paseo / camino / ceniza)
+├── aventura.py            # el contrato Aventura + registro de aventuras
+├── opciones.py            # selector de opciones: flechas ↑/↓ o texto
+├── menu.py                # menú principal interactivo y ayuda
+├── juego.py               # motor: bucle, comandos, combate, guardado
+└── aventuras/
+    └── corazon_ceniza.py  # todo el contenido de la primera aventura
+tests/                     # mapa, combate, menú, dificultades y partida completa
 ```
+
+El motor no sabe nada de ninguna aventura en concreto: lee el mapa, los
+objetos, los textos y los eventos desde un objeto `Aventura`. El
+contenido de "El Corazón de Ceniza" vive entero en su propio módulo.
+
+## Cómo sumar contenido
+
+**Una aventura nueva.** Crea `src/aldamar/aventuras/mi_aventura.py`:
+define tu mapa de `Lugar`, tus `ITEMS`, `ENEMIGOS`, `RECLUTAS`,
+`TIENDAS`, `DIALOGOS`, prólogo, héroes y eventos, arma un `Aventura(...)`
+y ciérralo con `registrar(AVENTURA)`. Importa el módulo en
+`aventuras/__init__.py` y aparecerá solo en el menú. Los eventos de
+lugar son funciones `(juego, lugar)`; el evento llamado `final` se
+dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
+
+**Un héroe nuevo.** Agrega una entrada a `PERSONAJES` de la aventura
+(vida, ataque, monedas, inventario y presentación): el menú lo ofrece
+automáticamente cuando hay más de uno. Para acompañantes reclutables,
+otra entrada en `RECLUTAS` más su diálogo y su lugar en el mapa.
+
+**Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
+`dificultad.py` con sus multiplicadores (vida, ataque, monedas,
+corrupción, curación): el menú y la CLI la listan solas.
 
 ## El error que lo empezó todo
 

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aldamar"
-version = "0.1.0"
-description = "Aventura de fantasía épica original para la terminal: el Corazón de Ceniza."
+version = "0.2.0"
+description = "Aventuras de fantasía épica originales para la terminal: motor multi-aventura."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
