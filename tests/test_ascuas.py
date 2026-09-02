@@ -91,6 +91,30 @@ def test_la_decision_cancelada_no_decide():
     assert "panal" not in juego.jugador.inventario
 
 
+def test_cancelar_con_esc_limpia_la_pantalla_y_la_escena_se_vuelve_a_contar(monkeypatch):
+    """Con flechas, Esc sale de la elección limpiando la pantalla (issue 24):
+    el relato del lugar se va, pero la decisión sigue abierta y la escena
+    se vuelve a contar tal y como era al re-entrar."""
+    import aldamar.opciones as opciones_mod
+
+    salida: list[str] = []
+    juego = Juego(
+        BRASA, semilla=7, entrada=EntradaTipeada([]), salida=salida.append,
+        color=False, flechas=True,
+    )
+    escena = "Bruna te alcanza un panal"
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: "\x1b")
+    juego.av.eventos["juramento"](juego, juego.aqui())
+    assert juego.flags == {}  # Esc no decide
+    assert "\x1b[2J\x1b[H" in salida  # …pero la pantalla queda limpia
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: "\r")
+    juego.av.eventos["juramento"](juego, juego.aqui())  # re-entrar: se cuenta de nuevo
+    assert juego.flags == {"juramento": True, "bruna": True}
+    assert "panal" in juego.jugador.inventario
+    assert "\n".join(salida).count(escena) == 2
+
+
 def test_la_decision_puede_costar_corrupcion():
     juego = Juego(SAL, semilla=7, entrada=EntradaTipeada(["quitar"]), salida=lambda _t: None, color=False)
     juego.av.eventos["faro"](juego, juego.aqui())

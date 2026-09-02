@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from . import aventuras  # noqa: F401  (garantiza el registro del contenido)
 from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, obtener_dificultad
-from .opciones import elegir_opcion, pantalla_completa  # noqa: F401  (elegir_opcion re-exportado)
+from .opciones import LIMPIAR, _es_interactivo, elegir_opcion, pantalla_completa  # noqa: F401  (elegir_opcion re-exportado)
 
 ARCHIVO_PARTIDA = "partida.json"
 
@@ -92,7 +92,14 @@ def menu_principal(
     significa que no se juega. Con `flechas=True` (o detección automática)
     las listas se navegan con ↑/↓ y Enter.
     """
+    navegable = flechas or (flechas is None and _es_interactivo(entrada, salida))
     _portada(salida, color)
+
+    def _de_vuelta() -> None:
+        """El menú anterior volvió con la pantalla limpia: falta la portada."""
+        if navegable:
+            _portada(salida, color)
+
     while True:
         clave = elegir_opcion(
             "Menú principal",
@@ -117,6 +124,11 @@ def menu_principal(
                 salida=salida,
                 color=color,
             )
+            if navegable:
+                # la ayuda restauró la pantalla de antes: el bloque viejo del
+                # menú sigue ahí; se limpia para no apilar otro debajo
+                salida(LIMPIAR)
+            _de_vuelta()
             continue
 
         if clave == "cargar":
@@ -139,6 +151,7 @@ def menu_principal(
                 flechas=flechas,
             )
             if clave_av is None:
+                _de_vuelta()
                 continue
             av = obtener_aventura(clave_av)
 
@@ -158,6 +171,7 @@ def menu_principal(
                     flechas=flechas,
                 )
                 if per is None:
+                    _de_vuelta()
                     continue
             else:
                 per = av.jugador_inicial
@@ -174,6 +188,7 @@ def menu_principal(
                 flechas=flechas,
             )
             if clave_dif is None:
+                _de_vuelta()
                 continue
             dif = obtener_dificultad(clave_dif)
 

@@ -352,7 +352,7 @@ class Juego:
                 aviso_esc=aviso_esc,
             )
             if clave is None:  # solo sale así del submenú: de vuelta al juego
-                self.salida(LIMPIAR)
+                # elegir_opcion ya limpió la pantalla; la cabecera re-ancla
                 return ""
             if clave == OTRAS:
                 titulo = "Otras acciones"

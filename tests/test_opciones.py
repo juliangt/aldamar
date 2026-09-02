@@ -117,9 +117,16 @@ def test_un_atajo_tambien_limpia(monkeypatch):
     assert "\x1b[2J\x1b[H" in salida
 
 
-def test_esc_no_limpia_la_pantalla(monkeypatch):
+def test_al_volver_con_esc_se_limpia_la_pantalla(monkeypatch):
+    """Invariante: salir del menú deja la pantalla limpia, se salga como se salga."""
     _clave, salida = elegir_con_teclas(monkeypatch, ["\x1b"])
-    assert "\x1b[2J\x1b[H" not in salida  # volver deja la vista como estaba
+    assert "\x1b[2J\x1b[H" in salida  # al volver también: lo que venga se ve solo
+
+
+def test_ctrl_d_vuelve_y_tambien_limpia(monkeypatch):
+    _clave, salida = elegir_con_teclas(monkeypatch, ["\x04"])
+    assert _clave is None
+    assert "\x1b[2J\x1b[H" in salida
 
 
 def test_con_aviso_esc_se_queda_dentro_del_menu(monkeypatch):

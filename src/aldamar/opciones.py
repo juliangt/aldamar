@@ -223,6 +223,7 @@ def _elegir_con_flechas(
                     return opciones[int(tecla) - 1][0]
                 elif tecla in ("\x1b", "q", "Q", "\x04"):  # Esc, q o Ctrl-D: volver
                     if aviso_esc is None:
+                        salida(LIMPIAR)  # la pantalla queda limpia al volver, como al elegir
                         return None
                     # no hay a dónde volver: el menú se queda, el aviso queda
                     # dicho y nada se vuelve a imprimir (el bloque no se apila)
@@ -278,7 +279,8 @@ def elegir_opcion(
     La descripción puede ocupar varios renglones (se muestran todos,
     debajo de su opción). Con teclado real (o `flechas=True`) navega con
     ↑/↓ y Enter; los dígitos eligen al vuelo y Esc vuelve (None). Al
-    elegir, la pantalla se limpia: lo que se pinte después se ve solo.
+    salir, por cualquier vía —elegir o volver—, la pantalla se limpia:
+    lo que se pinte después se ve solo.
     Con `aviso_esc`, Esc no saca del menú: el aviso queda escrito bajo
     las opciones y se sigue eligiendo. En modo tipeado acepta número o
     nombre. Sin opciones, devuelve None.
