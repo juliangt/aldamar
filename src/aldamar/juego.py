@@ -44,6 +44,16 @@ TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 ESCRIBIR = "\x00texto"  # clave del menú que abre el modo tipeado clásico
 OTRAS = "\x00otras"  # clave del menú que abre el submenú de gestiones
 
+# Claves de los verbos con submenú: un verbo, un listado (issue 26). En el
+# menú de acciones cada verbo es una sola entrada; elegirlo apila su
+# listado y Esc vuelve al menú de abajo.
+IR = "\x00ir"
+TOMAR = "\x00tomar"
+HABLAR = "\x00hablar"
+RECLUTAR = "\x00reclutar"
+COMPRAR = "\x00comprar"
+USAR = "\x00usar"
+
 # La tómbola del turno enemigo: el golpe normal tira con este peso, las
 # habilidades con el suyo (declarado en el JSON).
 PESO_GOLPE = 2
@@ -321,7 +331,7 @@ class Juego:
 
     def _pista(self) -> str:
         if self._usa_flechas():
-            return "(Elige qué hacer con ↑/↓ y Enter; las gestiones están en «Otras acciones…».)"
+            return "(Elige con ↑/↓ y Enter: cada verbo abre su listado, y Esc vuelve; las gestiones están en «Otras acciones…».)"
         return "(Escribe  ayuda  para ver los comandos.)"
 
     def _leer_orden(
@@ -333,15 +343,20 @@ class Juego:
     ) -> str:
         """La próxima orden del jugador.
 
-        Con teclado real se elige en menús navegables. En el menú del
-        juego Esc no lleva a ningún sitio: queda un aviso y se sigue
-        eligiendo; «Otras acciones…» abre el submenú de gestiones, de
-        donde sí se vuelve con Esc. Sin teclado real, se lee una línea,
-        como toda la vida.
+        Con teclado real se elige en menús navegables anidados: la raíz
+        es el menú del juego (o de combate), y cada verbo —«Tomar…»,
+        «Comprar…», «Otras acciones…»— apila su listado; Esc sube un
+        nivel y en la raíz no lleva a ningún sitio: queda un aviso y se
+        sigue eligiendo. Sin teclado real, se lee una línea, como toda
+        la vida.
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
+        pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
+            (titulo, opciones, aviso_esc)
+        ]
         while True:
+            titulo, opciones, aviso_esc = pila[-1]
             clave = elegir_opcion(
                 titulo,
                 opciones,
@@ -351,61 +366,133 @@ class Juego:
                 flechas=True,
                 aviso_esc=aviso_esc,
             )
-            if clave is None:  # solo sale así del submenú: de vuelta al juego
-                # elegir_opcion ya limpió la pantalla; la cabecera re-ancla
-                return ""
-            if clave == OTRAS:
-                titulo = "Otras acciones"
-                opciones = self._opciones_otras()
-                aviso_esc = None  # aquí sí hay vuelta atrás
+            if clave is None:  # Esc: subir un nivel; en la raíz, de vuelta al juego
+                pila.pop()
+                if not pila:
+                    return ""
+                self._cabecera()  # la limpieza de la vuelta se lleva el ancla
                 continue
             if clave == ESCRIBIR:
                 return self.entrada(prompt).strip()
+            sublista = self._submenu(clave)
+            if sublista is not None:  # un verbo: apila su listado
+                pila.append((sublista[0], sublista[1], None))
+                continue
             return clave
 
     def _opciones_juego(self) -> list[tuple[str, str, str]]:
-        """Las acciones del mundo aquí y ahora; las gestiones van aparte."""
+        """El menú de acciones del mundo: una entrada por verbo.
+
+        Cada verbo abre su submenú con el listado (`_submenu`); con una
+        sola cosa que hacer, el verbo queda directo («Ir a: El ejido»)
+        y sin nada que mostrar, no aparece.
+        """
         l = self.aqui()
         ops: list[tuple[str, str, str]] = [
             ("mirar", "Mirar alrededor", "El lugar, lo que hay y a dónde ir"),
         ]
-        ops += [
-            (f"ir {i}", f"Ir a: {nombre}", "")
-            for i, (_d, _p, nombre) in enumerate(self.destinos(l), 1)
-        ]
+        destinos = self.destinos(l)
+        if len(destinos) == 1:
+            ops.append(("ir 1", f"Ir a: {destinos[0][2]}", ""))
+        elif destinos:
+            ops.append((IR, "Ir a…", f"{len(destinos)} destinos"))
         en_suelo = self.restantes(l)
         hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
-        if en_suelo or hay_monedas:
-            ops.append(("tomar todo", "Tomar todo", "Objetos del suelo y monedas"))
-        ops += [
-            (f"tomar {k}", f"Tomar: {self.av.items[k]['nombre']}", "")
-            for k in en_suelo
-        ]
-        ops += [(f"hablar {npc}", f"Hablar: {npc}", "") for npc in l.npcs]
-        ops += [
-            (f"reclutar {npc}", f"Reclutar: {npc}", "Se suma a tu grupo")
-            for npc, clave in l.npcs.items()
-            if clave in self.av.reclutas
-        ]
+        if len(en_suelo) == 1 and not hay_monedas:
+            ops.append((f"tomar {en_suelo[0]}", f"Tomar: {self.av.items[en_suelo[0]]['nombre']}", ""))
+        elif en_suelo or hay_monedas:
+            ops.append((TOMAR, "Tomar…", self._cuenta_tomar(l)))
+        npcs = list(l.npcs)
+        if len(npcs) == 1:
+            ops.append((f"hablar {npcs[0]}", f"Hablar: {npcs[0]}", ""))
+        elif npcs:
+            ops.append((HABLAR, "Hablar…", f"{len(npcs)} personas aquí"))
+        aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+        if len(aliados) == 1:
+            ops.append((f"reclutar {aliados[0]}", f"Reclutar: {aliados[0]}", "Se suma a tu grupo"))
+        elif aliados:
+            ops.append((RECLUTAR, "Reclutar…", f"{len(aliados)} aliados"))
         if l.tienda:
-            ops += [
-                (
-                    f"comprar {k}",
-                    f"Comprar: {self.av.items[k]['nombre']}",
-                    f"{self.av.items[k]['precio']} monedas",
-                )
-                for k in self.av.tiendas[l.id]
-            ]
-            ops += self._opciones_equipo()  # en la tienda, probar lo llevado
-        ops += [
-            (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
-            for k in self.jugador.inventario
-            if self.av.items[k]["tipo"] == "consumible"
-        ]
+            stock = self.av.tiendas[l.id]
+            if len(stock) == 1 and not self._opciones_equipo():
+                item = self.av.items[stock[0]]
+                ops.append((f"comprar {stock[0]}", f"Comprar: {item['nombre']}", f"{item['precio']} monedas"))
+            else:
+                ops.append((COMPRAR, "Comprar…", f"{len(stock)} cosas en venta"))
+        if any(self.av.items[k]["tipo"] == "consumible" for k in self.jugador.inventario):
+            ops.append(self._entrada_usar())
         if l.descanso:
             ops.append(("descansar", "Descansar", "Curarte del todo aquí mismo"))
         ops.append((OTRAS, "Otras acciones…", "Estado, inventario, partida y ayuda"))
         return ops
+
+    def _entrada_usar(self) -> tuple[str, str, str]:
+        """La entrada del verbo «usar»: directa si hay un solo consumible."""
+        consumibles = [
+            k for k in self.jugador.inventario
+            if self.av.items[k]["tipo"] == "consumible"
+        ]
+        if len(consumibles) == 1:
+            k = consumibles[0]
+            return (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
+        return (USAR, "Usar…", f"{len(consumibles)} provisiones")
+
+    def _cuenta_tomar(self, l: Lugar) -> str:
+        """Lo que hay por el suelo, para contar junto al verbo."""
+        objetos = len(self.restantes(l))
+        hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
+        cosas = "" if not objetos else ("1 objeto" if objetos == 1 else f"{objetos} objetos")
+        if cosas and hay_monedas:
+            return f"{cosas} y monedas"
+        return cosas or "monedas"
+
+    def _submenu(self, clave: str) -> tuple[str, list[tuple[str, str, str]]] | None:
+        """El listado de un verbo: (título, opciones) del submenú a apilar.
+
+        El título dice dónde estás y cuántas cosas hay. Devuelve None si
+        la clave no abre submenú: es una orden directa.
+        """
+        l = self.aqui()
+        if clave == OTRAS:
+            return ("Otras acciones", self._opciones_otras())
+        if clave == IR:
+            destinos = self.destinos(l)
+            return (
+                f"Ir a — desde {l.nombre} ({len(destinos)} destinos)",
+                [(f"ir {i}", nombre, "") for i, (_d, _p, nombre) in enumerate(destinos, 1)],
+            )
+        if clave == TOMAR:
+            ops = [("tomar todo", "Tomar todo", "Objetos del suelo y monedas")]
+            ops += [(f"tomar {k}", self.av.items[k]["nombre"], "") for k in self.restantes(l)]
+            return (f"Tomar — en {l.nombre} ({self._cuenta_tomar(l)})", ops)
+        if clave == HABLAR:
+            npcs = list(l.npcs)
+            return (
+                f"Hablar — {l.nombre} ({len(npcs)} personas aquí)",
+                [(f"hablar {npc}", npc, "") for npc in npcs],
+            )
+        if clave == RECLUTAR:
+            aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+            return (
+                f"Reclutar — {l.nombre} ({len(aliados)} aliados)",
+                [(f"reclutar {npc}", npc, "Se suma a tu grupo") for npc in aliados],
+            )
+        if clave == COMPRAR:
+            stock = self.av.tiendas[l.id]
+            ops = [
+                (f"comprar {k}", self.av.items[k]["nombre"], f"{self.av.items[k]['precio']} monedas")
+                for k in stock
+            ]
+            ops += self._opciones_equipo()  # en la tienda, probar lo llevado
+            return (f"Comprar — {l.nombre} ({len(stock)} cosas en venta)", ops)
+        if clave == USAR:
+            ops = [
+                (f"usar {k}", self.av.items[k]["nombre"], f"cura {self.av.items[k]['curacion']}")
+                for k in self.jugador.inventario
+                if self.av.items[k]["tipo"] == "consumible"
+            ]
+            return (f"Usar — tu mochila ({len(ops)} provisiones)", ops)
+        return None
 
     def _opciones_otras(self) -> list[tuple[str, str, str]]:
         """Las gestiones que no son del mundo: ficha, equipo, partida y ayuda."""
@@ -431,11 +518,8 @@ class Juego:
                 self.av.comando_especial,
                 "El golpe especial de la aventura",
             ))
-        ops += [
-            (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
-            for k in self.jugador.inventario
-            if self.av.items[k]["tipo"] == "consumible"
-        ]
+        if any(self.av.items[k]["tipo"] == "consumible" for k in self.jugador.inventario):
+            ops.append(self._entrada_usar())
         if any(self.av.items[k]["tipo"] == "cuerno" for k in self.jugador.inventario):
             ops.append(("cuerno", "Tocar el cuerno", "Pone en fuga a las criaturas menores"))
         ops += [
