@@ -16,9 +16,12 @@ import random
 import sys
 
 from . import __version__, aventuras  # noqa: F401  (aventuras: registra el contenido)
+from . import guardado
 from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from . import legado as modulo_legado
+from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
+from .guardado import PartidaInvalida
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
 from .opciones import (
@@ -108,6 +111,8 @@ class Juego:
         self.final: str | None = None
         self.en_combate = False
         self.reanudada = False
+        # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
+        self.stats = Estadisticas()
 
     # ── salida con color ─────────────────────────────────────────────
     def _c(self, texto: str, *codigos: str) -> str:
@@ -766,6 +771,7 @@ class Juego:
                 self.monedas_tomadas.add(l.id)
                 ganancia = round(l.monedas * self.dificultad.monedas)
                 self.jugador.monedas += ganancia
+                self.stats.recoge(ganancia)
                 self.exito(f"Recoges {ganancia} monedas de plata.")
             if not restantes and not hay_monedas:
                 self.tenue("No hay nada que tomar aquí.")
@@ -811,6 +817,7 @@ class Juego:
             return
         self.jugador.monedas -= precio
         self.adquirir(clave)
+        self.stats.gasta(precio, clave)
         self.exito(f"Compras {self.av.items[clave]['nombre']} por {precio} monedas.")
 
     def _usar(self, arg: str) -> None:
@@ -953,10 +960,12 @@ class Juego:
         self.peligro(f"\n¡{enemigo.nombre} se abalanza!")
         # los estados alterados viven lo que vive el combate
         self._limpiar_estados(enemigo)
+        self.stats.empieza_combate(self.lugar, enemigo.clave, enemigo.nombre)
         usos: dict[int, int] = {}  # cuántas veces usó cada habilidad
         try:
             while not self.fin:
                 accion = self._turno_jugador(enemigo)
+                self.stats.cuenta_turno()
                 if accion == "huida":
                     return "huida"
                 if accion == "cuerno":
@@ -1053,6 +1062,7 @@ class Juego:
             return False
         j.veneno_turnos -= 1
         j.vida = max(0, j.vida - j.veneno_dano)
+        self.stats.golpe_recibido(j.veneno_dano)
         self.peligro(f"El veneno arde: −{j.veneno_dano} ({j.vida}/{j.vida_max}).")
         if j.veneno_turnos <= 0:
             j.veneno_dano = j.veneno_turnos = 0
@@ -1070,6 +1080,7 @@ class Juego:
         objetivo = self._objetivo()
         dano = self.rng.randint(max(1, enemigo.ataque), enemigo.ataque + 3) + extra
         efectivo = self._recibe(objetivo, dano)
+        self.stats.golpe_recibido(efectivo)
         if texto:
             linea = texto.format(efectivo=efectivo)
         elif isinstance(objetivo, Companero):
@@ -1116,6 +1127,7 @@ class Juego:
 
             if cmd == "atacar":
                 efectivo = self._golpea(self.jugador, enemigo)
+                self.stats.golpe_infligido(efectivo)
                 self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
             elif cmd == "usar":
                 clave = self._buscar_item(arg, self.jugador.inventario)
@@ -1129,7 +1141,11 @@ class Juego:
                     self.tenue("Eso no se puede usar en combate.")
                     continue
             elif especial and cmd == especial and self.av.ataque_especial:
+                # el daño del especial ocurre dentro del evento: se mide
+                # por la vida que pierde el enemigo en la llamada
+                antes = enemigo.vida
                 self.av.ataque_especial(self, enemigo)
+                self.stats.golpe_infligido(antes - enemigo.vida)
                 if self.fin:
                     return "seguir"
             elif cmd == "cuerno":
@@ -1169,6 +1185,7 @@ class Juego:
             for c in self.jugador.companeras_vivas():
                 dano = self.rng.randint(c.ataque, c.ataque + 2)
                 efectivo = enemigo.recibir(dano)
+                self.stats.golpe_infligido(efectivo)
                 self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
                 if not enemigo.vivo:
                     break
@@ -1186,6 +1203,7 @@ class Juego:
             clave = pendientes[0]
             enemigo = self.crear_enemigo(clave)
             resultado = self._duelo(enemigo)
+            self.stats.cierra_combate(resultado)
             if self.fin:
                 break
             if resultado == "victoria":
@@ -1225,7 +1243,10 @@ class Juego:
     # ── guardar / cargar ─────────────────────────────────────────────
     def _guardar(self, arg: str = "") -> None:
         ruta = arg.strip() or ARCHIVO_PARTIDA
+        # la primera clave es la versión del esquema: guardado.py la lee
+        # al cargar y sabe migrar (o rechazar con nombre y apellido)
         estado = {
+            "version": guardado.VERSION,
             "aventura": self.av.id,
             "dificultad": self.dificultad.clave,
             "personaje": self.personaje,
@@ -1267,15 +1288,14 @@ class Juego:
         j.vida = estado["vida"]
         j.monedas = estado["monedas"]
         j.corrupcion = estado["corrupcion"]
-        # guardados de antes del issue 17: nivel 1, sin XP y con lo mejor
-        # del inventario puesto — la migración es no tocar nada de esto
-        j.experiencia = estado.get("experiencia", 0)
-        j.nivel = estado.get("nivel", 1)
+        # el estado ya pasó por guardado.preparar: viene en el esquema
+        # actual (la migración 0→1 deja `equipado` en None)
+        j.experiencia = estado["experiencia"]
+        j.nivel = estado["nivel"]
         j.inventario = list(estado["inventario"])
-        j.equipado = {
-            t: k for t, k in (estado.get("equipado") or {}).items() if k in j.inventario
-        }
-        if "equipado" not in estado:
+        puesto = estado["equipado"]
+        j.equipado = {t: k for t, k in (puesto or {}).items() if k in j.inventario}
+        if puesto is None:  # «vestía siempre lo mejor del inventario»
             self._autoequipar()
         j.companeros = []
         for c in estado["companeros"]:
@@ -1284,17 +1304,18 @@ class Juego:
         self.lugar = estado["lugar"]
         self.lugar_previo = estado["lugar_previo"]
         self.flags = dict(estado["flags"])
-        # guardados viejos pueden traer menos lugares: los faltantes
-        # recuperan sus enemigos originales
+        # un guardado de una edición anterior del juego puede traer menos
+        # lugares que la aventura de hoy: los faltantes recuperan sus
+        # enemigos originales (esto es evolución del contenido, no del
+        # esquema, y por eso no lo lleva la migración)
         guardados = {k: list(v) for k, v in estado["enemigos"].items()}
         self.enemigos = {
             lid: guardados.get(lid, list(l.enemigos)) for lid, l in self.av.lugares.items()
         }
         self.tomados = {tuple(t.split("|", 1)) for t in estado["tomados"]}
         self.monedas_tomadas = set(estado["monedas_tomadas"])
-        # guardados de antes de la pantalla de cierre: la huella empieza aquí
-        self.derrotados = list(estado.get("derrotados", []))
-        self.visitados = list(estado.get("visitados") or [self.lugar])
+        self.derrotados = list(estado["derrotados"])
+        self.visitados = list(estado["visitados"]) or [self.lugar]
         self.epilogo = None
         self.fin = False
         self.final = estado.get("final")
@@ -1304,10 +1325,9 @@ class Juego:
     def _cargar(self, arg: str = "") -> None:
         ruta = arg.strip() or ARCHIVO_PARTIDA
         try:
-            with open(ruta, encoding="utf-8") as f:
-                estado = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
-            self.peligro(f"No se pudo cargar {ruta}: {e}")
+            estado = guardado.cargar(ruta)
+        except PartidaInvalida as e:
+            self.peligro(str(e))
             return
         self._aplicar_estado(estado, ruta)
 
@@ -1323,8 +1343,7 @@ class Juego:
         flechas: bool | None = None,
     ) -> "Juego":
         """Construye una partida a partir de un archivo de guardado."""
-        with open(ruta, encoding="utf-8") as f:
-            estado = json.load(f)
+        estado = guardado.cargar(ruta)
         juego = cls(
             aventura=obtener_aventura(estado.get("aventura")),
             dificultad=obtener_dificultad(estado.get("dificultad")),
@@ -1400,12 +1419,21 @@ def main(
         metavar="ARCHIVO",
         help=f"archivo de legado de la serie ({modulo_legado.ARCHIVO_LEGADO} por defecto)",
     )
+    parser.add_argument(
+        "--stats",
+        nargs="?",
+        const=ARCHIVO_ESTADISTICAS,
+        default=None,
+        metavar="ARCHIVO",
+        help=f"escribir estadísticas de la partida al terminar ({ARCHIVO_ESTADISTICAS} por defecto)",
+    )
     parser.add_argument("--version", action="version", version=f"aldamar {__version__}")
     args = parser.parse_args(argv)
     color = False if args.sin_color else None
     flechas = False if args.sin_flechas else None
     color_menu = bool(color) if color is not None else hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     ruta_legado = legado_ruta or args.legado or modulo_legado.ARCHIVO_LEGADO
+    ruta_stats = args.stats
     # lo que la serie recuerda de partidas anteriores (issue 19); si el
     # archivo falta o está roto, se juega igual, solo que sin memoria
     datos_legado = modulo_legado.leer(ruta_legado)
@@ -1481,6 +1509,13 @@ def main(
             juego = _partida_del_menu()
         while juego is not None:
             eleccion = juego.ciclo()
+            if ruta_stats:
+                # la sesión deja sus números antes de decidir «¿y ahora qué?»
+                try:
+                    juego.stats.escribir(juego, ruta_stats)
+                    salida(f"Estadísticas de la partida en {ruta_stats}.")
+                except OSError as e:
+                    salida(f"No se pudieron escribir las estadísticas: {e}")
             _escribir_legado(juego, ruta_legado, salida)
             if eleccion == "otra":
                 # nueva partida al instante: misma aventura, héroe y
@@ -1503,6 +1538,8 @@ def main(
                 juego = None
     except KeyboardInterrupt:
         salida("\nEl viso cae sobre Aldamar. Partida suspendida.")
+    except PartidaInvalida as e:
+        salida(str(e))
     except (OSError, json.JSONDecodeError) as e:
         salida(f"No se pudo abrir la partida: {e}")
     except KeyError as e:

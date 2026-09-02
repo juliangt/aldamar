@@ -1,0 +1,60 @@
+{
+  "aventura": "corazon_ceniza",
+  "dificultad": "paseo",
+  "personaje": "tilo",
+  "nombre": "juanca",
+  "vida": 54,
+  "monedas": 33,
+  "corrupcion": 0,
+  "inventario": [
+    "corazon",
+    "provisiones",
+    "provisiones",
+    "capa_gris",
+    "antorcha"
+  ],
+  "companeros": [],
+  "lugar": "rioclaro",
+  "lugar_previo": "puente",
+  "flags": {},
+  "enemigos": {
+    "vegaverde": [],
+    "molino": [],
+    "puente": [],
+    "bosque": [
+      "espectro"
+    ],
+    "rioclaro": [],
+    "valoria": [],
+    "minas": [
+      "trasgo",
+      "trasgo"
+    ],
+    "cienagas": [
+      "espectro",
+      "espectro"
+    ],
+    "refugio": [],
+    "yerma": [
+      "lobero",
+      "lobero"
+    ],
+    "aguja": [
+      "capitan"
+    ],
+    "umbak": [
+      "custodio"
+    ]
+  },
+  "tomados": [
+    "molino|provisiones",
+    "vegaverde|capa_gris",
+    "vegaverde|provisiones"
+  ],
+  "monedas_tomadas": [
+    "molino",
+    "puente",
+    "vegaverde"
+  ],
+  "final": null
+}
