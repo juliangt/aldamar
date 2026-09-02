@@ -10,7 +10,10 @@ Eventos de lugar:
 - "otorgar": entrega un objeto, una sola vez si declara `una_vez`.
 - "curar_grupo": cura al héroe, resucita y cura a los compañeros.
 - "corrupcion": un aviso y puntos de corrupción, cada vez que se entra.
-- "narrar": un texto de puro relato, una sola vez si declara `una_vez`.
+- "narrar": un texto de puro relato, una sola vez si declara `una_vez`,
+  reservable con una `condicion` de banderas y con texto alternativo
+  (`texto_grieta` + `grieta_desde`) cuando la corrupción del héroe
+  supera el umbral.
 - "decision": un texto y una elección con efectos inmediatos (objeto,
   corrupción, bandera); la bandera es la que después leen los eventos
   que quieran reaccionar a la decisión.
@@ -83,13 +86,36 @@ def evento_corrupcion(puntos: int, aviso: str | None = None) -> Evento:
     return evento
 
 
-def evento_narrar(texto: str, una_vez: str | None = None) -> Evento:
+def evento_narrar(
+    texto: str,
+    una_vez: str | None = None,
+    condicion: dict | None = None,
+    texto_grieta: str | None = None,
+    grieta_desde: int | None = None,
+) -> Evento:
+    """Un texto de puro relato, una sola vez si declara `una_vez`.
+
+    `condicion` (`flag`/`no_flag`) lo reserva a una circunstancia: sin
+    ella, la escena no se cuenta ni se marca (legado que aún no llegó).
+    Y si declara `texto_grieta` con su `grieta_desde`, el texto que se
+    lee depende de la grieta que lleva el héroe: la corrupción vista
+    desde el mundo, no solo del epílogo.
+    """
+
     def evento(j: "Juego", lugar: "Lugar") -> None:
         if una_vez and j.flags.get(una_vez):
             return
+        if condicion:
+            if condicion.get("flag") and not j.flags.get(condicion["flag"]):
+                return
+            if condicion.get("no_flag") and j.flags.get(condicion["no_flag"]):
+                return
+        if texto_grieta and grieta_desde and j.jugador.corrupcion >= grieta_desde:
+            j.epico("\n" + j._texto_heroe(texto_grieta))
+        else:
+            j.epico("\n" + j._texto_heroe(texto))
         if una_vez:
             j.flags[una_vez] = True
-        j.epico("\n" + texto)
 
     return evento
 
@@ -106,7 +132,7 @@ def evento_decision(texto: str, pregunta: str, opciones: list[dict], una_vez: st
     def evento(j: "Juego", lugar: "Lugar") -> None:
         if j.flags.get(una_vez):
             return
-        j.epico("\n" + texto)
+        j.epico("\n" + j._texto_heroe(texto))
         clave = elegir_opcion(
             pregunta,
             [
@@ -129,7 +155,7 @@ def evento_decision(texto: str, pregunta: str, opciones: list[dict], una_vez: st
         if elegida.get("corrupcion"):
             j.corruptear(elegida["corrupcion"])
         if elegida.get("texto"):
-            j.epico("\n" + elegida["texto"])
+            j.epico("\n" + j._texto_heroe(elegida["texto"]))
 
     return evento
 
@@ -157,7 +183,7 @@ def evento_emboscar(
         if not nuevos:
             return
         pendientes.extend(nuevos)
-        j.peligro("\n" + texto)
+        j.peligro("\n" + j._texto_heroe(texto))
 
     return evento
 
@@ -249,7 +275,13 @@ def evento_desde(datos: dict, clave: str | None = None) -> Evento:
     if tipo == "corrupcion":
         return evento_corrupcion(datos["puntos"], datos.get("aviso"))
     if tipo == "narrar":
-        return evento_narrar(datos["texto"], datos.get("una_vez"))
+        return evento_narrar(
+            datos["texto"],
+            datos.get("una_vez"),
+            datos.get("condicion"),
+            datos.get("texto_grieta"),
+            datos.get("grieta_desde"),
+        )
     if tipo == "decision":
         return evento_decision(
             datos["texto"],

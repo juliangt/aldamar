@@ -79,11 +79,13 @@ Cuatro campañas, ordenadas en el menú de menor a mayor aliento. Las
 tres últimas forman la serie **«Las Ascuas del Corazón»**: cada
 historia mantiene hilo con la anterior —personajes, lugares y
 consecuencias se citan de una a otra— pero se entiende y se gana por
-separado; la conexión es de continuidad, no de prerrequisito.
+separado; la conexión es de continuidad, no de prerrequisito. Y desde
+el legado, tus decisiones cruzan aventuras: lo que juraste, robaste o
+te quedaste en la garras de una historia lo recuerda la siguiente.
 
 | # | Aventura | Tamaño | Qué es |
 | - | -------- | ------ | ------ |
-| 1 | **El Corazón de Ceniza** | campaña | El amuleto despierta; de Vegaverde a la Forja Eterna. |
+| 1 | **El Corazón de Ceniza** | campaña | El amuleto despierta; de Vegaverde a la Forja Eterna. La más rica del motor: decisiones con precio, emboscadas y un jefe por fases. |
 | 2 | **La Brasa de Vegaverde** | misión | La primera ascua cae en los huertos originales: ahógala. |
 | 3 | **La Sal y la Ceniza** | campaña | La marea devuelve otra ascua a las salinas de Ríoclaro. |
 | 4 | **La Aguja sin Sombra** | saga | La Aguja Pálida teje el humo en Morvath: decisiones que pesan, jefe por fases y más de un final. |
@@ -111,11 +113,23 @@ siguiente.
   Aldric** (caballero valoriano) y **Torkan Hachagris** (herrera goran).
   Pelean solos, reciben golpes y pueden caer.
 - **Corrupción**: usar el Corazón en combate golpea muy fuerte… y deja
-  una grieta. Las Ciénagas también la agravan. La Torre de Belthar la
-  alivia una vez. El epílogo cambia según cuánta grieta lleves al alba.
+  una grieta. Las Ciénagas también la agravan; la corona de la Aguja
+  Pálida cobra la suya. La Torre de Belthar la alivia una vez, y el
+  camino la lee: un NPC que huele el humo, un umbral que te reconoce.
+  El epílogo cambia según cuánta grieta lleves al alba.
+- **Legado**: la serie recuerda. Al terminar una aventura se escribe
+  `legado.json` con banderas canónicas —el juramento, la grieta— y al
+  empezar otra, las que aquella importa se encienden solas: NPCs que
+  reconocen la cadena, textos alternativos para quien viene tocado y
+  un «Tu fama te precede…» en el prólogo. Se heredan decisiones y
+  fama; **no** se hereda inventario, niveles ni monedas: cada aventura
+  está balanceada para empezar de cero. Con `--legado <archivo>` se
+  escribe en otro sitio.
 - **Comercio y campaña**: monedas repartidas por el mapa, tiendas en
   Ríoclaro y Valoria, y dos llaves de paso: antorcha para las minas,
-  estandarte del consejo para los Yermos.
+  estandarte del consejo para los Yermos. El estandarte, ahora, se
+  pide jurando la Alianza — o se toma en depósito, y la ceniza lo
+  sabe.
 - **Progresión**: cada enemigo caído paga **experiencia** (campo
   `experiencia` del enemigo) y la curva —corta y explícita— sube tu
   **nivel** hasta 5: +1 de ataque y +8 de vida máxima por nivel. Las
@@ -136,12 +150,14 @@ siguiente.
   elección es determinista bajo la semilla.
 - **Jefes por fases**: los jefes declaran `fases` —al cruzar un
   umbral de vida cambian nombre, estadísticas y habilidades, con su
-  texto de transición. Morvath ya no finge: la Aguja vive en él.
+  texto de transición. Morvath no finge — y el Custodio Pálido de la
+  cumbre tampoco: debajo del guarda hay una montaña.
 - **Dificultades**: tres ritmos de viaje — *Paseo por el huerto*, *El
   camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas,
   corrupción y experiencia sin tocar la historia.
-- **Cinco finales**: victoria pura, victoria con cicatriz, la Sombra
-  nueva, la caída en pleno camino… y la muerte.
+- **Seis finales**: victoria pura, la victoria compartida (si llevas
+  una deuda chica que pagar), victoria con cicatriz, la Sombra nueva,
+  la caída en pleno camino… y la muerte.
 
 ### Comandos
 
@@ -184,6 +200,7 @@ src/aldamar/
 ├── dificultad.py             # presets de balance (paseo / camino / ceniza)
 ├── aventura.py               # el contrato Aventura + registro de aventuras
 ├── eventos.py                # vocabulario declarativo de eventos y golpes especiales
+├── legado.py                 # el hilo de la serie: legado.json, fama y banderas canónicas
 ├── cargador.py               # lee y valida los JSON de aventura
 ├── opciones.py               # selector de opciones: flechas ↑/↓ o texto
 ├── menu.py                   # menú principal interactivo y ayuda
@@ -208,7 +225,8 @@ convierte en funciones del motor).
 un objeto con `id`, `titulo`, `descripcion`, `prologo_base`,
 `texto_nombre`, `lugar_inicial`, `jugador_inicial`, `epilogos`
 (`muerte` y `caida`) y las secciones `personajes`, `items`, `enemigos`,
-`reclutas`, `tiendas`, `dialogos`, `lugares` y `eventos`. Un campo
+`reclutas`, `tiendas`, `dialogos`, `lugares` y `eventos` — más un
+`legado` opcional si la aventura pertenece a una serie (abajo). Un campo
 `orden` opcional (entero) fija su posición en el menú: menor primero,
 y antes que quien no lo declara; las series lo usan para contarse en
 orden. Al soltarlo en el directorio se descubre, valida y registra
@@ -218,24 +236,27 @@ emboscadas y los items que otorgan las decisiones) y ante un JSON roto
 nombra archivo y campo.
 
 Los **eventos** de lugar se declaran con el vocabulario de
-`eventos.py`, sin código:
+`eventos.py`, sin código; cada lugar referencia los suyos por clave en
+su campo `eventos` (una lista, en orden: una escena, una decisión y
+una emboscada conviven sin pisarse), y el evento llamado `final` se
+dispara cuando el lugar queda limpio de enemigos, el resto al entrar:
 
 | Tipo           | Para qué                                                                 |
 | -------------- | ------------------------------------------------------------------------ |
 | `otorgar`      | Entrega un objeto, una sola vez si declara `una_vez` (flag)               |
 | `curar_grupo`  | Cura al héroe, resucita y cura a los compañeros; `corrupcion` opcional    |
 | `corrupcion`   | Un `aviso` y `puntos` de corrupción, cada vez que se entra                |
-| `narrar`       | Un texto de puro relato, una sola vez si declara `una_vez`                |
+| `narrar`       | Relato puro: `condicion` (`flag`/`no_flag`) lo reserva a una circunstancia y `texto_grieta` + `grieta_desde` dan texto alternativo si la corrupción supera el umbral |
 | `decision`     | Texto y elección con efectos: `item`, `corrupcion` y `flag` por opción    |
 | `emboscar`     | Suma `enemigos` al lugar si se cumple su `condicion` (`flag`/`no_flag`)   |
 | `final`        | Un texto, `opciones` de elección y el desenlace según corrupción          |
 
 Las **banderas** (`flags`) son lo que cose una aventura consigo misma:
-una `decision` deja una bandera encendida, un `emboscar` la lee para
-cobrarse su precio y una opción de `final` puede declarar
-`requiere_flag` para ofrecerse solo si aquella decisión ocurrió. Así
-se escriben las consecuencias tardías y los finales múltiples de la
-saga, sin una línea de código en el JSON.
+una `decision` deja una bandera encendida, un `emboscar` o un `narrar`
+con `condicion` la leen para cobrarse su precio y una opción de `final`
+puede declarar `requiere_flag` para ofrecerse solo si aquella decisión
+ocurrió. Así se escriben las consecuencias tardías y los finales
+múltiples de la saga, sin una línea de código en el JSON.
 
 Cada lugar referencia su evento por clave; el evento llamado `final` se
 dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
@@ -272,6 +293,33 @@ de `nombre`, `vida`, `ataque`, `defensa` y `sin_huida`:
 La elección de habilidad es determinista bajo la semilla: mismas
 decisiones, misma pelea. Toda esta sintaxis se valida en `cargador.py`
 y el error nombra archivo y campo, como siempre.
+
+**El legado de una serie.** Si tu aventura pertenece a una serie,
+declara un `legado` junto a las secciones del JSON:
+
+```json
+"legado": {
+  "importa": ["juramento", "grieta"],
+  "exporta": { "juramento": "consejo", "grieta": "guardia" },
+  "texto_fama": "Tu fama te precede, {nombre}: el cantar llegó antes que tú.",
+  "heroe": true
+}
+```
+
+- `exporta` mapea banderas canónicas de la serie → banderas locales
+  que alguna `decision` de esta aventura deja encendidas (el cargador
+  verifica que existan). Al terminar —evento `final` con nombre— se
+  escriben en `legado.json`, gestionando cada aventura solo sus claves:
+  la cadena entera sobrevive, no solo la última faena.
+- `importa` son las canónicas que se encienden al empezar si el legado
+  las trae, bajo su propio nombre: tus `condicion` y `requiere_flag`
+  ya saben leerlas. `cargar_todas` rechaza una canónica importada que
+  no exporte nadie.
+- `heroe` exporta, además, el nombre puesto por el jugador y el rasgo
+  del héroe; `texto_fama` es el gesto del prólogo cuando hay legado y
+  admite `{nombre}`, `{trato}` y `{quien}`.
+- Qué se hereda: decisiones y fama. Qué no: inventario, niveles ni
+  monedas — cada aventura está balanceada para empezar de cero.
 
 **Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,

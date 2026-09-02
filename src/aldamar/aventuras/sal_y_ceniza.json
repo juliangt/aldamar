@@ -211,7 +211,7 @@
       },
       "tienda": true,
       "descanso": true,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -232,7 +232,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "noticia",
+      "eventos": ["cadena_en_el_vado", "noticia"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -255,7 +255,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -274,7 +274,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": "faro",
+      "eventos": ["faro"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -297,7 +297,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["hilo_gris"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -318,7 +318,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -339,7 +339,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "salmuera",
+      "eventos": ["salmuera"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -362,7 +362,7 @@
       },
       "tienda": true,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -381,7 +381,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "final",
+      "eventos": ["final"],
       "requiere": "farol_sal",
       "requiere_texto": "La salmuera oscura se mueve sola: sin la luz de un fuego que quiera\narder, la salina te cierra el paso."
     }
@@ -391,6 +391,22 @@
       "tipo": "narrar",
       "una_vez": "noticia",
       "texto": "A media orilla alcanzas a un mercader sin sombrero que vuelve del\nsur.\n  «¿Vas a la costa? Cuentan en Vegaverde que ahogaron la brasa del\n   tejo: una pastora, un huertero y agua limpia. La primera ascua,\n   en el suelo.»\n  «La del mar dicen que duerme en la Salina Vieja. Y que la Viuda\n   teje a su alrededor desde la marea.»"
+    },
+    "cadena_en_el_vado": {
+      "tipo": "narrar",
+      "una_vez": "cadena_en_el_vado",
+      "condicion": {
+        "flag": "juramento"
+      },
+      "texto": "Al mercader sin sombrero le falta poco para la posada y le sobran noticias.\n  «¿Vas a la costa? Pues apunta: el velo de cera del tejo, cuento entero — juraron dos en la deuda, el huertero y la colmena. Y antes hubo quien cruzó medio continente con una palabra del consejo al cuello.»\n  «Cadena de ascuas, cadena de palabras. La marea, {trato}, llegó tarde a enterarse.»"
+    },
+    "hilo_gris": {
+      "tipo": "narrar",
+      "una_vez": "hilo_gris",
+      "condicion": {
+        "flag": "grieta"
+      },
+      "texto": "La espuma deja en las piedras una borra gris que se enrosca sola, hilo a hilo, en tu dirección.\n  El mar también guarda lo ajeno: sabe de faroles que cambian de mano sin despertar a nadie, y teje despacio, como la Viuda, esperando a que la deuda vuelva a la orilla."
     },
     "faro": {
       "tipo": "decision",
@@ -459,6 +475,17 @@
       "final_tentado": "la sal limpia, la grieta nadadora",
       "texto_companeros": "Junto a ti, empapados y vivos: {nombres}."
     }
+  },
+  "legado": {
+    "importa": [
+      "juramento",
+      "grieta"
+    ],
+    "exporta": {
+      "juramento": "faro_encendido",
+      "grieta": "faro_robado"
+    },
+    "heroe": true
   },
   "comando_especial": {
     "comando": "marea",

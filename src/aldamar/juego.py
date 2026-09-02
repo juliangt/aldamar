@@ -18,6 +18,7 @@ import sys
 from . import __version__, aventuras  # noqa: F401  (aventuras: registra el contenido)
 from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
+from . import legado as modulo_legado
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
 from .opciones import (
@@ -71,6 +72,7 @@ class Juego:
         color: bool | None = None,
         flechas: bool | None = None,
         nombre: str | None = None,
+        legado: dict | None = None,
     ) -> None:
         self.av = aventura
         self.dificultad = dificultad or obtener_dificultad()
@@ -90,6 +92,10 @@ class Juego:
         self.lugar: str = self.av.lugar_inicial
         self.lugar_previo: str = self.av.lugar_inicial
         self.flags: dict[str, bool] = {}
+        # el legado de la serie: lo que otras aventuras recuerdan de ti
+        # (issue 19); sus banderas canónicas se encienden al empezar
+        self.legado = dict(legado) if legado else {}
+        modulo_legado.enciende(self.flags, self.av.legado.importa, self.legado)
         self.enemigos: dict[str, list[str]] = {
             lid: list(l.enemigos) for lid, l in self.av.lugares.items()
         }
@@ -399,6 +405,17 @@ class Juego:
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
         self.epico(ficha.prologo or self.av.prologo)
+        if self.legado and self.av.legado.importa:
+            # la serie recuerda: el gesto de la fama, con la voz del héroe
+            texto = self.av.legado.texto_fama or modulo_legado.FAMA
+            self.epico(
+                "\n"
+                + texto.format(
+                    nombre=self.legado.get("nombre") or ficha.nombre,
+                    trato=ficha.trato,
+                    quien=ficha.quien,
+                )
+            )
         if not self.nombre_dado:  # «jugar otra vez» conserva el nombre puesto
             try:
                 pregunta = ficha.texto_nombre or self.av.texto_nombre
@@ -886,19 +903,21 @@ class Juego:
             self.visitados.append(destino.id)
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
-        evento = self.av.eventos.get(destino.evento) if destino.evento else None
-        es_final = destino.evento == "final"
-        if evento and not es_final:
-            evento(self, destino)
-            if self.fin:
-                return
+        eventos = [self.av.eventos[c] for c in destino.eventos if c in self.av.eventos]
+        es_final = "final" in destino.eventos
+        if eventos and not es_final:
+            for evento in eventos:
+                evento(self, destino)
+                if self.fin:
+                    return
         pendientes = self.enemigos[destino.id]
         if pendientes:
             self._combate()
             if self.fin or self.lugar != destino.id:
                 return
-        if es_final and evento and not pendientes:
-            evento(self, destino)
+        if es_final and eventos and not pendientes:
+            for evento in eventos:
+                evento(self, destino)
 
     # ── combate ──────────────────────────────────────────────────────
     def _objetivo(self) -> Combatiente:
@@ -1326,7 +1345,29 @@ def ayuda_combate(av: Aventura) -> str:
     return f"En combate: atacar · usar <cosa>{especial} · cuerno · huir · estado"
 
 
-def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
+def _escribir_legado(juego: "Juego", ruta: str, salida) -> None:
+    """Al terminar una aventura (final con nombre), escribe su legado.
+
+    Las muertes, caídas y partidas suspendidas no dejan legado: la serie
+    recuerda lo que se contó, no lo que se quedó a medias.
+    """
+    if not juego.av.legado.exporta:
+        return
+    if juego.final in (None, "muerte", "caida", "suspendida"):
+        return
+    try:
+        modulo_legado.escribir(juego.av, juego, ruta)
+    except OSError as e:
+        salida(f"No se pudo escribir el legado: {e}")
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    entrada=input,
+    salida=print,
+    legado_ruta: str | None = None,
+) -> None:
     parser = argparse.ArgumentParser(
         prog="aldamar",
         description="Aldamar: aventuras de fantasía épica para la terminal.",
@@ -1353,11 +1394,21 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
         action="store_true",
         help="conservar lo que el lanzador escribió antes del juego (informe del build de uv, avisos)",
     )
+    parser.add_argument(
+        "--legado",
+        default=None,
+        metavar="ARCHIVO",
+        help=f"archivo de legado de la serie ({modulo_legado.ARCHIVO_LEGADO} por defecto)",
+    )
     parser.add_argument("--version", action="version", version=f"aldamar {__version__}")
     args = parser.parse_args(argv)
     color = False if args.sin_color else None
     flechas = False if args.sin_flechas else None
     color_menu = bool(color) if color is not None else hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    ruta_legado = legado_ruta or args.legado or modulo_legado.ARCHIVO_LEGADO
+    # lo que la serie recuerda de partidas anteriores (issue 19); si el
+    # archivo falta o está roto, se juega igual, solo que sin memoria
+    datos_legado = modulo_legado.leer(ruta_legado)
 
     # El lanzador (uv y compañía) cuenta su build en pantalla antes de que
     # el juego empiece, y el informe queda mezclado con el relato. Salvo
@@ -1398,6 +1449,7 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
             salida=salida,
             color=color,
             flechas=flechas,
+            legado=datos_legado,
         )
 
     # Bucle de sesión: menú → partida → pantalla de cierre → menú…
@@ -1423,11 +1475,13 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
                 salida=salida,
                 color=color,
                 flechas=flechas,
+                legado=datos_legado,
             )
         else:
             juego = _partida_del_menu()
         while juego is not None:
             eleccion = juego.ciclo()
+            _escribir_legado(juego, ruta_legado, salida)
             if eleccion == "otra":
                 # nueva partida al instante: misma aventura, héroe y
                 # dificultad, y el nombre puesto se conserva
@@ -1441,6 +1495,7 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
                     salida=salida,
                     color=color,
                     flechas=flechas,
+                    legado=datos_legado,
                 )
             elif eleccion == "menu":
                 juego = _partida_del_menu()

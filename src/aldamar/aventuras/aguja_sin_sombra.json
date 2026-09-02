@@ -323,7 +323,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -346,7 +346,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": "arranque",
+      "eventos": ["cadena_en_el_molino", "arranque"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -369,7 +369,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -391,7 +391,7 @@
       },
       "tienda": true,
       "descanso": true,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -412,7 +412,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": "juramento",
+      "eventos": ["estandarte"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -435,7 +435,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -458,7 +458,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["hilos_en_el_agua"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -477,7 +477,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": "campanilla",
+      "eventos": ["campanilla"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -500,7 +500,7 @@
       },
       "tienda": true,
       "descanso": false,
-      "evento": "fragua",
+      "eventos": ["fragua"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -523,7 +523,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "cienizas",
+      "eventos": ["cienizas"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -545,7 +545,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "ceniza_viva",
+      "eventos": ["ceniza_viva"],
       "requiere": "estandarte",
       "requiere_texto": "El aire de ceniza te empuja hacia atrás: los Yermos solo se cruzan\nbajo el estandarte del consejo."
     },
@@ -566,7 +566,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "regreso",
+      "eventos": ["regreso"],
       "requiere": "campanilla",
       "requiere_texto": "El primer peldaño zumba y te devuelve al suelo: la escalera solo la\nsube quien lleva bronce que sepa callar ecos."
     },
@@ -587,7 +587,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "final",
+      "eventos": ["final"],
       "requiere": null,
       "requiere_texto": ""
     }
@@ -597,6 +597,22 @@
       "tipo": "narrar",
       "una_vez": "arranque",
       "texto": "En el poste de la encrucijada alguien ha clavado un aviso con cera\nverde, la letra torcida e inconfundible:\n  «Convocados: el estandarte se reparte en Valoria. La campanilla,\n   en mi torre. Los Yermos solo se cruzan bajo paño del consejo, y\n   la escalera solo la sube quien sepa callar ecos. Tres faenas en\n   la cima; el vino, en Barrok. — B.»"
+    },
+    "cadena_en_el_molino": {
+      "tipo": "narrar",
+      "una_vez": "cadena_en_el_molino",
+      "condicion": {
+        "flag": "juramento"
+      },
+      "texto": "Junto al espantapájaros de capa, Tilo afila la lanza sin dejar de mirarte.\n  «El velo del tejo, el farol de la costa, el paño de Valoria: conozco esa cadena. Yo la empecé cargando un amuleto; ahora sigue contigo.»\n  «No la aflojes, {trato}. Yo la solté un paso, y mira el espantapájaros.»"
+    },
+    "hilos_en_el_agua": {
+      "tipo": "narrar",
+      "una_vez": "hilos_en_el_agua",
+      "condicion": {
+        "flag": "grieta"
+      },
+      "texto": "Bajo la barandilla, el agua arrastra hilos grises que nadie teje: ni marea ni espuma, apenas memoria con forma de borra.\n  La Aguja canta deudas también, y la tuya ya está en la lista. El puente cruza igual; los cantares, después, no lo contarán igual."
     },
     "fragua": {
       "tipo": "curar_grupo",
@@ -657,7 +673,7 @@
       "final_tentado": "la Aguja calla, la grieta canta",
       "texto_companeros": "Junto a ti, en la cima y en la crónica: {nombres}."
     },
-    "juramento": {
+    "estandarte": {
       "tipo": "decision",
       "texto": "El heraldo extiende el estandarte del consejo sobre la mesa, con el\nSol Levantado cosido con hilo nuevo sobre hilo viejo, y pone al lado\nun pliego del juramento de la Alianza.\n  «La Aguja canta y el consejo desentierra paños. Jura la Alianza\n   de las cuatro razas y el estandarte va contigo; o encabeza la\n   guardia de los puentes, y el estandarte va contigo igual.»\n  «Pero que quede dicho: la ceniza distingue lo que jura de lo que\n   promete.»",
       "pregunta": "¿Qué respondes al consejo?",
@@ -680,6 +696,18 @@
         }
       ]
     }
+  },
+  "legado": {
+    "importa": [
+      "juramento",
+      "grieta"
+    ],
+    "exporta": {
+      "juramento": "consejo",
+      "grieta": "guardia"
+    },
+    "texto_fama": "Tu fama te precede: Belthar convoca a los que ya cortaron una ascua, y tu nombre subió con la convocatoria.",
+    "heroe": true
   },
   "comando_especial": {
     "comando": "eco",

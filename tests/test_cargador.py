@@ -119,7 +119,7 @@ def test_el_json_roto_da_error_claro():
         (lambda d: d["lugares"]["claro"].update(objetos=["fantasma"]), "fantasma"),
         (lambda d: d["lugares"]["claro"].update(enemigos=["dragon"]), "dragon"),
         (lambda d: d["lugares"]["claro"].update(npcs={"mercedes": "charla"}), "charla"),
-        (lambda d: d["lugares"]["claro"].update(evento="milagro"), "milagro"),
+        (lambda d: d["lugares"]["claro"].update(eventos=["milagro"]), "milagro"),
         (lambda d: d["lugares"]["claro"].update(tienda=True), "stock"),
         (lambda d: d["lugares"]["claro"].update(requiere="llave_maestra"), "llave_maestra"),
         (lambda d: d["personajes"]["ana"].update(inventario=["fantasma"]), "fantasma"),
@@ -403,11 +403,11 @@ def test_el_orden_de_registro_lo_fija_el_campo_orden(tmp_path, monkeypatch):
 # ── los eventos declarativos se comportan como deben ────────────────────
 
 def test_el_consejo_entrega_el_estandarte_una_sola_vez():
-    juego, salida = _juego([])
+    juego, salida = _juego(["alianza"])
     juego.av.eventos["consejo"](juego, juego.aqui())
     juego.av.eventos["consejo"](juego, juego.aqui())
     assert juego.jugador.inventario.count("estandarte") == 1
-    assert juego.flags == {"consejo": True}
+    assert juego.flags == {"consejo": True, "alianza": True}
     assert "Recibes: estandarte del consejo." in "\n".join(salida)
 
 
@@ -483,3 +483,75 @@ def test_la_partida_scripted_corre_sobre_la_aventura_del_json():
     assert juego.fin
     assert juego.final and "victoria" in juego.final
     assert "El Jardín que venció a la Sombra" in " ".join("\n".join(salida).split())
+
+
+# ── narrar con condiciones y grieta; lugares con varios eventos ─────────
+
+def test_un_narrar_con_texto_de_grieta_sin_umbral_se_rechaza():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["eventos"] = {"eco": {"tipo": "narrar", "texto": "Algo.", "texto_grieta": "Humo."}}
+    with pytest.raises(AventuraInvalida, match="grieta_desde"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_un_narrar_con_umbral_fuera_de_rango_se_rechaza():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["eventos"] = {
+        "eco": {
+            "tipo": "narrar",
+            "texto": "Algo.",
+            "texto_grieta": "Humo.",
+            "grieta_desde": 0,
+        }
+    }
+    with pytest.raises(AventuraInvalida, match="grieta_desde"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_un_narrar_con_condicion_y_grieta_se_carga():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["eventos"] = {
+        "eco": {
+            "tipo": "narrar",
+            "texto": "Algo.",
+            "texto_grieta": "Humo.",
+            "grieta_desde": 40,
+            "condicion": {"flag": "juramento"},
+        }
+    }
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert callable(av.eventos["eco"])
+
+
+def test_un_lugar_con_varios_eventos_los_guarda_en_orden():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["eventos"] = {
+        "uno": {"tipo": "narrar", "texto": "Uno."},
+        "dos": {"tipo": "narrar", "texto": "Dos."},
+    }
+    datos["lugares"]["claro"]["eventos"] = ["uno", "dos"]
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert av.lugares["claro"].eventos == ["uno", "dos"]
+
+
+def test_un_legado_mal_tipado_se_rechaza():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["legado"] = {"heroe": "sí"}
+    with pytest.raises(AventuraInvalida, match="heroe"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_un_legado_que_exporta_banderas_de_decision_se_carga():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["eventos"] = {
+        "elegir": {
+            "tipo": "decision",
+            "texto": "Uno u otro.",
+            "pregunta": "¿Qué haces?",
+            "opciones": [{"clave": "a", "titulo": "Lo uno", "flag": "juramento"}],
+        }
+    }
+    datos["legado"] = {"exporta": {"juramento": "juramento"}, "importa": ["juramento"]}
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert av.legado.exporta == {"juramento": "juramento"}
+    assert av.legado.cruza

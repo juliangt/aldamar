@@ -18,7 +18,7 @@ import json
 from importlib import resources
 from typing import Any
 
-from .aventura import Aventura, PersonajeInicial, registrar
+from .aventura import Legado, Aventura, PersonajeInicial, registrar
 from .eventos import TIPOS_EVENTOS, ataque_especial_desde, evento_desde
 from .mundo import Lugar
 from .personajes import RASGOS, TIPOS_HABILIDAD, Companero
@@ -287,6 +287,9 @@ def _personaje(clave: str, datos: dict, prologo_base: str, origen: str) -> Perso
 
 def _lugar(lid: str, datos: dict, origen: str) -> Lugar:
     po = f"lugares[{lid!r}]"
+    eventos = datos.get("eventos", [])
+    if not isinstance(eventos, list) or any(not isinstance(e, str) for e in eventos):
+        raise _mal(origen, f"{po}: 'eventos' debe ser una lista de claves de eventos")
     return Lugar(
         id=lid,
         nombre=_texto(datos, "nombre", po),
@@ -298,7 +301,7 @@ def _lugar(lid: str, datos: dict, origen: str) -> Lugar:
         npcs=_dicc_de_textos(datos, "npcs", po),
         tienda=_booleano(datos, "tienda", po, defecto=False),
         descanso=_booleano(datos, "descanso", po, defecto=False),
-        evento=_texto_opcional(datos, "evento", po),
+        eventos=eventos,
         requiere=_texto_opcional(datos, "requiere", po),
         requiere_texto=_texto_opcional(datos, "requiere_texto", po) or "",
     )
@@ -374,6 +377,12 @@ def _evento(
     elif tipo == "narrar":
         _texto(datos, "texto", po)
         _texto_opcional(datos, "una_vez", po)
+        _valida_condicion(datos, po, origen)
+        if datos.get("texto_grieta") is not None:
+            _texto(datos, "texto_grieta", po)
+            grieta = _entero(datos, "grieta_desde", po)
+            if not 1 <= grieta <= 99:
+                raise _mal(origen, f"{po}: 'grieta_desde' debe ser un porcentaje entre 1 y 99")
     elif tipo == "decision":
         _texto(datos, "texto", po)
         _texto(datos, "pregunta", po)
@@ -442,6 +451,49 @@ def _valida_final(datos: dict, po: str, origen: str) -> None:
     _texto_opcional(datos, "texto_companeros", po)
 
 
+def _legado(datos: dict, origen: str, banderas_de_decision: set[str]) -> Legado:
+    """El hilo de la serie: qué exporta esta aventura y qué importa.
+
+    Las canónicas exportadas tienen que apuntar a banderas que una
+    decisión de esta aventura deja encendidas: el legado cuenta lo que
+    se hizo, no lo que se fue a decir.
+    """
+    crudo = datos.get("legado")
+    if crudo is None:
+        return Legado()
+    if not isinstance(crudo, dict):
+        raise _mal(origen, "el campo 'legado' debe ser un objeto")
+    exporta = crudo.get("exporta", {})
+    if not isinstance(exporta, dict) or any(
+        not isinstance(c, str) or not isinstance(v, str) for c, v in exporta.items()
+    ):
+        raise _mal(
+            origen, "legado.exporta debe ser un objeto de canónica → bandera local"
+        )
+    for canonica, local in exporta.items():
+        if local not in banderas_de_decision:
+            raise _mal(
+                origen,
+                f"legado.exporta: la canónica {canonica!r} apunta a la bandera "
+                f"{local!r}, que ninguna decisión de esta aventura enciende",
+            )
+    importa = crudo.get("importa", [])
+    if not isinstance(importa, list) or any(not isinstance(c, str) for c in importa):
+        raise _mal(origen, "legado.importa debe ser una lista de banderas canónicas")
+    texto_fama = crudo.get("texto_fama")
+    if texto_fama is not None and not isinstance(texto_fama, str):
+        raise _mal(origen, "legado.texto_fama debe ser texto")
+    heroe = crudo.get("heroe", False)
+    if not isinstance(heroe, bool):
+        raise _mal(origen, "legado.heroe debe ser true o false")
+    return Legado(
+        exporta=dict(exporta),
+        importa=list(importa),
+        texto_fama=texto_fama,
+        heroe=heroe,
+    )
+
+
 def _comando_especial(datos: dict, origen: str):
     """Devuelve (comando, texto_fuera, ataque) para la Aventura."""
     crudo = datos.get("comando_especial")
@@ -483,8 +535,9 @@ def _chequea_referencias(
         for _npc, dialogo in lugar.npcs.items():
             if dialogo not in av.dialogos:
                 raise _mal(origen, f"lugares[{lid!r}]: el diálogo {dialogo!r} no existe en dialogos")
-        if lugar.evento and lugar.evento not in av.eventos:
-            raise _mal(origen, f"lugares[{lid!r}]: el evento {lugar.evento!r} no existe en eventos")
+        for clave_evento in lugar.eventos:
+            if clave_evento not in av.eventos:
+                raise _mal(origen, f"lugares[{lid!r}]: el evento {clave_evento!r} no existe en eventos")
         if lugar.requiere and lugar.requiere not in av.items:
             raise _mal(origen, f"lugares[{lid!r}]: exige el item {lugar.requiere!r}, que no existe")
         if lugar.tienda and lid not in tiendas:
@@ -552,10 +605,16 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
     eventos_crudos = datos.get("eventos", {})
     if not isinstance(eventos_crudos, dict):
         raise _mal(origen, "el campo 'eventos' debe ser un objeto")
-    eventos = {
-        clave: _evento(clave, ev, items, set(enemigos), origen)
-        for clave, ev in eventos_crudos.items()
-    }
+    eventos = {}
+    banderas_de_decision: set[str] = set()
+    for clave, ev in eventos_crudos.items():
+        eventos[clave] = _evento(clave, ev, items, set(enemigos), origen)
+        if isinstance(ev, dict) and ev.get("tipo") == "decision":
+            for opcion in ev.get("opciones", []):
+                if isinstance(opcion, dict) and opcion.get("flag"):
+                    banderas_de_decision.add(opcion["flag"])
+
+    legado_av = _legado(datos, origen, banderas_de_decision)
 
     orden = datos.get("orden")
     if orden is not None and (isinstance(orden, bool) or not isinstance(orden, int)):
@@ -584,6 +643,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         texto_especial_fuera=texto_fuera,
         ataque_especial=ataque,
         eventos=eventos,
+        legado=legado_av,
         orden=orden,
     )
     _chequea_referencias(av, tiendas_raw, origen)
@@ -615,5 +675,18 @@ def cargar_todas(raiz: Any | None = None) -> None:
             continue
         av = cargar_aventura(entrada.read_text(encoding="utf-8"), f"aventuras/{entrada.name}")
         cargadas.append((av.orden if av.orden is not None else float("inf"), entrada.name, av))
+    # el legado cruza aventuras: toda canónica importada tiene que
+    # exportarla alguna (el error nombra el archivo que la espera)
+    canonicas: set[str] = set()
+    for _orden, _nombre, av in cargadas:
+        canonicas.update(av.legado.exporta)
+    for _orden, nombre, av in cargadas:
+        for canonica in av.legado.importa:
+            if canonica not in canonicas:
+                raise _mal(
+                    f"aventuras/{nombre}",
+                    f"legado.importa: la bandera canónica {canonica!r} "
+                    f"no la exporta ninguna aventura",
+                )
     for _orden, _nombre, av in sorted(cargadas, key=lambda t: (t[0], t[1])):
         registrar(av)

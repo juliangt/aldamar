@@ -55,6 +55,33 @@ class PersonajeInicial:
     quien: str = "el caminante"  # cómo dicen de ti en los cantares, con artículo
 
 
+@dataclass(frozen=True)
+class Legado:
+    """Lo que una aventura cose con las demás de su serie (issue 19).
+
+    `exporta` mapea banderas canónicas de la serie → bandera local que
+    las deja encendida; al terminar (evento `final`) las encendidas se
+    escriben en `legado.json`. `importa` son las canónicas que esta
+    aventura enciende al empezar si el legado las trae, bajo su propio
+    nombre, donde `decision`, `emboscar`, `narrar` con `condicion` y
+    las opciones de `final` con `requiere_flag` ya saben leerlas.
+    `texto_fama` es el gesto del prólogo cuando hay legado (admite
+    {nombre}, {trato} y {quien}); `heroe` exporta además el nombre y el
+    rasgo del héroe. Nada de inventario, niveles ni monedas: el balance
+    de cada aventura se escribe para empezar de cero.
+    """
+
+    exporta: dict[str, str] = field(default_factory=dict)
+    importa: list[str] = field(default_factory=list)
+    texto_fama: str | None = None
+    heroe: bool = False
+
+    @property
+    def cruza(self) -> bool:
+        """¿Tiene sentido hablar de legado en esta aventura?"""
+        return bool(self.exporta or self.importa)
+
+
 @dataclass
 class Aventura:
     id: str
@@ -78,9 +105,11 @@ class Aventura:
     comando_especial: str | None = None  # p.ej. "corazon"; None = sin especial
     texto_especial_fuera: str = ""
     ataque_especial: AtaqueEspecial | None = None
-    # eventos por clave de Lugar.evento; el evento "final" se dispara
+    # eventos por clave de Lugar.eventos; el evento "final" se dispara
     # cuando el lugar queda limpio de enemigos, el resto al entrar.
     eventos: dict[str, Evento] = field(default_factory=dict)
+    # lo que esta aventura escribe y lee del legado de su serie (issue 19)
+    legado: Legado = field(default_factory=Legado)
     # posición sugerida en el menú (menor primero); None = al final, por
     # orden alfabético. Las series lo usan para contarse en orden.
     orden: int | None = None
