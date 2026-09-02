@@ -176,7 +176,10 @@ def evento_final(
     """La opción sin `epilogo` es el desenlace por defecto: el epílogo
     elegido depende de la corrupción del héroe contra el umbral. Una
     opción puede declarar `requiere_flag`: solo se ofrece si la decisión
-    que encendió esa bandera ocurrió."""
+    que encendió esa bandera ocurrió.
+
+    El epílogo no se imprime aquí: queda en `juego.epilogo` y la pantalla
+    de cierre lo presenta con aire (así no aparece dos veces)."""
 
     def evento(j: "Juego", lugar: "Lugar") -> None:
         j.escribir("\n" + texto)
@@ -197,17 +200,16 @@ def evento_final(
         )
         elegida = next((op for op in visibles if op["clave"] == clave), None)
         if elegida is not None and "epilogo" in elegida:
-            mostrar = j.aviso if elegida.get("estilo", "aviso") == "aviso" else j.epico
-            mostrar("\n" + elegida["epilogo"])
+            j.epilogo = elegida["epilogo"]
             j.final = elegida["final"]
             j.fin = True
             return
         # desenlace por defecto (también si cancela la elección)
         tentado = j.jugador.corrupcion >= umbral_tentado
-        j.epico("\n" + (epilogo_tentado if tentado else epilogo_puro))
+        j.epilogo = epilogo_tentado if tentado else epilogo_puro
         vivas = [c.nombre for c in j.jugador.companeras_vivas()]
         if vivas and texto_companeros:
-            j.escribir(texto_companeros.format(nombres=", ".join(vivas)))
+            j.epilogo += "\n\n" + texto_companeros.format(nombres=", ".join(vivas))
         j.final = final_tentado if tentado else final_puro
         j.fin = True
 

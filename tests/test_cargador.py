@@ -442,10 +442,11 @@ def test_el_final_destruir_limpio_nombra_a_los_companeros():
                   vida_max=18, ataque=5)
     )
     juego.av.eventos["final"](juego, juego.aqui())
-    plano = " ".join("\n".join(salida).split())
     assert juego.fin and juego.final == "victoria pura"
-    assert "Junto a ti, al alba: Sylvana de los Faroles." in plano
-    assert "El Jardín que venció a la Sombra" in plano
+    # el epílogo no se imprime: queda guardado para la pantalla de cierre
+    epilogo = " ".join(juego.epilogo.split())
+    assert "Junto a ti, al alba: Sylvana de los Faroles." in epilogo
+    assert "El Jardín que venció a la Sombra" in epilogo
 
 
 def test_el_final_destruir_con_la_grieta_avanzada_da_victoria_con_cicatriz():
@@ -459,7 +460,8 @@ def test_reclamar_tiene_su_propio_epilogo():
     juego, salida = _juego(["reclamar"])
     juego.av.eventos["final"](juego, juego.aqui())
     assert juego.fin and juego.final == "la Sombra nueva"
-    assert "trono vacío" in "\n".join(salida)
+    assert "trono vacío" in juego.epilogo
+    assert "trono vacío" not in "\n".join(salida)  # no se imprime: lo dirá el cierre
 
 
 def test_el_golpe_del_corazon_aplica_la_formula_exacta():

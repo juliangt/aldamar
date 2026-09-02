@@ -86,7 +86,10 @@ def test_partida_completa_hasta_la_victoria(fabrica):
     texto = "\n".join(salida)
     assert juego.fin
     assert juego.final and "victoria" in juego.final
-    assert "— FIN —" in texto
+    # la pantalla de cierre: remate, epílogo con aire y menú para seguir
+    assert "¡La noche retrocede!" in texto
+    assert "Tu historia queda contada: «victoria pura»" in texto
+    assert "¿Y ahora qué?" in texto and "Jugar otra vez" in texto
     # con corrupción baja (16%), el epílogo es el de la victoria sin cicatriz
     assert juego.jugador.corrupcion < 60
     plano = " ".join(texto.split())
@@ -98,8 +101,9 @@ def test_reclamar_en_la_cumbre_tiene_su_propio_final(fabrica):
     juego.ciclo()
     texto = "\n".join(salida)
     assert juego.final == "la Sombra nueva"
-    assert "trono vacío" in texto
-    assert "— FIN —" in texto
+    assert "trono vacío" in texto  # el epílogo, ahora en la pantalla de cierre
+    assert "Así acaba este cantar" in texto  # el remate de un final nombrado
+    assert "«la Sombra nueva»" in texto
 
 
 def test_guardar_y_cargar_preserva_el_estado(tmp_path, fabrica):
@@ -155,7 +159,7 @@ def test_partida_completa_a_traves_del_menu_de_arranque():
     assert "A L D A M A R" in texto  # la portada del menú apareció
     assert "¿Quién será tu héroe?" in texto
     assert "¿A qué ritmo quieres caminar?" in texto
-    assert "— FIN —" in texto
+    assert "¿Y ahora qué?" in texto  # la pantalla de cierre ofrece seguir
     assert "El Jardín que venció a la Sombra" in " ".join(texto.split())
 
 
@@ -171,4 +175,4 @@ def test_partida_completa_con_ruy_el_errante(fabrica):
     # el prólogo y el trato de Belthar son los del errante
     assert "el pliego de un viejo falro" in texto
     assert "escúchame, errante" in texto
-    assert "— FIN —" in texto
+    assert "Tu historia queda contada: «victoria pura»" in texto  # el cierre
