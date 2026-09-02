@@ -13,7 +13,14 @@ from typing import TYPE_CHECKING, Callable
 
 from .dificultad import Dificultad, ajusta
 from .mundo import Lugar
-from .personajes import RASGOS, Companero, Enemigo, Jugador
+from .personajes import (
+    RASGOS,
+    Companero,
+    Enemigo,
+    Jugador,
+    fase_desde,
+    habilidad_desde,
+)
 
 if TYPE_CHECKING:  # solo para anotaciones; evita import circular en runtime
     from .juego import Juego
@@ -80,6 +87,12 @@ class Aventura:
 
     def crear_enemigo(self, clave: str, dif: Dificultad) -> Enemigo:
         d = self.enemigos[clave]
+        # los umbrales de fase son % de vida: se recorren de mayor a menor
+        fases = sorted(
+            (fase_desde(f) for f in d.get("fases", [])),
+            key=lambda f: f.umbral,
+            reverse=True,
+        )
         return Enemigo(
             clave=clave,
             nombre=d["nombre"],
@@ -88,6 +101,8 @@ class Aventura:
             ataque=ajusta(d["ataque"], dif.ataque_enemigos),
             defensa=d.get("defensa", 0),
             sin_huida=d.get("sin_huida", False),
+            habilidades=tuple(habilidad_desde(h) for h in d.get("habilidades", [])),
+            fases=tuple(fases),
         )
 
     def crear_jugador(self, clave: str | None, dif: Dificultad) -> Jugador:

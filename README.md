@@ -116,9 +116,30 @@ siguiente.
 - **Comercio y campaña**: monedas repartidas por el mapa, tiendas en
   Ríoclaro y Valoria, y dos llaves de paso: antorcha para las minas,
   estandarte del consejo para los Yermos.
+- **Progresión**: cada enemigo caído paga **experiencia** (campo
+  `experiencia` del enemigo) y la curva —corta y explícita— sube tu
+  **nivel** hasta 5: +1 de ataque y +8 de vida máxima por nivel. Las
+  dificultades ajustan la experiencia (más en *Paseo*, menos en
+  *Yermos de Ceniza*). El guardado recuerda nivel y experiencia; los
+  guardados viejos migran solos.
+- **Equipo elegido**: nada de «llevas lo mejor del inventario»: con
+  `equipar <cosa>` y `desequipar <cosa>` decides qué empuñas y qué te
+  ciñes (hay opciones en el submenú de gestiones y en las tiendas).
+  Al conseguir la primera arma o armadura se viste sola; a partir de
+  ahí, decidir entre dos piezas es el juego.
+- **Combate con decisiones**: los enemigos pueden declarar
+  **habilidades** en su JSON — `veneno` (daño por turno durante N
+  turnos), `curarse`, `refuerzo` (suma otro enemigo al lugar) y
+  `golpe_fuerte` (se anuncia un turno y pega fuerte al siguiente: si
+  lees el aviso, puedes curarte a tiempo). Cada habilidad lleva su
+  texto, peso y condiciones (`vida_menor_que`, `cada_n_turnos`), y la
+  elección es determinista bajo la semilla.
+- **Jefes por fases**: los jefes declaran `fases` —al cruzar un
+  umbral de vida cambian nombre, estadísticas y habilidades, con su
+  texto de transición. Morvath ya no finge: la Aguja vive en él.
 - **Dificultades**: tres ritmos de viaje — *Paseo por el huerto*, *El
-  camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas y
-  corrupción sin tocar la historia.
+  camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas,
+  corrupción y experiencia sin tocar la historia.
 - **Cinco finales**: victoria pura, victoria con cicatriz, la Sombra
   nueva, la caída en pleno camino… y la muerte.
 
@@ -128,11 +149,13 @@ siguiente.
 | ------------------- | ------------------------------------------- |
 | `mirar`             | Describe el sitio, objetos, gente y salidas |
 | `ir 1` / `ir este`  | Viajar (número, dirección o nombre)         |
-| `estado`            | Vida, corrupción, equipo y compañeros       |
+| `estado`            | Vida, nivel, corrupción, equipo y compañeros|
 | `inventario`        | Lo que llevas                               |
 | `tomar <cosa>`      | Recoger (`tomar todo`)                      |
 | `comprar <cosa>`    | En tiendas                                  |
 | `usar <cosa>`       | Consumir provisiones o hierbas              |
+| `equipar <cosa>`    | Empuñar un arma o ponerte una armadura      |
+| `desequipar <cosa>` | Guardar lo llevado puesto (`desequipar arma`)|
 | `hablar <quién>`    | Escuchar a los NPCs                         |
 | `reclutar <quién>`  | Sumar un aliado                             |
 | `descansar`         | Curación completa donde haya cama           |
@@ -156,7 +179,7 @@ sobre cada aventura registrada.
 
 ```
 src/aldamar/
-├── personajes.py             # jugador, compañeros, enemigos, rasgos, corrupción
+├── personajes.py             # jugador, compañeros, enemigos, rasgos, corrupción, progresión, habilidades y fases
 ├── mundo.py                  # primitivas: Lugar, normaliza, alcanzables
 ├── dificultad.py             # presets de balance (paseo / camino / ceniza)
 ├── aventura.py               # el contrato Aventura + registro de aventuras
@@ -222,6 +245,34 @@ en `comando_especial`: comando, `texto_fuera` y un `efecto` con
 Si algún día hace falta un efecto nuevo, se suma al vocabulario en
 `eventos.py`: el JSON sigue siendo puro dato.
 
+**Un enemigo con oficio.** Cada entrada de `enemigos` acepta, además
+de `nombre`, `vida`, `ataque`, `defensa` y `sin_huida`:
+
+- `experiencia`: la XP que paga al caer (la curva de niveles es corta:
+  no hay nivel 6).
+- `habilidades`: una lista de técnicas. Cada una declara `tipo`, su
+  `texto` (o `texto_aviso` + `texto_golpe`, que debe mencionar
+  `{efectivo}`), un `peso` frente al golpe normal y una `condicion`
+  opcional (`vida_menor_que`: porcentaje de vida; `cada_n_turnos`:
+  solo en turnos múltiplos de N):
+
+| Tipo           | Para qué                                                              |
+| -------------- | --------------------------------------------------------------------- |
+| `veneno`       | `dano` por turno durante `turnos`; el más reciente manda               |
+| `curarse`      | Recupera `puntos` de vida, sin pasarse del máximo                      |
+| `refuerzo`     | Suma `enemigo` (otra clave) a la cola del lugar; `veces` por combate   |
+| `golpe_fuerte` | `texto_aviso` un turno (no pega) y al siguiente el golpe con `dano_extra` |
+
+- `fases`: la ficha de un jefe por tramos. Cada fase declara
+  `vida_menor_que` (porcentaje que la dispara), `texto` de transición
+  y, opcionales, `nombre`, `ataque`, `defensa` y `habilidades` (las
+  que no se declaran se heredan). Los umbrales solo se cruzan hacia
+  delante: curarse no deshace una fase.
+
+La elección de habilidad es determinista bajo la semilla: mismas
+decisiones, misma pelea. Toda esta sintaxis se valida en `cargador.py`
+y el error nombra archivo y campo, como siempre.
+
 **Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,
 un `rasgo` (clave de `RASGOS`), `prologo_extra` y `texto_nombre`
@@ -232,7 +283,7 @@ diálogo y su lugar en el mapa.
 
 **Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
 `dificultad.py` con sus multiplicadores (vida, ataque, monedas,
-corrupción, curación): el menú y la CLI la listan solas.
+corrupción, curación, experiencia): el menú y la CLI la listan solas.
 
 ## El error que lo empezó todo
 

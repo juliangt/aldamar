@@ -21,7 +21,7 @@ from typing import Any
 from .aventura import Aventura, PersonajeInicial, registrar
 from .eventos import TIPOS_EVENTOS, ataque_especial_desde, evento_desde
 from .mundo import Lugar
-from .personajes import RASGOS, Companero
+from .personajes import RASGOS, TIPOS_HABILIDAD, Companero
 
 _FALTA = object()  # sentinel: el campo no vino y no tiene valor por defecto
 
@@ -60,6 +60,15 @@ def _entero(datos: dict, campo: str, donde: str, defecto: int | object = _FALTA)
         return defecto  # type: ignore[return-value]
     if isinstance(valor, bool) or not isinstance(valor, int):
         raise _mal(donde, f"el campo {campo!r} debe ser entero (llegó {type(valor).__name__})")
+    return valor
+
+
+def _entero_opcional(datos: dict, campo: str, donde: str) -> int | None:
+    valor = datos.get(campo)
+    if valor is None:
+        return None
+    if isinstance(valor, bool) or not isinstance(valor, int):
+        raise _mal(donde, f"el campo {campo!r} debe ser entero o null (llegó {type(valor).__name__})")
     return valor
 
 
@@ -119,6 +128,7 @@ def _items(datos: dict, origen: str) -> dict[str, dict]:
 
 def _enemigos(datos: dict, origen: str) -> dict[str, dict]:
     crudos = _diccionario(datos, "enemigos", origen)
+    claves = set(crudos)
     for clave, enemigo in crudos.items():
         po = f"enemigos[{clave!r}]"
         if not isinstance(enemigo, dict):
@@ -129,7 +139,101 @@ def _enemigos(datos: dict, origen: str) -> dict[str, dict]:
         _entero(enemigo, "ataque", po)
         _entero(enemigo, "defensa", po, defecto=0)
         _booleano(enemigo, "sin_huida", po, defecto=False)
+        experiencia = _entero(enemigo, "experiencia", po, defecto=0)
+        if experiencia < 0:
+            raise _mal(po, "'experiencia' no puede ser negativa")
+        _valida_habilidades(enemigo.get("habilidades", []), po, claves, clave, origen)
+        _valida_fases(enemigo, po, claves, clave, origen)
     return crudos
+
+
+def _valida_habilidades(
+    lista: object, po: str, claves_enemigos: set[str], clave_enemigo: str, origen: str
+) -> None:
+    """El vocabulario de habilidades, sea del enemigo o de una de sus fases."""
+    if not isinstance(lista, list):
+        raise _mal(origen, f"{po}: 'habilidades' debe ser una lista")
+    for i, hab in enumerate(lista):
+        hp = f"{po}.habilidades[{i}]"
+        if not isinstance(hab, dict):
+            raise _mal(origen, f"{hp} debe ser un objeto")
+        tipo = _texto(hab, "tipo", hp)
+        if tipo not in TIPOS_HABILIDAD:
+            raise _mal(
+                origen,
+                f"{hp}: tipo de habilidad desconocido {tipo!r}; "
+                f"válidos: {', '.join(sorted(TIPOS_HABILIDAD))}",
+            )
+        if tipo == "veneno":
+            if _entero(hab, "dano", hp) <= 0:
+                raise _mal(origen, f"{hp}: 'dano' debe ser mayor a cero")
+            if _entero(hab, "turnos", hp) <= 0:
+                raise _mal(origen, f"{hp}: 'turnos' debe ser mayor a cero")
+            _texto(hab, "texto", hp)
+        elif tipo == "curarse":
+            if _entero(hab, "puntos", hp) <= 0:
+                raise _mal(origen, f"{hp}: 'puntos' debe ser mayor a cero")
+            _texto(hab, "texto", hp)
+        elif tipo == "refuerzo":
+            convocado = _texto(hab, "enemigo", hp)
+            if convocado not in claves_enemigos:
+                raise _mal(origen, f"{hp}: convoca al enemigo {convocado!r}, que no existe")
+            if convocado == clave_enemigo:
+                raise _mal(
+                    origen, f"{hp}: no puede convocarse a sí mismo (la pelea no acabaría nunca)"
+                )
+            if _entero(hab, "veces", hp, defecto=1) < 1:
+                raise _mal(origen, f"{hp}: 'veces' debe ser mayor a cero")
+            _texto(hab, "texto", hp)
+        elif tipo == "golpe_fuerte":
+            if _entero(hab, "dano_extra", hp) <= 0:
+                raise _mal(origen, f"{hp}: 'dano_extra' debe ser mayor a cero")
+            _texto(hab, "texto_aviso", hp)
+            mensaje = _texto(hab, "texto_golpe", hp)
+            if "{efectivo}" not in mensaje:
+                raise _mal(origen, f"{hp}: 'texto_golpe' debe mencionar {{efectivo}}")
+        if _entero(hab, "peso", hp, defecto=1) < 1:
+            raise _mal(origen, f"{hp}: 'peso' debe ser mayor a cero")
+        condicion = hab.get("condicion")
+        if condicion is None:
+            continue
+        if not isinstance(condicion, dict):
+            raise _mal(origen, f"{hp}: 'condicion' debe ser un objeto o null")
+        vida = condicion.get("vida_menor_que")
+        if vida is not None and (
+            isinstance(vida, bool) or not isinstance(vida, int) or not 1 <= vida <= 99
+        ):
+            raise _mal(
+                origen, f"{hp}.condicion: 'vida_menor_que' debe ser un porcentaje entre 1 y 99"
+            )
+        cada = condicion.get("cada_n_turnos")
+        if cada is not None and (
+            isinstance(cada, bool) or not isinstance(cada, int) or cada < 1
+        ):
+            raise _mal(origen, f"{hp}.condicion: 'cada_n_turnos' debe ser entero mayor a cero")
+
+
+def _valida_fases(
+    datos: dict, po: str, claves_enemigos: set[str], clave_enemigo: str, origen: str
+) -> None:
+    """Cada fase: umbral de vida, ficha nueva y, si quiere, habilidades."""
+    fases = datos.get("fases", [])
+    if not isinstance(fases, list):
+        raise _mal(origen, f"{po}: 'fases' debe ser una lista")
+    for i, fase in enumerate(fases):
+        fp = f"{po}.fases[{i}]"
+        if not isinstance(fase, dict):
+            raise _mal(origen, f"{fp} debe ser un objeto")
+        umbral = _entero(fase, "vida_menor_que", fp)
+        if not 1 <= umbral <= 99:
+            raise _mal(origen, f"{fp}: 'vida_menor_que' debe ser un porcentaje entre 1 y 99")
+        _texto(fase, "texto", fp)
+        _texto_opcional(fase, "nombre", fp)
+        for campo in ("ataque", "defensa"):
+            valor = _entero_opcional(fase, campo, fp)
+            if valor is not None and valor < 0:
+                raise _mal(origen, f"{fp}: {campo!r} no puede ser negativo")
+        _valida_habilidades(fase.get("habilidades", []), fp, claves_enemigos, clave_enemigo, origen)
 
 
 def _reclutas(datos: dict, origen: str) -> dict[str, Companero]:

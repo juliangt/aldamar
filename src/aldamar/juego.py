@@ -17,7 +17,7 @@ import sys
 
 from . import __version__, aventuras  # noqa: F401  (aventuras: registra el contenido)
 from .aventura import AVENTURAS, Aventura, obtener_aventura
-from .dificultad import DIFICULTADES, Dificultad, obtener_dificultad
+from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
 from .opciones import (
@@ -26,12 +26,27 @@ from .opciones import (
     elegir_opcion,
     pantalla_completa,
 )
-from .personajes import CORRUPCION_MAXIMA, RASGOS, Combatiente, Companero, Enemigo, Jugador
+from .personajes import (
+    CORRUPCION_MAXIMA,
+    RASGOS,
+    SUBIDA_ATAQUE,
+    SUBIDA_VIDA,
+    XP_NIVEL,
+    Combatiente,
+    Companero,
+    Enemigo,
+    Habilidad,
+    Jugador,
+)
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 
 ESCRIBIR = "\x00texto"  # clave del menú que abre el modo tipeado clásico
 OTRAS = "\x00otras"  # clave del menú que abre el submenú de gestiones
+
+# La tómbola del turno enemigo: el golpe normal tira con este peso, las
+# habilidades con el suyo (declarado en el JSON).
+PESO_GOLPE = 2
 
 
 class Juego:
@@ -57,6 +72,7 @@ class Juego:
             color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         self.color = color
         self.jugador = self.av.crear_jugador(self.personaje, self.dificultad)
+        self._autoequipar()  # el héroe empieza con lo suyo puesto
         self.lugar: str = self.av.lugar_inicial
         self.lugar_previo: str = self.av.lugar_inicial
         self.flags: dict[str, bool] = {}
@@ -100,20 +116,114 @@ class Juego:
         return texto.format(trato=ficha.trato, quien=ficha.quien)
 
     # ── equipo derivado ──────────────────────────────────────────────
-    def _mejor(self, tipo: str) -> dict | None:
-        candidatos = [self.av.items[k] for k in self.jugador.inventario if self.av.items[k]["tipo"] == tipo]
-        return max(candidatos, key=lambda i: i["bonus"], default=None)
+    def _item_equipado(self, tipo: str) -> dict | None:
+        """La pieza puesta en ese sitio (arma/armadura), si la sigues llevando."""
+        clave = self.jugador.equipado.get(tipo)
+        if clave and clave in self.jugador.inventario:
+            return self.av.items[clave]
+        self.jugador.equipado.pop(tipo, None)
+        return None
 
     def bonus_arma(self) -> int:
-        arma = self._mejor("arma")
+        arma = self._item_equipado("arma")
         return arma["bonus"] if arma else 0
 
     def bonus_armadura(self) -> int:
-        armadura = self._mejor("armadura")
+        armadura = self._item_equipado("armadura")
         return armadura["bonus"] if armadura else 0
 
     def ataque_total(self) -> int:
         return self.jugador.ataque + self.bonus_arma()
+
+    def _autoequipar(self) -> None:
+        """Viste lo mejor que haya, sin decisión: al empezar y al cargar
+        un guardado viejo —que vestía siempre lo mejor del inventario—.
+        A partir de ahí, equiparse es un comando, no un efecto automático."""
+        for tipo in ("arma", "armadura"):
+            if self.jugador.equipado.get(tipo):
+                continue
+            candidatos = [k for k in self.jugador.inventario if self.av.items[k]["tipo"] == tipo]
+            mejor = max(candidatos, key=lambda k: self.av.items[k]["bonus"], default=None)
+            if mejor is not None:
+                self.jugador.equipado[tipo] = mejor
+
+    def adquirir(self, clave: str) -> None:
+        """Suma un objeto al inventario. Si es equipo y su sitio está
+        vacío, se pone solo (con aviso): la primera pieza sirve como
+        siempre; decidir entre dos ya es asunto del jugador."""
+        self.jugador.inventario.append(clave)
+        item = self.av.items[clave]
+        tipo = item["tipo"]
+        if tipo in ("arma", "armadura") and not self.jugador.equipado.get(tipo):
+            self.jugador.equipado[tipo] = clave
+            if tipo == "arma":
+                self.aviso(f"Empuñas: {item['nombre']} (+{item['bonus']} de ataque).")
+            else:
+                self.aviso(f"Te ciñes: {item['nombre']} (+{item['bonus']} de defensa).")
+
+    def _equipar(self, arg: str) -> None:
+        if not arg:
+            self.tenue("¿Equipar qué? Prueba  equipar <cosa>  o el submenú de gestiones.")
+            return
+        clave = self._buscar_item(arg, self.jugador.inventario)
+        if not clave:
+            self.tenue("No llevas eso.")
+            return
+        item = self.av.items[clave]
+        tipo = item["tipo"]
+        if tipo not in ("arma", "armadura"):
+            self.tenue("Eso no se equipa: se usa, se bebe o se lleva por lo que es.")
+            return
+        if self.jugador.equipado.get(tipo) == clave:
+            self.tenue(f"Ya llevas {item['nombre']} puesto.")
+            return
+        self.jugador.equipado[tipo] = clave
+        if tipo == "arma":
+            self.exito(f"Empuñas: {item['nombre']} (+{item['bonus']} de ataque).")
+            self.tenue(f"Tu ataque total ahora es {self.ataque_total()}.")
+        else:
+            self.exito(f"Te ajustas: {item['nombre']} (+{item['bonus']} de defensa).")
+
+    def _desequipar(self, arg: str) -> None:
+        puestas = self.jugador.equipado
+        if not puestas:
+            self.tenue("No llevas nada equipado.")
+            return
+        t = normaliza(arg)
+        tipo: str | None = None
+        if t in puestas:
+            tipo = t
+        else:
+            clave = self._buscar_item(arg, list(puestas.values()))
+            tipo = next((s for s, k in puestas.items() if k == clave), None)
+        if tipo is None:
+            self.tenue("Eso no está equipado.")
+            return
+        clave = puestas.pop(tipo)
+        self.escribir(f"Guardas: {self.av.items[clave]['nombre']}.")
+
+    def _opciones_equipo(self) -> list[tuple[str, str, str]]:
+        """Equipar lo que no está puesto y desequipar lo que sí."""
+        ops: list[tuple[str, str, str]] = []
+        for tipo in ("arma", "armadura"):
+            puesta = self.jugador.equipado.get(tipo)
+            unidad = "ataque" if tipo == "arma" else "defensa"
+            ops += [
+                (
+                    f"equipar {k}",
+                    f"Equipar: {self.av.items[k]['nombre']}",
+                    f"+{self.av.items[k]['bonus']} {unidad}",
+                )
+                for k in self.jugador.inventario
+                if self.av.items[k]["tipo"] == tipo and k != puesta
+            ]
+            if puesta:
+                ops.append((
+                    f"desequipar {tipo}",
+                    f"Desequipar: {self.av.items[puesta]['nombre']}",
+                    "",
+                ))
+        return ops
 
     # ── utilidades de mundo ──────────────────────────────────────────
     def aqui(self) -> Lugar:
@@ -286,6 +396,7 @@ class Juego:
                 )
                 for k in self.av.tiendas[l.id]
             ]
+            ops += self._opciones_equipo()  # en la tienda, probar lo llevado
         ops += [
             (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
             for k in self.jugador.inventario
@@ -297,16 +408,20 @@ class Juego:
         return ops
 
     def _opciones_otras(self) -> list[tuple[str, str, str]]:
-        """Las gestiones que no son del mundo: ficha, partida y ayuda."""
-        return [
-            ("estado", "Estado", "Vida, corrupción y equipo"),
+        """Las gestiones que no son del mundo: ficha, equipo, partida y ayuda."""
+        ops: list[tuple[str, str, str]] = [
+            ("estado", "Estado", "Vida, nivel, corrupción y equipo"),
             ("inventario", "Inventario", "Lo que llevas"),
+        ]
+        ops += self._opciones_equipo()
+        ops += [
             ("guardar", "Guardar partida", f"En {ARCHIVO_PARTIDA}"),
             ("cargar", "Cargar partida", "Volver a un archivo guardado"),
             ("ayuda", "Ayuda", "Los comandos, a pantalla completa"),
             (ESCRIBIR, "Escribir un comando…", "Órdenes a mano, como siempre"),
             ("salir", "Salir del juego", "Dejar de jugar"),
         ]
+        return ops
 
     def _opciones_combate(self, enemigo: Enemigo) -> list[tuple[str, str, str]]:
         ops: list[tuple[str, str, str]] = [("atacar", "Atacar", "Golpe a golpe")]
@@ -347,6 +462,8 @@ class Juego:
             "tomar": self._tomar,
             "comprar": self._comprar,
             "usar": self._usar,
+            "equipar": self._equipar,
+            "desequipar": self._desequipar,
             "hablar": self._hablar,
             "reclutar": self._reclutar,
             "descansar": self._descansar,
@@ -398,13 +515,16 @@ class Juego:
         ficha = self.av.personajes[self.personaje]
         self.epico(f"\n— {j.nombre} · {ficha.titulo} —")
         self.escribir(f"Vida: {j.vida}/{j.vida_max}   Corrupción: {j.recepcion()} {j.corrupcion}%")
+        self.escribir(f"Nivel: {j.nivel}   Experiencia: {j.progreso_xp()}")
+        if j.envenenado:
+            self.peligro(f"Envenenado: −{j.veneno_dano} por turno ({j.veneno_turnos} turnos).")
         if j.rasgos:
             self.escribir(
                 "Rasgos: "
                 + " · ".join(f"{RASGOS[r].nombre} ({RASGOS[r].descripcion})" for r in j.rasgos)
             )
-        arma = self._mejor("arma")
-        armadura = self._mejor("armadura")
+        arma = self._item_equipado("arma")
+        armadura = self._item_equipado("armadura")
         texto_arma = f"{arma['nombre']} (+{arma['bonus']})" if arma else "tus propias manos"
         texto_armadura = f"{armadura['nombre']}" if armadura else "túnica de jardinería"
         self.escribir(
@@ -435,7 +555,8 @@ class Juego:
                 extra = f" (+{i['bonus']} defensa)"
             elif i["tipo"] == "consumible":
                 extra = f" (cura {i['curacion']})"
-            self.escribir(f"  {i['nombre']}{extra}")
+            puesto = " · puesto" if k in j.equipado.values() else ""
+            self.escribir(f"  {i['nombre']}{extra}{puesto}")
 
     # ── objetos ──────────────────────────────────────────────────────
     def _tomar(self, arg: str) -> None:
@@ -445,7 +566,7 @@ class Juego:
         if arg in ("todo", "todas", "todo."):
             for k in restantes:
                 self.tomados.add((l.id, k))
-                self.jugador.inventario.append(k)
+                self.adquirir(k)
                 self.exito(f"Tomas: {self.av.items[k]['nombre']}.")
             if hay_monedas:
                 self.monedas_tomadas.add(l.id)
@@ -458,7 +579,7 @@ class Juego:
         clave = self._buscar_item(arg, restantes)
         if clave:
             self.tomados.add((l.id, clave))
-            self.jugador.inventario.append(clave)
+            self.adquirir(clave)
             self.exito(f"Tomas: {self.av.items[clave]['nombre']}.")
         else:
             self.tenue("Eso no está por aquí.")
@@ -495,7 +616,7 @@ class Juego:
             self.aviso(f"Te faltan monedas: cuesta {precio} y llevas {self.jugador.monedas}.")
             return
         self.jugador.monedas -= precio
-        self.jugador.inventario.append(clave)
+        self.adquirir(clave)
         self.exito(f"Compras {self.av.items[clave]['nombre']} por {precio} monedas.")
 
     def _usar(self, arg: str) -> None:
@@ -594,7 +715,7 @@ class Juego:
                 return
         pendientes = self.enemigos[destino.id]
         if pendientes:
-            self._combate(list(pendientes))
+            self._combate()
             if self.fin or self.lugar != destino.id:
                 return
         if es_final and evento and not pendientes:
@@ -632,37 +753,142 @@ class Juego:
     def _duelo(self, enemigo: Enemigo) -> str:
         """Un enemigo por vez. Devuelve victoria | huida | muerte."""
         self.peligro(f"\n¡{enemigo.nombre} se abalanza!")
-        while not self.fin:
-            accion = self._turno_jugador(enemigo)
-            if accion == "huida":
-                return "huida"
-            if accion == "cuerno":
-                self.exito(f"{enemigo.nombre} huye con los demás. Combate resuelto.")
-                return "victoria"
-            if self.fin:
-                return "muerte"
-            if not enemigo.vivo:
-                self.exito(f"{enemigo.nombre} cae y se deshace en humo pardo.")
-                return "victoria"
-            objetivo = self._objetivo()
-            efectivo = self._golpea(enemigo, objetivo)
-            if isinstance(objetivo, Companero):
-                self.peligro(
-                    f"{enemigo.nombre} golpea a {objetivo.nombre}: −{efectivo} ({objetivo.vida}/{objetivo.vida_max})."
-                )
-                if not objetivo.vivo:
-                    objetivo.viva = False
-                    self.peligro(f"{objetivo.nombre} cae…")
-            else:
-                self.peligro(
-                    f"{enemigo.nombre} te golpea: −{efectivo} ({self.jugador.vida}/{self.jugador.vida_max})."
-                )
-                if not self.jugador.vivo:
-                    self.aviso("\n" + self._texto_heroe(self.av.epilogo_muerte))
-                    self.fin = True
-                    self.final = "muerte"
+        # los estados alterados viven lo que vive el combate
+        self._limpiar_estados(enemigo)
+        usos: dict[int, int] = {}  # cuántas veces usó cada habilidad
+        try:
+            while not self.fin:
+                accion = self._turno_jugador(enemigo)
+                if accion == "huida":
+                    return "huida"
+                if accion == "cuerno":
+                    self.exito(f"{enemigo.nombre} huye con los demás. Combate resuelto.")
+                    return "victoria"
+                if self.fin:
                     return "muerte"
+                if not enemigo.vivo:
+                    self.exito(f"{enemigo.nombre} cae y se deshace en humo pardo.")
+                    return "victoria"
+                self._turno_enemigo(enemigo, usos)
+        finally:
+            self._limpiar_estados(enemigo)
         return "muerte"
+
+    def _limpiar_estados(self, enemigo: Enemigo) -> None:
+        self.jugador.veneno_dano = self.jugador.veneno_turnos = 0
+        enemigo.cargado = 0
+        enemigo.texto_cargado = ""
+
+    def _turno_enemigo(self, enemigo: Enemigo, usos: dict[int, int]) -> None:
+        """El turno del enemigo: fase pendiente, veneno y su acción.
+
+        Si el héroe cae aquí dentro, deja `fin`/`final` puestos, como el
+        resto del motor.
+        """
+        enemigo.turno += 1
+        transicion = enemigo.avanzar_fase()
+        if transicion:
+            self.peligro("\n" + transicion)
+        if self._pica_veneno():
+            return
+        if enemigo.cargado:  # el golpe avisado cae sí o sí
+            self._ataca_enemigo(
+                enemigo,
+                extra=enemigo.cargado,
+                texto=enemigo.texto_cargado or f"{enemigo.nombre} suelta el golpe que venía tensando",
+            )
+            enemigo.cargado = 0
+            enemigo.texto_cargado = ""
+            return
+        candidatos: list[object] = ["golpe"]
+        pesos = [PESO_GOLPE]
+        for i, hab in enumerate(enemigo.habilidades):
+            if self._habilitada(enemigo, hab, usos.get(i, 0)):
+                candidatos.append(i)
+                pesos.append(hab.peso)
+        eleccion = self.rng.choices(candidatos, pesos)[0]
+        if eleccion == "golpe":
+            self._ataca_enemigo(enemigo)
+        else:
+            self._usa_habilidad(enemigo, enemigo.habilidades[eleccion], eleccion, usos)
+
+    def _habilitada(self, enemigo: Enemigo, hab: Habilidad, usada: int) -> bool:
+        """La habilidad entra en la tómbola de este turno."""
+        if hab.veces and usada >= hab.veces:
+            return False
+        if hab.cond_vida is not None and enemigo.vida >= enemigo.vida_max * hab.cond_vida / 100:
+            return False
+        if hab.cond_turnos is not None and enemigo.turno % hab.cond_turnos != 0:
+            return False
+        return True
+
+    def _usa_habilidad(
+        self, enemigo: Enemigo, hab: Habilidad, indice: int, usos: dict[int, int]
+    ) -> None:
+        """Ejecuta la habilidad elegida: cada tipo, su efecto y su texto."""
+        usos[indice] = usos.get(indice, 0) + 1
+        if hab.tipo == "veneno":
+            self.jugador.envenenar(hab.dano, hab.turnos)
+            self.peligro(f"{hab.texto} (−{hab.dano} por turno durante {hab.turnos} turnos).")
+        elif hab.tipo == "curarse":
+            antes = enemigo.vida
+            enemigo.curar(hab.puntos)
+            self.aviso(
+                f"{hab.texto} (+{enemigo.vida - antes} vida: {enemigo.vida}/{enemigo.vida_max})."
+            )
+        elif hab.tipo == "refuerzo":
+            self.enemigos[self.lugar].append(hab.enemigo)
+            nombre = self.av.enemigos[hab.enemigo]["nombre"]
+            self.peligro(f"{hab.texto} ¡{nombre} entra en combate!")
+        elif hab.tipo == "golpe_fuerte":
+            enemigo.cargado = hab.dano_extra
+            enemigo.texto_cargado = hab.texto_golpe
+            self.aviso(hab.texto_aviso)
+
+    def _pica_veneno(self) -> bool:
+        """El veneno cobra su turno al empezar el del enemigo.
+
+        Devuelve True si el héroe cayó envenenado: la partida se acaba.
+        """
+        j = self.jugador
+        if not j.envenenado:
+            return False
+        j.veneno_turnos -= 1
+        j.vida = max(0, j.vida - j.veneno_dano)
+        self.peligro(f"El veneno arde: −{j.veneno_dano} ({j.vida}/{j.vida_max}).")
+        if j.veneno_turnos <= 0:
+            j.veneno_dano = j.veneno_turnos = 0
+            self.tenue("El ardor del veneno se apaga.")
+        if not j.vivo:
+            self.aviso("\n" + self._texto_heroe(self.av.epilogo_muerte))
+            self.fin = True
+            self.final = "muerte"
+            return True
+        return False
+
+    def _ataca_enemigo(self, enemigo: Enemigo, extra: int = 0, texto: str = "") -> None:
+        """El enemigo pega a su objetivo: el golpe normal, o el cargado
+        (que llega con `extra` de daño y su `texto` propio)."""
+        objetivo = self._objetivo()
+        dano = self.rng.randint(max(1, enemigo.ataque), enemigo.ataque + 3) + extra
+        efectivo = self._recibe(objetivo, dano)
+        if texto:
+            linea = texto.format(efectivo=efectivo)
+        elif isinstance(objetivo, Companero):
+            linea = f"{enemigo.nombre} golpea a {objetivo.nombre}: −{efectivo}"
+        else:
+            linea = f"{enemigo.nombre} te golpea: −{efectivo}"
+        if isinstance(objetivo, Companero):
+            self.peligro(f"{linea} ({objetivo.vida}/{objetivo.vida_max}).")
+            if not objetivo.vivo:
+                objetivo.viva = False
+                self.peligro(f"{objetivo.nombre} cae…")
+        else:
+            self.peligro(f"{linea} ({self.jugador.vida}/{self.jugador.vida_max}).")
+            if not self.jugador.vivo:
+                self.aviso("\n" + self._texto_heroe(self.av.epilogo_muerte))
+                self.fin = True
+                self.final = "muerte"
 
     def _turno_jugador(self, enemigo: Enemigo) -> str:
         """Acción del jugador y contraataque de los compañeros.
@@ -750,21 +976,23 @@ class Juego:
                     break
             return "seguir"
 
-    def _combate(self, claves: list[str]) -> None:
+    def _combate(self) -> None:
+        """Resuelve los duelos del lugar, uno a uno, mientras haya cola.
+
+        Los refuerzos que entren en plena pelea se suman a la cola y
+        también pelean antes de que el lugar quede libre.
+        """
         self.en_combate = True
-        lugar = self.lugar
-        pendientes = self.enemigos[lugar]
-        for clave in claves:
-            if clave not in pendientes:
-                continue
+        pendientes = self.enemigos[self.lugar]
+        while pendientes and not self.fin:
+            clave = pendientes[0]
             enemigo = self.crear_enemigo(clave)
             resultado = self._duelo(enemigo)
             if self.fin:
-                self.en_combate = False
-                return
+                break
             if resultado == "victoria":
-                if clave in pendientes:
-                    pendientes.remove(clave)
+                pendientes.remove(clave)
+                self._conceder_experiencia(clave)
                 if not pendientes:
                     self.exito("El aire vuelve a moverse. El camino queda libre.")
             else:  # huida
@@ -772,9 +1000,26 @@ class Juego:
                 self.aviso(
                     f"Vuelves a {self.av.lugares[self.lugar].nombre}. Los enemigos siguen ahí, esperando."
                 )
-                self.en_combate = False
-                return
+                break
         self.en_combate = False
+
+    def _conceder_experiencia(self, clave: str) -> None:
+        """La XP del caído y, si toca, las subidas de nivel."""
+        base = self.av.enemigos[clave].get("experiencia", 0)
+        if base <= 0:
+            return
+        j = self.jugador
+        j.experiencia += ajusta(base, self.dificultad.experiencia)
+        self.exito(f"Ganas experiencia: {j.experiencia}.")
+        while j.nivel <= len(XP_NIVEL) and j.experiencia >= XP_NIVEL[j.nivel - 1]:
+            j.nivel += 1
+            j.ataque += SUBIDA_ATAQUE
+            j.vida_max += SUBIDA_VIDA
+            j.curar(SUBIDA_VIDA)  # el aliento nuevo llega con vida nueva
+            self.epico(
+                f"\n¡{j.nombre} alcanza el nivel {j.nivel}! "
+                f"(+{SUBIDA_ATAQUE} ataque, +{SUBIDA_VIDA} vida máxima)"
+            )
 
     # ── guardar / cargar ─────────────────────────────────────────────
     def _guardar(self, arg: str = "") -> None:
@@ -787,7 +1032,10 @@ class Juego:
             "vida": self.jugador.vida,
             "monedas": self.jugador.monedas,
             "corrupcion": self.jugador.corrupcion,
+            "experiencia": self.jugador.experiencia,
+            "nivel": self.jugador.nivel,
             "inventario": self.jugador.inventario,
+            "equipado": dict(self.jugador.equipado),
             "companeros": [
                 {"clave": c.clave, "vida": c.vida, "viva": c.viva} for c in self.jugador.companeros
             ],
@@ -816,7 +1064,16 @@ class Juego:
         j.vida = estado["vida"]
         j.monedas = estado["monedas"]
         j.corrupcion = estado["corrupcion"]
+        # guardados de antes del issue 17: nivel 1, sin XP y con lo mejor
+        # del inventario puesto — la migración es no tocar nada de esto
+        j.experiencia = estado.get("experiencia", 0)
+        j.nivel = estado.get("nivel", 1)
         j.inventario = list(estado["inventario"])
+        j.equipado = {
+            t: k for t, k in (estado.get("equipado") or {}).items() if k in j.inventario
+        }
+        if "equipado" not in estado:
+            self._autoequipar()
         j.companeros = []
         for c in estado["companeros"]:
             base = self.av.reclutas[c["clave"]]

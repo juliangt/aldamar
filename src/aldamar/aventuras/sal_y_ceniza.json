@@ -129,32 +129,37 @@
     "gaviota": {
       "nombre": "gaviota cenicienta",
       "vida": 10,
-      "ataque": 3
+      "ataque": 3,
+      "experiencia": 10
     },
     "cangrejo": {
       "nombre": "cangrejo de salmuera",
       "vida": 14,
       "ataque": 4,
-      "defensa": 1
+      "defensa": 1,
+      "experiencia": 16
     },
     "mirlo": {
       "nombre": "mirlo de ceniza",
       "vida": 12,
-      "ataque": 4
+      "ataque": 4,
+      "experiencia": 12
     },
     "ahogado": {
       "nombre": "el Ahogado",
       "vida": 26,
       "ataque": 6,
       "defensa": 0,
-      "sin_huida": false
+      "sin_huida": false,
+      "experiencia": 25
     },
     "viuda": {
       "nombre": "la Viuda de Sal",
       "vida": 36,
       "ataque": 7,
       "defensa": 1,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 40
     }
   },
   "reclutas": {

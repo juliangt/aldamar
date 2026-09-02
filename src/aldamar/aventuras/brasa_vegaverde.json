@@ -62,14 +62,16 @@
     "mirlo": {
       "nombre": "mirlo de ceniza",
       "vida": 10,
-      "ataque": 3
+      "ataque": 3,
+      "experiencia": 12
     },
     "ahumado": {
       "nombre": "el Espantapájaros Ahumado",
       "vida": 26,
       "ataque": 6,
       "defensa": 0,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 20
     }
   },
   "reclutas": {
