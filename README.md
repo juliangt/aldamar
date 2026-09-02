@@ -42,12 +42,23 @@ uv run aldamar --debug            # no limpiar: deja visible el informe del buil
 ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
 ```
 
+Antes del menú —si hay teclado y pantalla de verdad— el juego se
+presenta: el **sello de Aldamar** en ASCII —el héroe de la historia,
+el Corazón de Ceniza al pecho y la espada clavada a su costado—, un **jingle 8-bit** de dos segundos y
+«Presiona cualquier tecla para comenzar…». El mismo jingle suena en la
+pantalla de cierre al terminar una aventura, victoria o desgracia. Los
+atajos que saltan el menú (`--cargar`, aventura y dificultad por CLI)
+van directos a lo suyo, sin presentación; con `--sin-splash` o
+`--sin-audio` se quita a mano.
+
 Atajos para saltar el menú:
 
 ```bash
 uv run aldamar --semilla 7 --sin-color
 uv run aldamar --aventura corazon_ceniza --dificultad ceniza
 uv run aldamar --sin-flechas      # menús respondiendo a texto
+uv run aldamar --sin-splash       # directo al menú, sin presentación
+uv run aldamar --sin-audio        # sin el jingle de entrada y de salida
 uv run aldamar --stats            # al terminar, escribe estadisticas.json
 uv run python -m aldamar          # también funciona sin instalar
 ```
@@ -55,6 +66,28 @@ uv run python -m aldamar          # también funciona sin instalar
 Dificultades: **Paseo por el huerto** (fácil), **El camino** (normal, el
 balance original) y **Yermos de Ceniza** (difícil). La partida guardada
 recuerda aventura, héroe y dificultad.
+
+### Preferencias: `configuracion.json`
+
+La primera partida de verdad deja en el directorio un
+`configuracion.json` listo para editar a mano. Cada clave prende o
+apaga lo suyo, y sobre el archivo mandan la variable de entorno y el
+flag de la CLI:
+
+| Clave     | Default | Qué hace                                                       |
+| --------- | ------- | -------------------------------------------------------------- |
+| `audio`   | `true`  | el jingle de la presentación y del cierre                       |
+| `splash`  | `true`  | la pantalla de presentación con el sello y «cualquier tecla…»   |
+| `color`   | `true`  | códigos ANSI (lo contrario de `--sin-color`)                    |
+| `flechas` | `true`  | menús navegables con ↑/↓ (lo contrario de `--sin-flechas`)      |
+| `debug`   | `false` | conservar el informe del lanzador (como `--debug`)              |
+| `semilla` | `null`  | semilla de cada partida, para una campaña repetible por defecto |
+
+La precedencia es siempre la misma: **flag de CLI > variable de entorno
+> `configuracion.json` > valores por defecto** (por ejemplo: `--debug`
+le gana a `ALDAMAR_DEBUG`, y este al `debug` del archivo). El archivo
+solo nace en sesiones de verdad: tuberías y tests no dejan nada a su
+paso, y ante un archivo roto se juega igual, con los defaults.
 
 ## El mundo
 
@@ -212,9 +245,12 @@ src/aldamar/
 │   ├── dificultad.py         # presets de balance (paseo / camino / ceniza)
 │   ├── guardado.py           # partida.json: versionado y migración
 │   ├── legado.py             # el hilo de la serie: legado.json, fama y banderas canónicas
-│   └── estadisticas.py       # estadisticas.json para el playtesting
+│   ├── estadisticas.py       # estadisticas.json para el playtesting
+│   └── configuracion.py      # configuracion.json: preferencias del jugador
 ├── interfaz/                 # la entrada del usuario
 │   ├── menu.py               # menú principal interactivo y ayuda
+│   ├── presentacion.py       # el sello de arranque: arte ASCII, jingle y una tecla
+│   ├── audio.py              # el jingle 8-bit: WAV generado al vuelo, sin dependencias
 │   └── opciones.py           # selector de opciones: flechas ↑/↓ o texto
 └── datos/                    # el contenido del juego, en JSON y fuera del código
     ├── rasgos.json           # los dones de héroe: nombre, descripción y efecto en datos

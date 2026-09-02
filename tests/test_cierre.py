@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import aldamar.motor.juego as juego_mod
 from aldamar.motor.juego import Juego, main
 from aldamar.contenido.personajes import Companero
 
@@ -23,6 +24,23 @@ def _jugar(lineas: list[str], personaje: str | None = None):
     )
     eleccion = juego.ciclo()
     return juego, salida, eleccion
+
+
+# ── el jingle de la despedida ────────────────────────────────────────────
+
+def test_el_cierre_suena_con_el_jingle_y_se_puede_apagar(fabrica, monkeypatch):
+    sonados: list[dict] = []
+    monkeypatch.setattr(
+        juego_mod.modulo_audio, "reproducir", lambda **llamada: sonados.append(llamada)
+    )
+    juego, _ = fabrica([])
+    juego.fin = True
+    juego.final = "victoria pura"
+    juego._cierre()
+    assert len(sonados) == 1  # la despedida suena
+    juego.audio = False
+    juego._cierre()
+    assert len(sonados) == 1  # con el audio apagado, no repite
 
 
 # ── el remate y el epílogo ───────────────────────────────────────────────
