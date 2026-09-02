@@ -97,6 +97,59 @@ def test_la_descripcion_extensa_se_reengloniza_al_ancho(monkeypatch):
     assert all(len(linea) <= 41 for linea in de_desc)  # nada se sale de la terminal
 
 
+# ── descripciones largas de una línea: renglones, no «…» (issue 25) ──────
+
+HISTORIA = (
+    "Una aguja de basalto atraviesa la niebla del puerto y nadie recuerda "
+    "quién la levantó: la ciudad duerme a su sombra y la Sombra, dicen "
+    "los viejos, duerme dentro."
+)
+
+
+def test_la_descripcion_larga_se_muestra_completa_en_varios_renglones(monkeypatch):
+    terminal = os.terminal_size((80, 24))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    lista = [("a", "Aguja sin Sombra", HISTORIA), ("b", "Otra", "corta")]
+    lineas = opciones_mod._lineas_menu(lista, 0, color=False)
+    texto = " ".join(" ".join(lineas).split())
+    assert "…" not in texto  # nada se corta
+    for palabra in ("basalto", "levantó", "duerme dentro"):
+        assert palabra in texto  # la historia entera está
+    renglones = [linea for linea in lineas if linea.startswith("     ") and linea.strip()]
+    assert len(renglones) >= 2  # se partió debajo de su opción
+    assert all(len(linea) <= 80 for linea in lineas)  # y nada se sale del ancho
+    # la opción corta de al lado sigue con su descripción al lado
+    assert any("Otra" in linea and "corta" in linea for linea in lineas)
+
+
+def test_el_atajo_elige_la_opcion_aun_con_renglones_de_por_medio(monkeypatch):
+    terminal = os.terminal_size((80, 24))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    lista = [("a", "Aguja sin Sombra", HISTORIA), ("b", "Otra", "corta")]
+    clave, _ = elegir_con_teclas(monkeypatch, ["2"], lista=lista)
+    assert clave == "b"  # el 1-9 elige opciones, no renglones de descripción
+
+
+def test_el_redibujo_cuadra_con_opciones_de_alto_distinto(monkeypatch):
+    """Una opción ocupa cuatro renglones y la siguiente, uno: al moverse
+    por la lista el bloque no deja restos ni duplica la pista de teclas."""
+    terminal = os.terminal_size((80, 24))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    term = Terminal()
+    teclas = iter(["\x1b[B", "\r"])
+    esperadas: list[str] = []
+
+    def tecla():
+        esperadas.append(term.texto())  # pantalla tal y como está al esperar
+        return next(teclas)
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", tecla)
+    lista = [("a", "Aguja sin Sombra", HISTORIA), ("b", "Otra", "")]
+    elegir_opcion("Prueba", lista, entrada=input, salida=term.escribe, flechas=True)
+    assert esperadas[-1].count("↑/↓") == 1
+    assert esperadas[-1].count("Prueba") == 1
+
+
 def test_el_modo_tipeado_tambien_muestra_toda_la_descripcion():
     salida: list[str] = []
     elegir_opcion(

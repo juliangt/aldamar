@@ -163,20 +163,19 @@ def _lineas_menu(opciones: list[tuple[str, str, str]], sel: int, color: bool) ->
             linea = _c(f"  ❯ {rotulo}", color, SELECCION)
         else:
             linea = f"    {rotulo}"
-        if desc and "\n" in desc:
-            # descripción extensa (ficha de héroe): renglones propios debajo
-            lineas.append(linea)
-            for renglon in _renglones_desc(desc, ancho - 8):
-                lineas.append(_c(f"     {renglon}", color, DIM))
-            continue
-        if desc:
+        if desc and "\n" not in desc:
             hueco = " " * (columna - len(rotulo) + 3)
-            margen = ancho - 1 - (4 + len(rotulo) + len(hueco)) - 1  # sitio para "…"
-            if margen >= 1:
-                if len(desc) > margen:  # una línea larga rompería el redibujo en sitio
-                    desc = desc[: margen - 1].rstrip() + "…"
+            margen = ancho - 1 - (4 + len(rotulo) + len(hueco))
+            if 0 < len(desc) <= margen:
+                # la descripción corta viaja al lado de su opción
                 linea += _c(f"{hueco}{desc}", color, DIM)
+                lineas.append(linea)
+                continue
+        # descripción extensa (ficha de héroe) o larga: renglones propios
+        # debajo de la opción — nunca se corta con «…»
         lineas.append(linea)
+        for renglon in _renglones_desc(desc, ancho - 8):
+            lineas.append(_c(f"     {renglon}", color, DIM))
     lineas.append(_c("  ↑/↓ mover · Enter elegir · 1-9 atajo · Esc volver", color, DIM))
     return lineas
 
