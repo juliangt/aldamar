@@ -1,0 +1,253 @@
+{
+  "id": "brasa_vegaverde",
+  "orden": 2,
+  "titulo": "La Brasa de Vegaverde",
+  "descripcion": "Las Ascuas · I. Un mes después del Corazón, una ascua cae en los huertos de Vegaverde y la roña gris marcha las hortalizas.",
+  "prologo_base": "Cuando el Corazón de Ceniza ardió en la Forja Eterna, Aldamar entero\nrespiró: veinte generaciones de miedo se hicieron humo, y el monte lo\nescupió hacia el mar. La gente bajó la guarda y sembró.\n\nPero la obra de Morvath no supo morir. El humo volvió del mar cargado\nde ascuas que no se apagan, y la primera cayó, dicen, en un huerto del\noeste. Ahora la roña gris marcha las hortalizas de Vegaverde y el viejo\ntejo del ejido arde sin consumirse.\n",
+  "texto_nombre": "¿Cómo te llamas, huertero de Vegaverde? ({nombre}): ",
+  "lugar_inicial": "vegaverde",
+  "jugador_inicial": "enebro",
+  "epilogos": {
+    "muerte": "Caes entre surcos que ya no conoces y la tierra de Vegaverde te\ndevuelve al silencio con las manos.\n\nOldo contará que su sobrino nieto salió a lo grande, contra el humo.\nLa brasa, en su tejo, seguirá esperando a otro.",
+    "caida": "La grieta se abre del todo entre las hortalizas marchitas. Ya no\nllevas la brasa: la brasa te lleva.\n\nEl tejo del ejido echa raíces negras hacia tu nombre, y en la casa-redil\napagan la lámpara de la puerta que te abrió."
+  },
+  "personajes": {
+    "enebro": {
+      "nombre": "Enebro Panverde",
+      "titulo": "falro huertero de Vegaverde",
+      "presentacion": "Oldo te entrega la carta con dedos de hoja seca y no se disculpa por\nel tiempo que hace que no escribe Belthar. La roña gris no espera.\nRasgo · Piel de piedra: cada golpe te quita un punto menos de vida.\nCriado entre arados y piedras, te queda la costumbre.",
+      "vida": 45,
+      "ataque": 4,
+      "monedas": 10,
+      "inventario": [],
+      "rasgos": [
+        "piel_piedra"
+      ],
+      "prologo_extra": "Eres sobrino nieto de Oldo Panverde, heredero del huerto y de las\ndeudas pequeñas. Creciste oyendo la historia del Corazón: tu primo Tilo\ncruzó medio continente con él al cuello y volvió con las manos limpias.\n\nUn mes ha pasado desde que el este ardió. Esta mañana la roña gris ha\nmarchitado la primera hilera de puerros, y Oldo ha sacado del baúl de\njardinería una carta sellada con cera verde.\n",
+      "texto_nombre": null,
+      "trato": "huertero",
+      "quien": "el huertero"
+    }
+  },
+  "items": {
+    "carta_belthar": {
+      "nombre": "carta de Belthar el Errante",
+      "tipo": "clave",
+      "precio": null,
+      "desc": "Letra torcida sellada con cera verde: «La obra no supo morir. El humo\nvolvió del mar cargado de ascuas. Apaga la tuya con agua limpia y sin\nmiedo; con miedo no, que el miedo la alimenta»."
+    },
+    "hoz": {
+      "nombre": "hoz de podar",
+      "tipo": "arma",
+      "bonus": 1,
+      "precio": 8,
+      "desc": "Acero de ferrería valoriana que Oldo afila cada primavera."
+    },
+    "capa_encerada": {
+      "nombre": "capa encerada",
+      "tipo": "armadura",
+      "bonus": 1,
+      "precio": 12,
+      "desc": "Encerada con cera de colmena: la lluvia, el barro y la ceniza resbalan."
+    },
+    "panal": {
+      "nombre": "panal de la colmena vieja",
+      "tipo": "consumible",
+      "curacion": 12,
+      "precio": null,
+      "desc": "Miel de la dehesa: cura lo menudo y lo hondo, dice Bruna."
+    }
+  },
+  "enemigos": {
+    "mirlo": {
+      "nombre": "mirlo de ceniza",
+      "vida": 10,
+      "ataque": 3
+    },
+    "ahumado": {
+      "nombre": "el Espantapájaros Ahumado",
+      "vida": 26,
+      "ataque": 6,
+      "defensa": 0,
+      "sin_huida": true
+    }
+  },
+  "reclutas": {
+    "bruna": {
+      "nombre": "Bruna de la Colmena",
+      "vida": 16,
+      "ataque": 4,
+      "defensa": 0
+    }
+  },
+  "tiendas": {},
+  "dialogos": {
+    "oldo_vegaverde": "Oldo Panverde mira el ejido desde el umbral, con la carta abierta en\nla mano y el ceño como nunca lo viste.\n  «Un mes hacía de aquella luz en el este, Enebro. Creímos que había\n   acabado todo. Y esta mañana la roña gris ha comido la hilera de\n   puerros y el tejo arde sin consumirse.»\n  «Belthar el Errante escribe desde las Ciénagas: la obra de Morvath\n   no supo morir. El humo volvió del mar cargado de ascuas, y una ha\n   caído aquí. Toma la carta. Y prepárate en el lavadero y en la\n   colmena antes de subir al tejo.»",
+    "perpetua_lavadero": "Perpetua frotaba ya cuando llegaron los romanos y no piensa parar\npor una guerra de humos.\n  «La noche que el monte del este escupió fuego lo vi desde el agua:\n   el cielo entero, rojo como un cangrejo hervido.»\n  «El agua del lavadero ha apagado fogatas peores, huertero. Y si te\n   ves apurado, el sur está la colmena de Bruna: las abejas saben de\n   cera y de heridas.»",
+    "bruna": "Bruna sale de entre los cajones con el velo de cera en las manos y\nlas abejas rondándole los puños sin pedirle cuentas.\n  «Las mías no entran al tejo desde hace tres días: dicen humo viejo,\n   de los que no se apagan. Y lo viejo es lo que hay que ahogar pronto.»\n  «Yo no le tengo miedo a la ceniza. La tuve, y ya.»\n  (Escribe  reclutar bruna  si la quieres en tu grupo.)"
+  },
+  "lugares": {
+    "vegaverde": {
+      "nombre": "Vegaverde",
+      "descripcion": "La casa-redil de Oldo, las tolvaneras y los huertos que esta mañana\nhuelen a pan y a miedo. Al este, el ejido; al fondo, el viejo tejo del\nejido arde sin humo negro, como una vela que no se decide a acabarse.",
+      "salidas": {
+        "este": "ejido",
+        "ejido": "ejido"
+      },
+      "objetos": [
+        "carta_belthar",
+        "hoz"
+      ],
+      "monedas": 5,
+      "enemigos": [],
+      "npcs": {
+        "oldo": "oldo_vegaverde"
+      },
+      "tienda": false,
+      "descanso": true,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "ejido": {
+      "nombre": "el Ejido",
+      "descripcion": "Hileras de puerros y cebolletas; las primeras marchitas de gris, como\nsi el invierno hubiera pasado por encima sin pisar. El aire sabe a\nhumo viejo. Al este brilla el tejo; al sur se oye el lavadero.",
+      "salidas": {
+        "oeste": "vegaverde",
+        "vegaverde": "vegaverde",
+        "este": "tejera",
+        "tejera": "tejera",
+        "sur": "lavadero",
+        "lavadero": "lavadero"
+      },
+      "objetos": [],
+      "monedas": 6,
+      "enemigos": [
+        "mirlo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "rona",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "tejera": {
+      "nombre": "la Tejera Vieja",
+      "descripcion": "El tejo más viejo de Vegaverde, hueco de siglos, arde por dentro sin\nconsumirse. En la hendidura late una brasa del tamaño de un puño, y\nalrededor, plantado donde no estaba ayer, el espantapájaros del ejido\nmira con ojos de ascua.",
+      "salidas": {
+        "oeste": "ejido",
+        "ejido": "ejido"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [
+        "ahumado"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "final",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "lavadero": {
+      "nombre": "el Lavadero del Arroyo",
+      "descripcion": "Pilas de cobre bruñido y agua limpia que canta sobre la losa. Perpetua\nfrota como hace cien años y echa la espuma al arroyo sin mirar. Al oeste,\ntras la dehesa, zumba la colmena.",
+      "salidas": {
+        "norte": "ejido",
+        "ejido": "ejido",
+        "oeste": "colmenar",
+        "colmenar": "colmenar"
+      },
+      "objetos": [
+        "capa_encerada"
+      ],
+      "monedas": 8,
+      "enemigos": [],
+      "npcs": {
+        "perpetua": "perpetua_lavadero"
+      },
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "colmenar": {
+      "nombre": "la Colmena de la Dehesa",
+      "descripcion": "Cajones de sabina a la sombra del arroyo y un zumbido grave que suena\na grupo de gente conversando. Las abejas vuelan derecho, como flechas\nque saben a qué vuelven, y no dejan de mirar hacia la tejera.",
+      "salidas": {
+        "este": "lavadero",
+        "lavadero": "lavadero"
+      },
+      "objetos": [],
+      "monedas": 8,
+      "enemigos": [],
+      "npcs": {
+        "bruna": "bruna"
+      },
+      "tienda": false,
+      "descanso": false,
+      "evento": "juramento",
+      "requiere": null,
+      "requiere_texto": ""
+    }
+  },
+  "eventos": {
+    "rona": {
+      "tipo": "corrupcion",
+      "puntos": 6,
+      "aviso": "El bochorno de la roña gris te repasa como una mano que busca dónde…"
+    },
+    "juramento": {
+      "tipo": "decision",
+      "texto": "Bruna te alcanza un panal envuelto en hoja de olmo y se ciñe el velo\nde cera a la frente, como quien se ata el delantal para faena seria.\n  «La colmena manda conmigo un velo encerado y una deuda con tu casa.\n   Tapa la brasa con cera, huertero: ahoga el fuego primero, entierra\n   lo que quede después.»",
+      "pregunta": "¿Qué respondes?",
+      "opciones": [
+        {
+          "clave": "aceptar",
+          "titulo": "Aceptar velo, panal y compañía",
+          "detalle": "dos en la faena, dos en la deuda",
+          "item": "panal",
+          "flag": "bruna",
+          "texto": "Bruna te ciñe el velo de cera con dos nudos apretados.\n  «Las abejas saben de apagar fuegos. Yo sé de acompañar. Vamos.»\n(Recibes: panal de la colmena vieja.)"
+        },
+        {
+          "clave": "declinar",
+          "titulo": "Seguir solo",
+          "detalle": "la deuda de tu casa, a tu manera",
+          "texto": "Bruna asiente sin rencor y te guarda el panal bajo el brazo.\n  «El humo elige a quien elige. Si vuelves achicharrado, no diré que\n   no avise.»"
+        }
+      ]
+    },
+    "final": {
+      "tipo": "final",
+      "texto": "El Espantapájaros Ahumado se deshace en ceniza parada y el tejo deja\nde crepitar. La brasa late en la hendidura, pequeña y viva como un\nsegundo corazón, y su calor te habla de inviernos sin frío y huertos\nque no conocen el invierno nunca.",
+      "pregunta": "¿Qué haces con la brasa?",
+      "opciones": [
+        {
+          "clave": "agua",
+          "titulo": "Ahogarla en el agua limpia del lavadero",
+          "detalle": "como manda la carta de Belthar: sin miedo"
+        },
+        {
+          "clave": "cera",
+          "titulo": "Ahogarla con el velo de cera de Bruna",
+          "detalle": "dos en la deuda, dos en la faena",
+          "requiere_flag": "bruna",
+          "epilogo": "El velo de cera baja sobre la brasa como una mano que sabe lo que\nhace. Chisporrotea, protesta, se queja de siglos — y se apaga con un\nsollozo de candelilla.\n\nEn Vegaverde sembrarán esa parcela con cebada y la llamarán El Parche\nde las Dos. Bruna contará la faena cien veces y en ninguna te dará\nmenos de la mitad. Tienes una aliada para lo que venga del mar.",
+          "estilo": "epico",
+          "final": "la brasa ahogada con cera"
+        }
+      ],
+      "umbral_tentado": 50,
+      "epilogo_puro": "Cargas la brasa envuelta en hoja de olmo hasta el lavadero y la dejas\ncorrer con el agua limpia de Perpetua. El chasquido final suena a puerta\nde casa cerrándose, y la losa queda tibia un rato, como un perro que\nacaba de irse.\n\nEn Vegaverde volverán a sembrar. Oldo guarda la carta de Belthar con\notras cartas viejas, por si el mar manda más recados, y a ti solo te\nda por mirar el este de tarde en tarde.",
+      "final_puro": "la brasa ahogada en agua limpia",
+      "epilogo_tentado": "La brasa cae al agua y muere — pero su calor ha aprendido tu nombre.\nLas noches siguientes sueñas con huertos que no conocen el invierno y\ndespiertas con la palma tibia, como si hubieras sostenido algo más que\nun puño de fuego.\n\nApagaste la primera ascua. La grieta que te queda es la segunda.",
+      "final_tentado": "la brasa ahogada, la grieta encendida",
+      "texto_companeros": "Junto a ti, con las manos aún temblando de la faena: {nombres}."
+    }
+  },
+  "comando_especial": null
+}

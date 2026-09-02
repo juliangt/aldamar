@@ -1,9 +1,9 @@
-# Aldamar · El Corazón de Ceniza
+# Aldamar
 
-Aventura de fantasía épica original para la terminal, en español.
+Aventuras de fantasía épica original para la terminal, en español.
 El amuleto que durmió veinte generaciones acaba de despertar: elígete
 un héroe, crúzate medio continente y devuélvelo al fuego que lo vio
-nacer.
+nacer. Y cuando el fuego se apague, quedará mucho humo que recoger.
 
 > **Nota sobre derechos.** Aldamar es una obra de fantasía original:
 > mundo, nombres, razas, textos y mecánicas son propios y están
@@ -72,6 +72,29 @@ Vegaverde → Camino del Molino → Puente de Piedra → (Bosque Umbrío o
 Ríoclaro) → Valoria, la Ciudad Dorada → Profundidades de Barrok →
 Ciénagas del Olvido → Torre de Belthar → Yermos de Ceniza → (desvío a
 la Aguja Pálida) → Monte Umbak.
+
+## Aventuras
+
+Cuatro campañas, ordenadas en el menú de menor a mayor aliento. Las
+tres últimas forman la serie **«Las Ascuas del Corazón»**: cada
+historia mantiene hilo con la anterior —personajes, lugares y
+consecuencias se citan de una a otra— pero se entiende y se gana por
+separado; la conexión es de continuidad, no de prerrequisito.
+
+| # | Aventura | Tamaño | Qué es |
+| - | -------- | ------ | ------ |
+| 1 | **El Corazón de Ceniza** | campaña | El amuleto despierta; de Vegaverde a la Forja Eterna. |
+| 2 | **La Brasa de Vegaverde** | misión | La primera ascua cae en los huertos originales: ahógala. |
+| 3 | **La Sal y la Ceniza** | campaña | La marea devuelve otra ascua a las salinas de Ríoclaro. |
+| 4 | **La Aguja sin Sombra** | saga | La Aguja Pálida teje el humo en Morvath: decisiones que pesan, jefe por fases y más de un final. |
+
+Hilo conductor: cuando el Corazón ardió, «el monte escupió el humo
+hacia el mar» — y la obra de Morvath no supo morir. El humo volvió
+del mar cargado de **ascuas** que van cayendo por Aldamar: la brasa
+de Vegaverde (2), la sal grisa de la costa (3) y la llamada de la
+Aguja (4). Belthar el Errante, Dorotea, Oldo Panverde, el estandarte
+del consejo, héroes y compañeros de una campaña reaparecen en la
+siguiente.
 
 ## Mecánicas
 
@@ -143,8 +166,11 @@ src/aldamar/
 ├── menu.py                   # menú principal interactivo y ayuda
 ├── juego.py                  # motor: bucle, comandos, combate, guardado
 └── aventuras/
-    └── corazon_ceniza.json   # toda la primera aventura, en datos
-tests/                        # mapa, combate, cargador, menú y partida completa
+    ├── corazon_ceniza.json    # la campaña original, en datos
+    ├── brasa_vegaverde.json   # Las Ascuas · I (corta)
+    ├── sal_y_ceniza.json      # Las Ascuas · II (media)
+    └── aguja_sin_sombra.json  # Las Ascuas · III (saga)
+tests/                        # mapa, combate, cargador, menú y partidas completas
 ```
 
 El motor no sabe nada de ninguna aventura en concreto: lee el mapa, los
@@ -159,10 +185,14 @@ convierte en funciones del motor).
 un objeto con `id`, `titulo`, `descripcion`, `prologo_base`,
 `texto_nombre`, `lugar_inicial`, `jugador_inicial`, `epilogos`
 (`muerte` y `caida`) y las secciones `personajes`, `items`, `enemigos`,
-`reclutas`, `tiendas`, `dialogos`, `lugares` y `eventos`. Al soltarlo en
-el directorio se descubre, valida y registra solo: aparece en el menú.
-El cargador verifica referencias (salidas, objetos, enemigos, diálogos,
-tiendas, eventos) y ante un JSON roto nombra archivo y campo.
+`reclutas`, `tiendas`, `dialogos`, `lugares` y `eventos`. Un campo
+`orden` opcional (entero) fija su posición en el menú: menor primero,
+y antes que quien no lo declara; las series lo usan para contarse en
+orden. Al soltarlo en el directorio se descubre, valida y registra
+solo: aparece en el menú. El cargador verifica referencias (salidas,
+objetos, enemigos, diálogos, tiendas, eventos, las condiciones de las
+emboscadas y los items que otorgan las decisiones) y ante un JSON roto
+nombra archivo y campo.
 
 Los **eventos** de lugar se declaran con el vocabulario de
 `eventos.py`, sin código:
@@ -172,7 +202,17 @@ Los **eventos** de lugar se declaran con el vocabulario de
 | `otorgar`      | Entrega un objeto, una sola vez si declara `una_vez` (flag)               |
 | `curar_grupo`  | Cura al héroe, resucita y cura a los compañeros; `corrupcion` opcional    |
 | `corrupcion`   | Un `aviso` y `puntos` de corrupción, cada vez que se entra                |
+| `narrar`       | Un texto de puro relato, una sola vez si declara `una_vez`                |
+| `decision`     | Texto y elección con efectos: `item`, `corrupcion` y `flag` por opción    |
+| `emboscar`     | Suma `enemigos` al lugar si se cumple su `condicion` (`flag`/`no_flag`)   |
 | `final`        | Un texto, `opciones` de elección y el desenlace según corrupción          |
+
+Las **banderas** (`flags`) son lo que cose una aventura consigo misma:
+una `decision` deja una bandera encendida, un `emboscar` la lee para
+cobrarse su precio y una opción de `final` puede declarar
+`requiere_flag` para ofrecerse solo si aquella decisión ocurrió. Así
+se escriben las consecuencias tardías y los finales múltiples de la
+saga, sin una línea de código en el JSON.
 
 Cada lugar referencia su evento por clave; el evento llamado `final` se
 dispara cuando el lugar queda limpio de enemigos, el resto al entrar.

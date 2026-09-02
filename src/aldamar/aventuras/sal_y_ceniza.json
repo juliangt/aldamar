@@ -1,0 +1,468 @@
+{
+  "id": "sal_y_ceniza",
+  "orden": 3,
+  "titulo": "La Sal y la Ceniza",
+  "descripcion": "Las Ascuas · II. La marea devuelve otra ascua a las salinas de Ríoclaro: la sal se vuelve gris y las caravanas no cruzan.",
+  "prologo_base": "La segunda ascua no cayó del cielo: el mar la devolvió. Un mes atrás\nel humo que el Monte Umbak escupió volvió con la marea, y donde la\nespuma ruge junto a Ríoclaro la sal ha empezado a saber a ceniza.\n\nEn Vegaverde ahogaron la primera en agua limpia; lo cuentan en las\nposadas, y también lo cuenta la carta que Belthar el Errante anda\ncopiando de su puño y letra: donde cae una ascua, la grieta avanza.\nLas caravanas no cruzan el vado, el faro duerme y la Viuda teje con\nsal. Alguien tiene que bajar a la costa.\n",
+  "texto_nombre": "¿Cómo te llamas, valiente de la costa? ({nombre}): ",
+  "lugar_inicial": "rioclaro",
+  "jugador_inicial": "bruna",
+  "epilogos": {
+    "muerte": "La marea gris te lleva con una dulzura que no esperabas. Lo último\nque ves es la espuma, que sigue rugiendo, indiferente y hermosa.\n\nEn Ríoclaro, Dorotea dejará un cuenco lleno en la ventana de la\nposada, por si vuelves con hambre. La ascua, en su sal, espera a otro.",
+    "caida": "La grieta se abre del todo entre las terrazas de sal. Ya no llevas\nla ascua: la ascua te lleva.\n\nEl faro se apaga solo la noche que faltas, y la Viuda estrena un\nlugar vacío en su telar para quien venga después."
+  },
+  "personajes": {
+    "bruna": {
+      "nombre": "Bruna de la Colmena",
+      "titulo": "pastora falra de Vegaverde",
+      "presentacion": "Dorotea te llena el cuenco hasta el borde sin preguntar de dónde\nvienes: el velo de cera en tu frente responde por ti. La segunda\nascua también hay que ahogarla.\nRasgo · Piel de piedra: cada golpe te quita un punto menos de vida.",
+      "vida": 55,
+      "ataque": 4,
+      "monedas": 8,
+      "inventario": [
+        "cayado"
+      ],
+      "rasgos": [
+        "piel_piedra"
+      ],
+      "prologo_extra": "Viste arder el tejo de Vegaverde y ayudaste a ahogar su brasa en\nagua limpia; la ceniza no te engaña dos veces. Ahora Belthar escribe\nque la marea devolvió otra ascua a las salinas de la costa, y el humo\nde tu dehesa sopla hacia el sur.\n\nTe va bien: las abejas también tienen que aprender a oler el mar.\n",
+      "texto_nombre": "¿Cómo te llamas, pastora del sur? ({nombre}): ",
+      "trato": "pastora",
+      "quien": "la pastora"
+    },
+    "gala": {
+      "nombre": "Gala Mar Serena",
+      "titulo": "buza sylva de la Costa de los Faroles",
+      "presentacion": "Sales del agua con la red vacía y la boca amarga: la sal sabe a\nceniza y los cangrejos huyen del fondo. Dorotea pone el cuenco; tú\npones el brazo.\nRasgo · Ojo de halcón: +1 de daño mientras la bestia conserve más\nde la mitad de su vida.",
+      "vida": 38,
+      "ataque": 4,
+      "monedas": 12,
+      "inventario": [
+        "cuchillo_marea",
+        "pan_sal"
+      ],
+      "rasgos": [
+        "ojo_halcon"
+      ],
+      "prologo_extra": "Los del bosque mandan a sus buzas cuando el mar hace cosas raras,\ny el mar lleva una luna haciendo cosas raras: peces que suben con\nescamas grises, mareas que no obedecen a la luna.\n\nDorotea, que debe al bosque más estofados de los que admite, te ha\ndado cama caliente y una mala noticia: la Viuda de Sal ha vuelto a\ntejer.\n",
+      "texto_nombre": "¿Cómo te llamas, buza de los Faroles? ({nombre}): ",
+      "trato": "buza",
+      "quien": "la buza"
+    },
+    "tamara": {
+      "nombre": "Támara",
+      "titulo": "moza de la posada de Ríoclaro",
+      "presentacion": "Dejas la jofaina y el mandil en la mesa de Dorotea y coges el cuchillo\ndel pescado. «Vuelvo antes de la cena», dices. Dorotea no lo cree\npero no lo discute.\nRasgo · Lengua de mercado: pagas 1 moneda menos en cada compra.",
+      "vida": 42,
+      "ataque": 5,
+      "monedas": 14,
+      "inventario": [
+        "pan_sal"
+      ],
+      "rasgos": [
+        "lengua_mercado"
+      ],
+      "prologo_extra": "Sirves cerveza en la posada de Dorotea desde los doce años y oyes\ntodo lo que oye un mostrador: que las caravanas no cruzan el vado, que\nla sal grisa no se vende ni regalada, que el farero Iseo delira con\nmareas de humo.\n\nLa cuenta que cierra todas las conversaciones: si nadie baja a la\ncosta, no hay nada que servir. Coges el cuchillo del pescado.\n",
+      "texto_nombre": "¿Cómo te llamas, moza de posada? ({nombre}): ",
+      "trato": "moza",
+      "quien": "la moza"
+    }
+  },
+  "items": {
+    "farol_sal": {
+      "nombre": "el farol de sal",
+      "tipo": "clave",
+      "precio": null,
+      "desc": "El farol del farero, tallado en sal que no se derrite: solo alumbra\ncon fuego que quiera arder. La Salina Vieja no se cruza sin él."
+    },
+    "cayado": {
+      "nombre": "cayado de pastora",
+      "tipo": "arma",
+      "bonus": 2,
+      "precio": 10,
+      "desc": "Nogal curado en sebo. Da la bienvenida que merecen los lobos y lo\nque venga a ser como los lobos."
+    },
+    "cuchillo_marea": {
+      "nombre": "cuchillo de marea",
+      "tipo": "arma",
+      "bonus": 1,
+      "precio": 6,
+      "desc": "El del pescado, para el pescado. Y para lo que haga como el pescado."
+    },
+    "arpon": {
+      "nombre": "arpón de buzo",
+      "tipo": "arma",
+      "bonus": 3,
+      "precio": 22,
+      "desc": "Cuerda de tripas y punta de acero de Barrok: lo que atraviesa, no\nse escapa."
+    },
+    "abrigo_salino": {
+      "nombre": "abrigo de salinero",
+      "tipo": "armadura",
+      "bonus": 1,
+      "precio": 12,
+      "desc": "Curtido con salmuera: el viento de la marisma rebota en él."
+    },
+    "perla_gris": {
+      "nombre": "la perla gris",
+      "tipo": "armadura",
+      "bonus": 2,
+      "precio": null,
+      "desc": "Al oído, un zumbido de marea contenido. Contra la piel, el frío\nde la hondura rebota."
+    },
+    "pan_sal": {
+      "nombre": "pan de sal",
+      "tipo": "consumible",
+      "curacion": 10,
+      "precio": 4,
+      "desc": "Corteza dura, miga tibia. El que aguanta viajes y borracheras."
+    },
+    "aguardiente": {
+      "nombre": "aguardiente de la casa",
+      "tipo": "consumible",
+      "curacion": 15,
+      "precio": 8,
+      "desc": "De la destilería de Dorotea. Limpia por dentro; por fuera, también,\nsi hay valor."
+    }
+  },
+  "enemigos": {
+    "gaviota": {
+      "nombre": "gaviota cenicienta",
+      "vida": 10,
+      "ataque": 3
+    },
+    "cangrejo": {
+      "nombre": "cangrejo de salmuera",
+      "vida": 14,
+      "ataque": 4,
+      "defensa": 1
+    },
+    "mirlo": {
+      "nombre": "mirlo de ceniza",
+      "vida": 12,
+      "ataque": 4
+    },
+    "ahogado": {
+      "nombre": "el Ahogado",
+      "vida": 26,
+      "ataque": 6,
+      "defensa": 0,
+      "sin_huida": false
+    },
+    "viuda": {
+      "nombre": "la Viuda de Sal",
+      "vida": 36,
+      "ataque": 7,
+      "defensa": 1,
+      "sin_huida": true
+    }
+  },
+  "reclutas": {
+    "iseo": {
+      "nombre": "Iseo el Farero",
+      "vida": 24,
+      "ataque": 5,
+      "defensa": 1
+    },
+    "maruxa": {
+      "nombre": "Maruxa la Salinera",
+      "vida": 20,
+      "ataque": 4,
+      "defensa": 0
+    }
+  },
+  "tiendas": {
+    "rioclaro": [
+      "pan_sal",
+      "aguardiente",
+      "cuchillo_marea",
+      "abrigo_salino"
+    ],
+    "casa_sal": [
+      "pan_sal",
+      "arpon",
+      "aguardiente"
+    ]
+  },
+  "dialogos": {
+    "dorotea": "Dorotea, la posadera, llena el cuenco hasta el borde y encima pone\nun trozo de pan de sal, que esto es Ríoclaro y aquí nadie muere de\nhambre con la cena puesta.\n  «Las caravanas no cruzan el vado desde la marea aquella, y la sal\n   grisa no se vende ni regalada. Si bajas a la costa, mira por el\n   farero: Iseo lleva una luna delirando con mareas de humo.»\n  «El descanso va por la casa; el aguardiente, por el portazo.»",
+    "noticia_vado": "Un mercader de tomillas sube el vado sin mercancías y sin sombrero.\n  «¿Vas a la costa? Cuentan en Vegaverde que ahogaron la brasa del\n   tejo: una pastora y un huertero, agua limpia y sin miedo. La\n   primera ascua, en el suelo.»\n  «Dicen que Belthar busca quien haga lo mismo con la del mar. Dicen\n   que la grieta avanza donde caen. Yo digo que la marea no oye\n   consejos.»",
+    "iseo": "Iseo el Farero tiene la piel del color de la sal grisa y los ojos\nbrillando de fiebre.\n  «Cuarenta años encendiendo el faro y ahora no me obedece la mano.\n   La marea trajo de todo: peces con escamas grises, espuma que\n   ruge palabras, una ascua que duerme en la Salina Vieja.»\n  «El farol de sal solo alumbra con fuego que quiera arder. El mío\n   se ha rendido. Si el tuyo quiere, la Salina Vieja no se cruza sin\n   él.»",
+    "maruxa": "Entre los cajones de la casa de sal, una salinera aparta la escoba\ny escupe al suelo, como quien pide permiso para decir una verdad.\n  «Maruxa Raçasal. Tres generaciones sacando sal de estas terrazas y\n   ahora saca sal grisa que se vende sola, de noche, sin nadie. El\n   Ahogado custodia la casa y la Viuda teje en la Vieja.»\n  «Voy contigo hasta que esto vuelva a ser sal de verdad. No por\n   valentía: por higiene.»\n  (Escribe  reclutar maruxa  si la quieres en tu grupo.)"
+  },
+  "lugares": {
+    "rioclaro": {
+      "nombre": "la Aldea de Ríoclaro",
+      "descripcion": "Casitas de piedra junto al vado y la posadera de Dorotea, donde el\nestofado es ley y el aguardiente, remedio. Desde la marea de ceniza,\nnadie baja al sur: el camino de las marismas se ve vacío y se oye\npeor.",
+      "salidas": {
+        "sur": "vado",
+        "vado": "vado"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [],
+      "npcs": {
+        "dorotea": "dorotea"
+      },
+      "tienda": true,
+      "descanso": true,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "vado": {
+      "nombre": "el Vado de las Marismas",
+      "descripcion": "El Río Plata se abre en cañas y avisa con una loma de arena de que\nel mar está cerca. El agua tira hacia el sur con insistencia nueva,\ncomo si la llamaran desde abajo.",
+      "salidas": {
+        "norte": "rioclaro",
+        "rioclaro": "rioclaro",
+        "sur": "calzada",
+        "calzada": "calzada"
+      },
+      "objetos": [],
+      "monedas": 6,
+      "enemigos": [
+        "gaviota"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "noticia",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "calzada": {
+      "nombre": "la Calzada Sumergida",
+      "descripcion": "Piedras romanas a ras de agua, la única senda firme entre la marisma.\nA oriente, el faro duerme con su linterna apagada; al sur, las terrazas\nde sal brillan con un brillo que no es de sal.",
+      "salidas": {
+        "norte": "vado",
+        "vado": "vado",
+        "este": "faro",
+        "faro": "faro",
+        "sur": "esteros",
+        "esteros": "esteros"
+      },
+      "objetos": [],
+      "monedas": 8,
+      "enemigos": [
+        "gaviota"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "faro": {
+      "nombre": "el Faro Dormido",
+      "descripcion": "Un dedo de piedra y sal con la linterna fría. Iseo el Farero duerme\ny delira contra la puerta, con el farol de sal en el regazo como se\nsostiene a un hijo enfermo.",
+      "salidas": {
+        "oeste": "calzada",
+        "calzada": "calzada"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [],
+      "npcs": {
+        "iseo": "iseo"
+      },
+      "tienda": false,
+      "descanso": false,
+      "evento": "faro",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "esteros": {
+      "nombre": "los Caños Grises",
+      "descripcion": "Canales que se cruzan como hilos en un telar. La espuma deja una\nborra gris en las piedras y las gaviotas discuten en un idioma que\nno les enseñaron sus madres. Al este, las terrazas; al sur, el cauce\nseco.",
+      "salidas": {
+        "norte": "calzada",
+        "calzada": "calzada",
+        "este": "salinas",
+        "salinas": "salinas",
+        "sur": "cauce",
+        "cauce": "cauce"
+      },
+      "objetos": [],
+      "monedas": 6,
+      "enemigos": [
+        "cangrejo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "cauce": {
+      "nombre": "el Cauce Seco",
+      "descripcion": "Un río viejo que no recuerda correr. En el lodo brillan cosas que\nla marea trajo y no quiso repetir: conchas de nadie, un peine de\nSirena y, arriba en una poza, una perla gris que late con la marea.",
+      "salidas": {
+        "norte": "esteros",
+        "esteros": "esteros"
+      },
+      "objetos": [
+        "perla_gris"
+      ],
+      "monedas": 10,
+      "enemigos": [
+        "cangrejo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "salinas": {
+      "nombre": "las Terrazas de Sal",
+      "descripcion": "Tablas de evaporar hasta el horizonte, todas con la misma grieta\ngris que avanza como una sombra de dentro. Las salmueras susurran\nnombres, y de vez en cuando uno tuyo.",
+      "salidas": {
+        "oeste": "esteros",
+        "esteros": "esteros",
+        "este": "casa_sal",
+        "casa_sal": "casa_sal"
+      },
+      "objetos": [],
+      "monedas": 8,
+      "enemigos": [
+        "mirlo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "salmuera",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "casa_sal": {
+      "nombre": "la Casa de la Sal",
+      "descripcion": "Bodega de tablones oscuros donde los salineros guardan lo que la\nsal no come: aperos, redes y una mesa con lo puesto para vender.\nAlguien grande moja en la puerta; no es agua lo que gotea.",
+      "salidas": {
+        "oeste": "salinas",
+        "salinas": "salinas",
+        "este": "salina_vieja",
+        "salina_vieja": "salina_vieja"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [
+        "ahogado"
+      ],
+      "npcs": {
+        "maruxa": "maruxa"
+      },
+      "tienda": true,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "salina_vieja": {
+      "nombre": "la Salina Vieja",
+      "descripcion": "La primera terraza, la más honda, donde la sal crió corazón. En el\ncentro, una ascua del tamaño de una cabeza duerme en salmuera viva,\ny a su alrededor, tejida con espuma y sigilo, la Viuda tensa su\ntelar de hilos grises.",
+      "salidas": {
+        "oeste": "casa_sal",
+        "casa_sal": "casa_sal"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [
+        "viuda"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "final",
+      "requiere": "farol_sal",
+      "requiere_texto": "La salmuera oscura se mueve sola: sin la luz de un fuego que quiera\narder, la salina te cierra el paso."
+    }
+  },
+  "eventos": {
+    "noticia": {
+      "tipo": "narrar",
+      "una_vez": "noticia",
+      "texto": "A media orilla alcanzas a un mercader sin sombrero que vuelve del\nsur.\n  «¿Vas a la costa? Cuentan en Vegaverde que ahogaron la brasa del\n   tejo: una pastora, un huertero y agua limpia. La primera ascua,\n   en el suelo.»\n  «La del mar dicen que duerme en la Salina Vieja. Y que la Viuda\n   teje a su alrededor desde la marea.»"
+    },
+    "faro": {
+      "tipo": "decision",
+      "texto": "Iseo abre los ojos sin estar despierto y te pone el farol de sal en\nlas manos con una ternura de marchamo roto.\n  «Solo alumbra con fuego que quiera arder. El mío se ha rendido:\n   cuarenta años y ahora se ha rendido.»\n  «Llévalo a la Salina Vieja, o déjalo, o… lo que hagas, hazlo pronto,\n   que la Viuda teje con la luz que sobra.»",
+      "pregunta": "¿Qué haces con el farol?",
+      "opciones": [
+        {
+          "clave": "encender",
+          "titulo": "Encenderlo con tu propio fuego",
+          "detalle": "lo que arde en ti, arde a tu favor",
+          "flag": "faro_encendido",
+          "texto": "El farol acepta la llama como aceptan la noticia las buenas casas:\ncon una luz limpia y un poco de orgullo. Iseo sonríe sin verte.\n  «Ya somos dos los que volvimos a querer arder.»\n(Recibes: el farol de sal.)",
+          "item": "farol_sal"
+        },
+        {
+          "clave": "quitar",
+          "titulo": "Tomarlo sin pedir permiso",
+          "detalle": "rápido, antes de que lo pienses",
+          "flag": "faro_robado",
+          "corrupcion": 8,
+          "texto": "Le quitas el farol de las manos sin despertarlo. Pesa más de lo\nque debería, como pesan las cosas que no son tuyas.\n\nEl Corazón de Aldamar susurra bajo la grieta: hay favores que se\ncobran solos. (+8 corrupción.)\n(Recibes: el farol de sal.)",
+          "item": "farol_sal"
+        }
+      ]
+    },
+    "salmuera": {
+      "tipo": "corrupcion",
+      "puntos": 6,
+      "aviso": "Las salmueras te reconocen por el nombre que susurran…"
+    },
+    "traicion": {
+      "tipo": "emboscar",
+      "enemigos": [
+        "gaviota",
+        "gaviota"
+      ],
+      "texto": "El farol robado chisporrotea a tu espalda y su luz se pone gris:\nla ceniza sabía que no era tuyo. Gaviotas cenicientas bajan del aire\nque acaban de inventar.",
+      "condicion": {
+        "flag": "faro_robado"
+      }
+    },
+    "final": {
+      "tipo": "final",
+      "texto": "La Viuda se deshace en espuma que ya no vuelve a tejerse. La ascua\nlate en la salmuera, caliente entre tanta sal, y su voz es la de las\nmareas: te habla de puertos donde nunca anochece y de tablas de sal\nque no comen ni el tiempo ni la memoria.",
+      "pregunta": "¿Qué haces con la ascua?",
+      "opciones": [
+        {
+          "clave": "salmuera",
+          "titulo": "Ahogarla en la salmuera",
+          "detalle": "que la sal vuelva a ser sal"
+        },
+        {
+          "clave": "farera",
+          "titulo": "Devolverla al farol: que arda farera",
+          "detalle": "un fuego que quiera arder, vigilando la costa",
+          "requiere_flag": "faro_encendido",
+          "epilogo": "El farol de sal abre su puerta de cristal y la ascua entra como\nentra la abeja al cajón: sabiendo dónde. El faro de la costa se\nenciende esa noche por primera vez desde la marea, y su luz es tibia\ny no olvida a nadie.\n\nLos barcos juran que hay una farera en la linterna; los fareros, que\nhay una farera en cada uno que vuelve. Tú solo sabes que el fuego que\nquiso arder, arde cuidando.",
+          "estilo": "epico",
+          "final": "el faro de la ascua"
+        }
+      ],
+      "umbral_tentado": 55,
+      "epilogo_puro": "La ascua cae en la salmuera y el chasquido se oye en Ríoclaro, que\nestá lejos: la sal vuelve a ser sal y el mar devuelve lo que le prestan.\n\nDorotea vuelve a servir cerveza a los de la costa y en la posada se\nbebe, por ley nueva, un vaso a la salud de quien baje a mirar la\nmarea. La grieta de la costa tardará; mientras, hay estofado.",
+      "final_puro": "la sal vuelve a ser sal",
+      "epilogo_tentado": "La ascua muere en la salmuera, pero su voz se queda en tu oído como\nse queda el agua en el fletre. Las mareas te buscarán a ti de ahora\nen adelante, y a veces, en la espuma, verás hilos.\n\nApagaste la ascua del mar. La grieta que te queda sabe nadar.",
+      "final_tentado": "la sal limpia, la grieta nadadora",
+      "texto_companeros": "Junto a ti, empapados y vivos: {nombres}."
+    }
+  },
+  "comando_especial": {
+    "comando": "marea",
+    "texto_fuera": "La marea susurra en tus oídos, pero aquí no hay nadie a quien arrastrar.",
+    "efecto": {
+      "dano_base": 10,
+      "dano_por_corrupcion": 3,
+      "corrupcion_coste": 12,
+      "mensaje": "Llamas a la marea gris y rompe contra la criatura: −{efectivo}…"
+    }
+  }
+}

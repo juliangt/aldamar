@@ -6,8 +6,9 @@ referencias entre secciones, además del vocabulario de eventos de
 `eventos.py`— y arma el objeto `Aventura` que el motor consume.
 
 Sumar una aventura al juego = soltar su JSON en el paquete: el
-descubrimiento (`cargar_todas`) es automático y el orden de registro,
-alfabético por nombre de archivo. Ante un archivo roto, el error
+descubrimiento (`cargar_todas`) es automático y el orden de registro —
+el del menú— lo fija el campo opcional `orden` (a igualdad o ausencia,
+alfabético por nombre de archivo). Ante un archivo roto, el error
 `AventuraInvalida` nombra el archivo y el campo de la culpa.
 """
 
@@ -199,7 +200,50 @@ def _lugar(lid: str, datos: dict, origen: str) -> Lugar:
     )
 
 
-def _evento(clave: str, datos: dict, items: dict[str, dict], origen: str):
+def _valida_opciones_decision(
+    datos: dict, items: dict[str, dict], po: str, origen: str
+) -> None:
+    opciones = datos.get("opciones")
+    if not isinstance(opciones, list) or not opciones:
+        raise _mal(origen, f"{po}: 'opciones' debe ser una lista con al menos una opción")
+    vistas: set[str] = set()
+    for i, opcion in enumerate(opciones):
+        opo = f"{po}.opciones[{i}]"
+        if not isinstance(opcion, dict):
+            raise _mal(origen, f"{opo} debe ser un objeto")
+        clave = _texto(opcion, "clave", opo)
+        if clave in vistas:
+            raise _mal(origen, f"{opo}: la clave {clave!r} está repetida")
+        vistas.add(clave)
+        _texto(opcion, "titulo", opo)
+        _texto_opcional(opcion, "detalle", opo)
+        _texto_opcional(opcion, "texto", opo)
+        _texto_opcional(opcion, "flag", opo)
+        item = opcion.get("item")
+        if item is not None:
+            _texto(opcion, "item", opo)
+            if item not in items:
+                raise _mal(origen, f"{opo}: otorga el item {item!r}, que no existe")
+        _entero(opcion, "corrupcion", opo, defecto=0)
+
+
+def _valida_condicion(datos: dict, po: str, origen: str) -> None:
+    condicion = datos.get("condicion")
+    if condicion is None:
+        return
+    if not isinstance(condicion, dict):
+        raise _mal(origen, f"{po}: 'condicion' debe ser un objeto o null")
+    _texto_opcional(condicion, "flag", f"{po}.condicion")
+    _texto_opcional(condicion, "no_flag", f"{po}.condicion")
+
+
+def _evento(
+    clave: str,
+    datos: dict,
+    items: dict[str, dict],
+    claves_enemigos: set[str],
+    origen: str,
+):
     po = f"eventos[{clave!r}]"
     if not isinstance(datos, dict):
         raise _mal(origen, f"{po} debe ser un objeto")
@@ -223,10 +267,26 @@ def _evento(clave: str, datos: dict, items: dict[str, dict], origen: str):
     elif tipo == "corrupcion":
         _entero(datos, "puntos", po)
         _texto_opcional(datos, "aviso", po)
+    elif tipo == "narrar":
+        _texto(datos, "texto", po)
+        _texto_opcional(datos, "una_vez", po)
+    elif tipo == "decision":
+        _texto(datos, "texto", po)
+        _texto(datos, "pregunta", po)
+        _valida_opciones_decision(datos, items, po, origen)
+    elif tipo == "emboscar":
+        _texto(datos, "texto", po)
+        enemigos = datos.get("enemigos")
+        if not isinstance(enemigos, list) or not enemigos:
+            raise _mal(origen, f"{po}: 'enemigos' debe ser una lista con al menos un enemigo")
+        for enemigo in enemigos:
+            if enemigo not in claves_enemigos:
+                raise _mal(origen, f"{po}: embosca al enemigo {enemigo!r}, que no existe")
+        _valida_condicion(datos, po, origen)
     elif tipo == "final":
         _valida_final(datos, po, origen)
     try:
-        return evento_desde(datos)
+        return evento_desde(datos, clave)
     except (KeyError, ValueError) as e:
         raise _mal(origen, f"{po}: {e}") from e
 
@@ -237,8 +297,8 @@ def _valida_final(datos: dict, po: str, origen: str) -> None:
     opciones = datos.get("opciones")
     if not isinstance(opciones, list) or not opciones:
         raise _mal(origen, f"{po}: 'opciones' debe ser una lista con al menos una opción")
-    por_defecto = 0
     vistas: set[str] = set()
+    por_defecto = 0
     for i, opcion in enumerate(opciones):
         opo = f"{po}.opciones[{i}]"
         if not isinstance(opcion, dict):
@@ -252,11 +312,18 @@ def _valida_final(datos: dict, po: str, origen: str) -> None:
         estilo = _texto_opcional(opcion, "estilo", opo) or "aviso"
         if estilo not in ("aviso", "epico"):
             raise _mal(origen, f"{opo}: 'estilo' debe ser 'aviso' o 'epico'")
+        _texto_opcional(opcion, "requiere_flag", opo)
         if "epilogo" in opcion:
             _texto(opcion, "epilogo", opo)
             _texto(opcion, "final", opo)
         else:
             por_defecto += 1
+            if opcion.get("requiere_flag"):
+                raise _mal(
+                    origen,
+                    f"{opo}: el desenlace por defecto no puede exigir "
+                    f"'requiere_flag' (tendría que estar siempre disponible)",
+                )
     if por_defecto != 1:
         raise _mal(
             origen,
@@ -382,8 +449,13 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
     if not isinstance(eventos_crudos, dict):
         raise _mal(origen, "el campo 'eventos' debe ser un objeto")
     eventos = {
-        clave: _evento(clave, ev, items, origen) for clave, ev in eventos_crudos.items()
+        clave: _evento(clave, ev, items, set(enemigos), origen)
+        for clave, ev in eventos_crudos.items()
     }
+
+    orden = datos.get("orden")
+    if orden is not None and (isinstance(orden, bool) or not isinstance(orden, int)):
+        raise _mal(origen, "el campo 'orden' debe ser entero o null")
 
     comando, texto_fuera, ataque = _comando_especial(datos, origen)
 
@@ -408,6 +480,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         texto_especial_fuera=texto_fuera,
         ataque_especial=ataque,
         eventos=eventos,
+        orden=orden,
     )
     _chequea_referencias(av, tiendas_raw, origen)
     return av
@@ -426,13 +499,17 @@ def cargar_todas(raiz: Any | None = None) -> None:
     """Descubre y registra todos los `*.json` del paquete de aventuras.
 
     `raiz` permite apuntar a otro directorio (los tests); por defecto es
-    `aldamar.aventuras`. El orden de registro es alfabético, para que
-    sea estable.
+    `aldamar.aventuras`. El orden de registro —el del menú— lo fija el
+    campo opcional `orden` (menor primero, y antes que quien no lo
+    declara); a igualdad, alfabético por nombre de archivo.
     """
     if raiz is None:
         raiz = resources.files("aldamar.aventuras")
-    for entrada in sorted(raiz.iterdir(), key=lambda e: e.name):
+    cargadas = []
+    for entrada in raiz.iterdir():
         if not entrada.name.endswith(".json"):
             continue
         av = cargar_aventura(entrada.read_text(encoding="utf-8"), f"aventuras/{entrada.name}")
+        cargadas.append((av.orden if av.orden is not None else float("inf"), entrada.name, av))
+    for _orden, _nombre, av in sorted(cargadas, key=lambda t: (t[0], t[1])):
         registrar(av)

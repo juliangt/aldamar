@@ -426,7 +426,7 @@ class Juego:
         for k in j.inventario:
             i = self.av.items[k]
             if i["tipo"] == "reliquia":
-                self.aviso("  el Corazón de Ceniza  ·  cuelga de tu cuello, caliente como una brasa")
+                self.aviso(f"  {i['nombre']}  ·  {i.get('desc', '')}")
                 continue
             extra = ""
             if i["tipo"] == "arma":
