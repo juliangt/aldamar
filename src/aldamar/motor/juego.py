@@ -31,12 +31,15 @@ from ..contenido.personajes import (
 )
 from ..contenido.rasgos import RASGOS
 from ..interfaz.menu import ARCHIVO_PARTIDA, ayuda, menu_principal
+from ..interfaz import audio as modulo_audio
+from ..interfaz import opciones, presentacion
 from ..interfaz.opciones import (
     LIMPIAR,
     _es_interactivo,
     elegir_opcion,
     pantalla_completa,
 )
+from . import configuracion
 from . import guardado
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from . import legado as modulo_legado
@@ -76,6 +79,7 @@ class Juego:
         flechas: bool | None = None,
         nombre: str | None = None,
         legado: dict | None = None,
+        audio: bool = True,
     ) -> None:
         self.av = aventura
         self.dificultad = dificultad or obtener_dificultad()
@@ -84,6 +88,7 @@ class Juego:
         self.entrada = entrada
         self.salida = salida
         self.flechas = flechas  # None = autodetectar; False = siempre tipear
+        self.audio = audio  # el jingle del cierre; la presentación decide el suyo
         if color is None:
             color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         self.color = color
@@ -392,6 +397,10 @@ class Juego:
         """
         if self._usa_flechas():
             self.salida(LIMPIAR)  # el cierre se ve solo, fuera del relato
+        if self.audio:
+            # el mismo jingle de la presentación (issue 34): la despedida
+            # suena, victoria o desgracia
+            modulo_audio.reproducir(entrada=self.entrada, salida=self.salida)
         lineas = self._texto_cierre().splitlines()
         for linea in lineas[:3]:
             self.epico(linea)  # el remate, en grande
@@ -1355,6 +1364,7 @@ class Juego:
         salida=print,
         color: bool | None = None,
         flechas: bool | None = None,
+        audio: bool = True,
     ) -> "Juego":
         """Construye una partida a partir de un archivo de guardado."""
         estado = guardado.cargar(ruta)
@@ -1367,6 +1377,7 @@ class Juego:
             salida=salida,
             color=color,
             flechas=flechas,
+            audio=audio,
         )
         juego._aplicar_estado(estado, ruta)
         return juego
@@ -1413,6 +1424,12 @@ def main(
         "--sin-flechas", action="store_true", help="menús respondiendo a texto, sin flechas del teclado"
     )
     parser.add_argument(
+        "--sin-audio", action="store_true", help="sin jingle en la presentación y en el cierre"
+    )
+    parser.add_argument(
+        "--sin-splash", action="store_true", help="sin pantalla de presentación: directo al menú"
+    )
+    parser.add_argument(
         "--cargar", nargs="?", const=ARCHIVO_PARTIDA, metavar="ARCHIVO", help="cargar una partida guardada"
     )
     parser.add_argument(
@@ -1443,8 +1460,26 @@ def main(
     )
     parser.add_argument("--version", action="version", version=f"aldamar {__version__}")
     args = parser.parse_args(argv)
-    color = False if args.sin_color else None
-    flechas = False if args.sin_flechas else None
+    # Las preferencias (issue 34): el archivo configuracion.json trae lo
+    # suyo, y sobre él mandan la variable de entorno y el flag de CLI.
+    config = configuracion.cargar()
+    if opciones._es_interactivo(entrada, salida):
+        # solo una sesión de verdad estrena el archivo: ni tests ni
+        # tuberías dejan un configuracion.json nuevo a su paso
+        try:
+            configuracion.asegurar()
+        except OSError:
+            pass  # un archivo que no nace no impide jugar
+    if args.debug:
+        debug = True
+    elif "ALDAMAR_DEBUG" in os.environ:
+        debug = os.environ["ALDAMAR_DEBUG"] not in ("", "0")
+    else:
+        debug = config.debug
+    audio = config.audio and not args.sin_audio
+    color = False if (args.sin_color or not config.color) else None
+    flechas = False if (args.sin_flechas or not config.flechas) else None
+    semilla = args.semilla if args.semilla is not None else config.semilla
     color_menu = bool(color) if color is not None else hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     ruta_legado = legado_ruta or args.legado or modulo_legado.ARCHIVO_LEGADO
     ruta_stats = args.stats
@@ -1455,9 +1490,20 @@ def main(
     # El lanzador (uv y compañía) cuenta su build en pantalla antes de que
     # el juego empiece, y el informe queda mezclado con el relato. Salvo
     # en modo debug, arrancamos limpios; en tuberías y tests, sin códigos.
-    debug = args.debug or os.environ.get("ALDAMAR_DEBUG", "") not in ("", "0")
-    if not debug and _es_interactivo(entrada, salida):
+    interactivo = _es_interactivo(entrada, salida)
+    if not debug and interactivo:
         salida(LIMPIAR)
+
+    # La presentación (issue 34): sello, jingle y una tecla. Solo en
+    # sesiones de verdad y cuando el arranque pasa por el menú; los
+    # atajos (--cargar, aventura y dificultad por CLI) van directos.
+    presenta = (
+        interactivo
+        and config.splash
+        and not args.sin_splash
+        and not args.cargar
+        and not (args.aventura and args.dificultad)
+    )
 
     def _partida_del_menu() -> Juego | None:
         """La partida que nace del menú principal; None si no se juega."""
@@ -1476,35 +1522,42 @@ def main(
         if eleccion.accion == "cargar":
             return Juego.desde_archivo(
                 eleccion.archivo or ARCHIVO_PARTIDA,
-                semilla=args.semilla,
+                semilla=semilla,
                 entrada=entrada,
                 salida=salida,
                 color=color,
                 flechas=flechas,
+                audio=audio,
             )
         return Juego(
             aventura=eleccion.aventura,
             dificultad=eleccion.dificultad,
             personaje=eleccion.personaje,
-            semilla=args.semilla,
+            semilla=semilla,
             entrada=entrada,
             salida=salida,
             color=color,
             flechas=flechas,
             legado=datos_legado,
+            audio=audio,
         )
 
     # Bucle de sesión: menú → partida → pantalla de cierre → menú…
     # el proceso vive hasta que el jugador elige salir de verdad.
     try:
+        if presenta:
+            presentacion.presentar(
+                entrada=entrada, salida=salida, color=color_menu, sonar=audio
+            )
         if args.cargar:
             juego = Juego.desde_archivo(
                 args.cargar,
-                semilla=args.semilla,
+                semilla=semilla,
                 entrada=entrada,
                 salida=salida,
                 color=color,
                 flechas=flechas,
+                audio=audio,
             )
         elif args.aventura and args.dificultad:
             # todo definido por CLI: ni menú
@@ -1512,12 +1565,13 @@ def main(
                 aventura=obtener_aventura(args.aventura),
                 dificultad=obtener_dificultad(args.dificultad),
                 personaje=args.personaje,
-                semilla=args.semilla,
+                semilla=semilla,
                 entrada=entrada,
                 salida=salida,
                 color=color,
                 flechas=flechas,
                 legado=datos_legado,
+                audio=audio,
             )
         else:
             juego = _partida_del_menu()
@@ -1539,12 +1593,13 @@ def main(
                     dificultad=juego.dificultad,
                     personaje=juego.personaje,
                     nombre=juego.jugador.nombre,
-                    semilla=args.semilla,
+                    semilla=semilla,
                     entrada=entrada,
                     salida=salida,
                     color=color,
                     flechas=flechas,
                     legado=datos_legado,
+                    audio=audio,
                 )
             elif eleccion == "menu":
                 juego = _partida_del_menu()
