@@ -189,7 +189,9 @@ def test_cargar_un_guardado_viejo_migra_sin_perder_el_equipo(tmp_path):
     juego.jugador.inventario += ["espada_corta", "capa_gris"]
     juego.ciclo()
     estado = json.loads((tmp_path / "vieja.json").read_text(encoding="utf-8"))
-    for campo in ("experiencia", "nivel", "equipado"):
+    # un guardado de antes del versionado tampoco trae campo 'version':
+    # guardado.preparar lo trata como esquema 0 y lo migra a la actual
+    for campo in ("experiencia", "nivel", "equipado", "version"):
         del estado[campo]
     (tmp_path / "vieja.json").write_text(json.dumps(estado, ensure_ascii=False), encoding="utf-8")
 

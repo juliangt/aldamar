@@ -16,9 +16,11 @@ import random
 import sys
 
 from . import __version__, aventuras  # noqa: F401  (aventuras: registra el contenido)
+from . import guardado
 from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from . import legado as modulo_legado
+from .guardado import PartidaInvalida
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
 from .opciones import (
@@ -1225,7 +1227,10 @@ class Juego:
     # ── guardar / cargar ─────────────────────────────────────────────
     def _guardar(self, arg: str = "") -> None:
         ruta = arg.strip() or ARCHIVO_PARTIDA
+        # la primera clave es la versión del esquema: guardado.py la lee
+        # al cargar y sabe migrar (o rechazar con nombre y apellido)
         estado = {
+            "version": guardado.VERSION,
             "aventura": self.av.id,
             "dificultad": self.dificultad.clave,
             "personaje": self.personaje,
@@ -1267,15 +1272,14 @@ class Juego:
         j.vida = estado["vida"]
         j.monedas = estado["monedas"]
         j.corrupcion = estado["corrupcion"]
-        # guardados de antes del issue 17: nivel 1, sin XP y con lo mejor
-        # del inventario puesto — la migración es no tocar nada de esto
-        j.experiencia = estado.get("experiencia", 0)
-        j.nivel = estado.get("nivel", 1)
+        # el estado ya pasó por guardado.preparar: viene en el esquema
+        # actual (la migración 0→1 deja `equipado` en None)
+        j.experiencia = estado["experiencia"]
+        j.nivel = estado["nivel"]
         j.inventario = list(estado["inventario"])
-        j.equipado = {
-            t: k for t, k in (estado.get("equipado") or {}).items() if k in j.inventario
-        }
-        if "equipado" not in estado:
+        puesto = estado["equipado"]
+        j.equipado = {t: k for t, k in (puesto or {}).items() if k in j.inventario}
+        if puesto is None:  # «vestía siempre lo mejor del inventario»
             self._autoequipar()
         j.companeros = []
         for c in estado["companeros"]:
@@ -1284,17 +1288,18 @@ class Juego:
         self.lugar = estado["lugar"]
         self.lugar_previo = estado["lugar_previo"]
         self.flags = dict(estado["flags"])
-        # guardados viejos pueden traer menos lugares: los faltantes
-        # recuperan sus enemigos originales
+        # un guardado de una edición anterior del juego puede traer menos
+        # lugares que la aventura de hoy: los faltantes recuperan sus
+        # enemigos originales (esto es evolución del contenido, no del
+        # esquema, y por eso no lo lleva la migración)
         guardados = {k: list(v) for k, v in estado["enemigos"].items()}
         self.enemigos = {
             lid: guardados.get(lid, list(l.enemigos)) for lid, l in self.av.lugares.items()
         }
         self.tomados = {tuple(t.split("|", 1)) for t in estado["tomados"]}
         self.monedas_tomadas = set(estado["monedas_tomadas"])
-        # guardados de antes de la pantalla de cierre: la huella empieza aquí
-        self.derrotados = list(estado.get("derrotados", []))
-        self.visitados = list(estado.get("visitados") or [self.lugar])
+        self.derrotados = list(estado["derrotados"])
+        self.visitados = list(estado["visitados"]) or [self.lugar]
         self.epilogo = None
         self.fin = False
         self.final = estado.get("final")
@@ -1304,10 +1309,9 @@ class Juego:
     def _cargar(self, arg: str = "") -> None:
         ruta = arg.strip() or ARCHIVO_PARTIDA
         try:
-            with open(ruta, encoding="utf-8") as f:
-                estado = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
-            self.peligro(f"No se pudo cargar {ruta}: {e}")
+            estado = guardado.cargar(ruta)
+        except PartidaInvalida as e:
+            self.peligro(str(e))
             return
         self._aplicar_estado(estado, ruta)
 
@@ -1323,8 +1327,7 @@ class Juego:
         flechas: bool | None = None,
     ) -> "Juego":
         """Construye una partida a partir de un archivo de guardado."""
-        with open(ruta, encoding="utf-8") as f:
-            estado = json.load(f)
+        estado = guardado.cargar(ruta)
         juego = cls(
             aventura=obtener_aventura(estado.get("aventura")),
             dificultad=obtener_dificultad(estado.get("dificultad")),
@@ -1503,6 +1506,8 @@ def main(
                 juego = None
     except KeyboardInterrupt:
         salida("\nEl viso cae sobre Aldamar. Partida suspendida.")
+    except PartidaInvalida as e:
+        salida(str(e))
     except (OSError, json.JSONDecodeError) as e:
         salida(f"No se pudo abrir la partida: {e}")
     except KeyError as e:
