@@ -48,6 +48,7 @@ Atajos para saltar el menú:
 uv run aldamar --semilla 7 --sin-color
 uv run aldamar --aventura corazon_ceniza --dificultad ceniza
 uv run aldamar --sin-flechas      # menús respondiendo a texto
+uv run aldamar --stats            # al terminar, escribe estadisticas.json
 uv run python -m aldamar          # también funciona sin instalar
 ```
 

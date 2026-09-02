@@ -20,6 +20,7 @@ from . import guardado
 from .aventura import AVENTURAS, Aventura, obtener_aventura
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from . import legado as modulo_legado
+from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
 from .guardado import PartidaInvalida
 from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from .mundo import Lugar, normaliza
@@ -110,6 +111,8 @@ class Juego:
         self.final: str | None = None
         self.en_combate = False
         self.reanudada = False
+        # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
+        self.stats = Estadisticas()
 
     # ── salida con color ─────────────────────────────────────────────
     def _c(self, texto: str, *codigos: str) -> str:
@@ -768,6 +771,7 @@ class Juego:
                 self.monedas_tomadas.add(l.id)
                 ganancia = round(l.monedas * self.dificultad.monedas)
                 self.jugador.monedas += ganancia
+                self.stats.recoge(ganancia)
                 self.exito(f"Recoges {ganancia} monedas de plata.")
             if not restantes and not hay_monedas:
                 self.tenue("No hay nada que tomar aquí.")
@@ -813,6 +817,7 @@ class Juego:
             return
         self.jugador.monedas -= precio
         self.adquirir(clave)
+        self.stats.gasta(precio, clave)
         self.exito(f"Compras {self.av.items[clave]['nombre']} por {precio} monedas.")
 
     def _usar(self, arg: str) -> None:
@@ -955,10 +960,12 @@ class Juego:
         self.peligro(f"\n¡{enemigo.nombre} se abalanza!")
         # los estados alterados viven lo que vive el combate
         self._limpiar_estados(enemigo)
+        self.stats.empieza_combate(self.lugar, enemigo.clave, enemigo.nombre)
         usos: dict[int, int] = {}  # cuántas veces usó cada habilidad
         try:
             while not self.fin:
                 accion = self._turno_jugador(enemigo)
+                self.stats.cuenta_turno()
                 if accion == "huida":
                     return "huida"
                 if accion == "cuerno":
@@ -1055,6 +1062,7 @@ class Juego:
             return False
         j.veneno_turnos -= 1
         j.vida = max(0, j.vida - j.veneno_dano)
+        self.stats.golpe_recibido(j.veneno_dano)
         self.peligro(f"El veneno arde: −{j.veneno_dano} ({j.vida}/{j.vida_max}).")
         if j.veneno_turnos <= 0:
             j.veneno_dano = j.veneno_turnos = 0
@@ -1072,6 +1080,7 @@ class Juego:
         objetivo = self._objetivo()
         dano = self.rng.randint(max(1, enemigo.ataque), enemigo.ataque + 3) + extra
         efectivo = self._recibe(objetivo, dano)
+        self.stats.golpe_recibido(efectivo)
         if texto:
             linea = texto.format(efectivo=efectivo)
         elif isinstance(objetivo, Companero):
@@ -1118,6 +1127,7 @@ class Juego:
 
             if cmd == "atacar":
                 efectivo = self._golpea(self.jugador, enemigo)
+                self.stats.golpe_infligido(efectivo)
                 self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
             elif cmd == "usar":
                 clave = self._buscar_item(arg, self.jugador.inventario)
@@ -1131,7 +1141,11 @@ class Juego:
                     self.tenue("Eso no se puede usar en combate.")
                     continue
             elif especial and cmd == especial and self.av.ataque_especial:
+                # el daño del especial ocurre dentro del evento: se mide
+                # por la vida que pierde el enemigo en la llamada
+                antes = enemigo.vida
                 self.av.ataque_especial(self, enemigo)
+                self.stats.golpe_infligido(antes - enemigo.vida)
                 if self.fin:
                     return "seguir"
             elif cmd == "cuerno":
@@ -1171,6 +1185,7 @@ class Juego:
             for c in self.jugador.companeras_vivas():
                 dano = self.rng.randint(c.ataque, c.ataque + 2)
                 efectivo = enemigo.recibir(dano)
+                self.stats.golpe_infligido(efectivo)
                 self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
                 if not enemigo.vivo:
                     break
@@ -1188,6 +1203,7 @@ class Juego:
             clave = pendientes[0]
             enemigo = self.crear_enemigo(clave)
             resultado = self._duelo(enemigo)
+            self.stats.cierra_combate(resultado)
             if self.fin:
                 break
             if resultado == "victoria":
@@ -1403,12 +1419,21 @@ def main(
         metavar="ARCHIVO",
         help=f"archivo de legado de la serie ({modulo_legado.ARCHIVO_LEGADO} por defecto)",
     )
+    parser.add_argument(
+        "--stats",
+        nargs="?",
+        const=ARCHIVO_ESTADISTICAS,
+        default=None,
+        metavar="ARCHIVO",
+        help=f"escribir estadísticas de la partida al terminar ({ARCHIVO_ESTADISTICAS} por defecto)",
+    )
     parser.add_argument("--version", action="version", version=f"aldamar {__version__}")
     args = parser.parse_args(argv)
     color = False if args.sin_color else None
     flechas = False if args.sin_flechas else None
     color_menu = bool(color) if color is not None else hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     ruta_legado = legado_ruta or args.legado or modulo_legado.ARCHIVO_LEGADO
+    ruta_stats = args.stats
     # lo que la serie recuerda de partidas anteriores (issue 19); si el
     # archivo falta o está roto, se juega igual, solo que sin memoria
     datos_legado = modulo_legado.leer(ruta_legado)
@@ -1484,6 +1509,13 @@ def main(
             juego = _partida_del_menu()
         while juego is not None:
             eleccion = juego.ciclo()
+            if ruta_stats:
+                # la sesión deja sus números antes de decidir «¿y ahora qué?»
+                try:
+                    juego.stats.escribir(juego, ruta_stats)
+                    salida(f"Estadísticas de la partida en {ruta_stats}.")
+                except OSError as e:
+                    salida(f"No se pudieron escribir las estadísticas: {e}")
             _escribir_legado(juego, ruta_legado, salida)
             if eleccion == "otra":
                 # nueva partida al instante: misma aventura, héroe y
