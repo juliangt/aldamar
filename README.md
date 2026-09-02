@@ -29,8 +29,14 @@ comprar, luchar… — y `ayuda` se abre a pantalla completa; **Esc** la
 cierra y devuelve la vista anterior. Las gestiones (estado,
 inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
 acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
-un comando…» abre el modo tipeado de siempre. Al elegir cualquier
-opción la pantalla se limpia: el contenido nuevo se ve solo.
+un comando…» abre el modo tipeado de siempre. La partida se lee como
+un relato continuo: cada resultado se escribe debajo de lo que ya
+estabas leyendo —también el aviso del turno anterior en pleno
+combate—, los menús se dibujan en ese mismo flujo sin que pierdas de
+vista lo de antes, y al elegir el bloque del menú se borra y queda
+escrita la decisión («› Tomar todo»). Viajar marca el cambio de
+escena con una raya. La ayuda, el prólogo y la pantalla de cierre
+conservan la pantalla entera para sí.
 
 También el arranque: si `uv` (o el lanzador de turno) contó su build
 en pantalla —«Building aldamar…», «Installed N packages…»—, el juego

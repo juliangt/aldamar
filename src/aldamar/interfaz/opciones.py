@@ -143,6 +143,18 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 
 # ── render ───────────────────────────────────────────────────────────────
 
+def _desdibuja(dibujadas: int, salida) -> None:
+    """Borra el bloque del menú entero, título incluido, sin tocar el relato.
+
+    El cursor queda en la fila donde estaba la primera opción: lo que se
+    escriba a continuación fluye justo debajo de donde estaba el menú.
+    Solo vale si el bloque cabe en la pantalla; si el título pudo
+    haberse salido por arriba, no hay forma segura de subir a borrar.
+    """
+    salida(f"\x1b[{dibujadas + 1}A")  # a la primera línea del bloque (el salto del print lo compensa)
+    salida("\x1b[1A\x1b[J")  # al título; borrar desde ahí hasta el fin de la pantalla
+
+
 def _renglones_desc(desc: str, ancho: int) -> list[str]:
     """Reengloniza una descripción extensa al ancho de la terminal."""
     ancho = max(1, ancho)
@@ -186,11 +198,26 @@ def _elegir_con_flechas(
     salida,
     color: bool,
     aviso_esc: str | None = None,
+    relato: bool = False,
 ) -> str | None:
     sel = 0
     aviso: str | None = None
     salida(_c(f"\n{titulo}", color, TITULO))
     dibujadas = 0  # líneas del bloque; el cursor queda justo debajo
+
+    def cerrar(etiqueta: str | None = None) -> None:
+        """Salir del menú. En modo relato se borra el propio bloque —título
+        incluido— y donde estaba el título queda escrita la decisión; si
+        el bloque no cabe en pantalla (el título pudo salirse por arriba)
+        o el modo no es relato, pantalla nueva como de toda la vida."""
+        cabe = dibujadas + 1 <= shutil.get_terminal_size().lines
+        if not (relato and cabe):
+            salida(LIMPIAR)
+            return
+        _desdibuja(dibujadas, salida)
+        if etiqueta is not None:
+            salida(f"\x1b[1A{_c(f'› {etiqueta}', color, DIM)}")
+
     try:
         with _modo_crudo():
             while True:
@@ -215,14 +242,14 @@ def _elegir_con_flechas(
                 elif tecla in FLECHA_ARRIBA:
                     sel = (sel - 1) % len(opciones)
                 elif tecla in ("\r", "\n"):
-                    salida(LIMPIAR)  # al avanzar, el contenido nuevo se ve solo
+                    cerrar(opciones[sel][1])
                     return opciones[sel][0]
                 elif tecla.isdigit() and tecla != "0" and int(tecla) <= len(opciones):
-                    salida(LIMPIAR)
+                    cerrar(opciones[int(tecla) - 1][1])
                     return opciones[int(tecla) - 1][0]
                 elif tecla in ("\x1b", "q", "Q", "\x04"):  # Esc, q o Ctrl-D: volver
                     if aviso_esc is None:
-                        salida(LIMPIAR)  # la pantalla queda limpia al volver, como al elegir
+                        cerrar()  # volver: sin decisión, sin rastro del menú
                         return None
                     # no hay a dónde volver: el menú se queda, el aviso queda
                     # dicho y nada se vuelve a imprimir (el bloque no se apila)
@@ -272,6 +299,7 @@ def elegir_opcion(
     color: bool = False,
     flechas: bool | None = None,
     aviso_esc: str | None = None,
+    relato: bool = False,
 ) -> str | None:
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
@@ -279,7 +307,10 @@ def elegir_opcion(
     debajo de su opción). Con teclado real (o `flechas=True`) navega con
     ↑/↓ y Enter; los dígitos eligen al vuelo y Esc vuelve (None). Al
     salir, por cualquier vía —elegir o volver—, la pantalla se limpia:
-    lo que se pinte después se ve solo.
+    lo que se pinte después se ve solo. Con `relato=True`, en cambio,
+    el menú vive dentro del relato: al salir solo se borra su propio
+    bloque —título incluido— y lo que se pinte después continúa debajo
+    de lo que ya se estaba leyendo (issue 36).
     Con `aviso_esc`, Esc no saca del menú: el aviso queda escrito bajo
     las opciones y se sigue eligiendo. En modo tipeado acepta número o
     nombre. Sin opciones, devuelve None.
@@ -287,5 +318,5 @@ def elegir_opcion(
     if not opciones:
         return None
     if flechas or (flechas is None and _es_interactivo(entrada, salida)):
-        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc)
+        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc, relato)
     return _elegir_tipeando(titulo, opciones, entrada, salida, color)

@@ -317,7 +317,6 @@ class Juego:
         cierre: "otra" (repetir), "menu" (otra aventura) o None (salir;
         también si se dejó a medias con «salir»)."""
         if self.reanudada:
-            self._cabecera()
             self._mirar()
             self.tenue("(Partida recuperada.) " + self._pista())
             self.reanudada = False
@@ -328,7 +327,6 @@ class Juego:
                 linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
             except EOFError:
                 linea = "salir"
-            self._cabecera()
             self._ejecutar(linea)
         if self.final:
             return self._cierre()
@@ -419,23 +417,12 @@ class Juego:
             aviso_esc="Elige a dónde ir: otra partida, el menú o salir.",
         )
 
-    def _cabecera(self) -> None:
-        """Dos líneas ancladas a la primera fila: el juego y tu estado.
-
-        Se pinta justo después de cada limpieza de pantalla —que es el
-        único momento en que se abre pantalla—, así que siempre está
-        arriba del todo y cuenta la situación fresca. Solo en modo
-        navegable: el modo tipeado es un relato, sin marco.
-        """
-        if not self._usa_flechas():
-            return
-        linea1 = self._c(f"Aldamar {__version__}", TITULO)
+    def _estado_linea(self) -> str:
+        """Quién, cómo y dónde: la línea tenue que abre cada menú (issue 36)."""
         j = self.jugador
-        linea2 = self._c(
-            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}",
-            DIM,
+        return (
+            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
         )
-        self.salida(f"\x1b[H{linea1}\n{linea2}")
 
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
@@ -462,7 +449,6 @@ class Juego:
         if self._usa_flechas():
             # el nombre también es "avanzar": la historia se ve sola
             self.salida(LIMPIAR)
-            self._cabecera()
         self.escribir("\n" + ficha.presentacion)
         self._mirar()
         self.tenue(self._pista())
@@ -492,11 +478,15 @@ class Juego:
         es el menú del juego (o de combate), y cada verbo —«Tomar…»,
         «Comprar…», «Otras acciones…»— apila su listado; Esc sube un
         nivel y en la raíz no lleva a ningún sitio: queda un aviso y se
-        sigue eligiendo. Sin teclado real, se lee una línea, como toda
-        la vida.
+        sigue eligiendo. Los menús viven dentro del relato (issue 36):
+        se dibujan debajo de lo leído y al elegir se borran solos, sin
+        llevarse por delante lo de antes; donde estaba el título queda
+        la decisión escrita. Sin teclado real, se lee una línea, como
+        toda la vida.
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
+        self.tenue(self._estado_linea())  # el estado, encima de cada menú de raíz
         pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
             (titulo, opciones, aviso_esc)
         ]
@@ -510,12 +500,12 @@ class Juego:
                 color=self.color,
                 flechas=True,
                 aviso_esc=aviso_esc,
+                relato=True,
             )
             if clave is None:  # Esc: subir un nivel; en la raíz, de vuelta al juego
                 pila.pop()
                 if not pila:
                     return ""
-                self._cabecera()  # la limpieza de la vuelta se lleva el ancla
                 continue
             if clave == ESCRIBIR:
                 return self.entrada(prompt).strip()
@@ -937,6 +927,7 @@ class Juego:
     def _entrar(self, destino: Lugar) -> None:
         if destino.id not in self.visitados:
             self.visitados.append(destino.id)
+        self.tenue("\n" + "─" * 40)  # cambia la escena: el viaje se marca en el relato
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
         eventos = [self.av.eventos[c] for c in destino.eventos if c in self.av.eventos]
@@ -1131,7 +1122,7 @@ class Juego:
         while True:
             try:
                 linea = self._leer_orden(
-                    f"¡{enemigo.nombre}! ¿Qué haces?",
+                    f"¡{enemigo.nombre} ({enemigo.vida}/{enemigo.vida_max})! ¿Qué haces?",
                     self._c("combate> ", DIM),
                     self._opciones_combate(enemigo),
                     aviso_esc="En combate no hay vuelta atrás: lucha, usa algo o huye.",
@@ -1146,7 +1137,6 @@ class Juego:
             arg = partes[1] if len(partes) > 1 else ""
             if not cmd:
                 continue  # Esc en el menú: se espera otra orden
-            self._cabecera()  # la elección limpió la pantalla: arriba, lo nuevo
 
             if cmd == "atacar":
                 efectivo = self._golpea(self.jugador, enemigo)

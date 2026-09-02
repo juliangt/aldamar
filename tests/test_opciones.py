@@ -31,6 +31,16 @@ class Terminal:
         self.fila = 0
 
     def escribe(self, texto: str) -> None:
+        if texto == "\x1b[1A\x1b[J":  # borrar desde la fila de arriba hasta el final
+            self.fila = max(0, self.fila - 1)
+            for i in range(self.fila, len(self.filas)):
+                self.filas[i] = ""
+            self.fila += 1  # el salto del print devuelve el cursor a su fila
+            return
+        escritura = re.fullmatch(r"\x1b\[1A(.+)", texto)
+        if escritura:  # subir una fila y escribir en ella: la decisión del relato
+            self._poner(max(0, self.fila - 1), escritura.group(1))
+            return
         subida = re.fullmatch(r"\x1b\[(\d+)A", texto)
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
             self.fila = max(0, self.fila - (int(subida.group(1)) - 1))
@@ -180,6 +190,59 @@ def test_ctrl_d_vuelve_y_tambien_limpia(monkeypatch):
     _clave, salida = elegir_con_teclas(monkeypatch, ["\x04"])
     assert _clave is None
     assert "\x1b[2J\x1b[H" in salida
+
+
+# ── modo relato: el menú se borra, el relato queda (issue 36) ────────────
+
+def elegir_en_relato(monkeypatch, teclas, lista=OPCIONES, filas=24):
+    """Menú con `relato=True`: devuelve (clave, impresos, pantalla).
+
+    `impresos` son los prints tal cual salieron; `pantalla`, la terminal
+    emulada después de aplicarlos.
+    """
+    terminal = os.terminal_size((80, filas))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    pendientes = list(teclas)
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))
+    term = Terminal()
+    impresos: list[str] = []
+
+    def salida(texto: str) -> None:
+        impresos.append(texto)
+        term.escribe(texto)
+
+    clave = elegir_opcion(
+        "Prueba", lista, entrada=input, salida=salida, flechas=True, relato=True
+    )
+    return clave, impresos, term.texto()
+
+
+def test_en_relato_no_se_limpia_la_pantalla(monkeypatch):
+    clave, impresos, _pantalla = elegir_en_relato(monkeypatch, ["\r"])
+    assert clave == "a"
+    assert "\x1b[2J\x1b[H" not in "\n".join(impresos)  # el relato sigue donde estaba
+
+
+def test_en_relato_el_bloque_se_borra_entero(monkeypatch):
+    clave, _impresos, pantalla = elegir_en_relato(monkeypatch, ["\r"])
+    assert clave == "a"
+    assert "Prueba" not in pantalla  # el título también se borró
+    assert "❯" not in pantalla and "↑/↓" not in pantalla  # y el bloque con él
+
+
+def test_en_relato_volver_con_esc_no_deja_rastro_del_menu(monkeypatch):
+    clave, _impresos, pantalla = elegir_en_relato(monkeypatch, ["\x1b"])
+    assert clave is None
+    assert "Prueba" not in pantalla and "❯" not in pantalla
+
+
+def test_menu_mas_alto_que_la_pantalla_vuelve_a_limpiar(monkeypatch):
+    """Si el título pudo haberse salido por arriba, no hay forma segura
+    de subir a borrar: pantalla nueva, como de toda la vida."""
+    lista = [(c, f"Opción {c}", "") for c in "abcdefghijklmnopqrstu"]
+    clave, impresos, _pantalla = elegir_en_relato(monkeypatch, ["2"], lista=lista, filas=10)
+    assert clave == "b"
+    assert "\x1b[2J\x1b[H" in impresos
 
 
 def test_con_aviso_esc_se_queda_dentro_del_menu(monkeypatch):

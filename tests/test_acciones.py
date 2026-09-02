@@ -144,20 +144,38 @@ def test_tras_el_nombre_se_limpia_la_pantalla(monkeypatch):
     assert texto.index(AVENTURA.prologo[:15]) < texto.index("\x1b[2J\x1b[H") < texto.index(presentacion)
 
 
-def test_la_cabecera_abre_cada_pantalla(monkeypatch):
+def test_el_estado_abre_cada_menu_de_raiz(monkeypatch):
+    """La línea de estado (quién, cómo y dónde) va encima de cada menú
+    de raíz; sin anclas: el relato fluye hacia abajo (issue 36)."""
     juego, salida = juego_flechas(monkeypatch, ["\x1b", "3"], opciones=MENU_MINIMO)
     juego._prologo()
     juego.ciclo()
-    texto = "\n".join(salida)
+    j = juego.jugador
     lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
-    assert f"Aldamar {__version__}" in texto  # primera línea: juego y versión
-    i = salida.index("\x1b[2J\x1b[H")  # la limpieza abre pantalla...
-    anclada = salida[i + 1]
-    assert anclada.startswith("\x1b[H")  # ...y la cabecera queda en la primera fila
-    assert f"Aldamar {__version__}\n" in anclada
-    assert f"Vida {juego.jugador.vida}/{juego.jugador.vida_max}" in anclada
-    assert f"{juego.jugador.monedas} monedas" in anclada
-    assert lugar in anclada  # quién, cómo, cuánto y dónde
+    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
+    assert estado in salida  # la línea de estado, antes del menú
+    assert salida.count(estado) == 1  # una vez por turno, no en cada redibujado
+    assert not any(l.startswith("\x1b[H") for l in salida)  # nada se ancla arriba
+
+
+def test_la_decision_queda_escrita_en_el_relato(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
+    juego._prologo()
+    juego.ciclo()  # «3» elige Salir: la decisión queda y la despedida, debajo
+    assert "\x1b[1A› Salir" in salida  # donde estaba el título del menú
+    assert salida.index("\x1b[1A› Salir") < salida.index(
+        "Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto."
+    )
+
+
+def test_viajar_deja_una_raya_de_cambio_de_escena(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["2"], lineas=["", ""])
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego._prologo()
+    orden = juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    juego._ejecutar(orden)
+    assert juego.lugar != juego.av.lugar_inicial
+    assert "\n" + "─" * 40 in salida  # la escena nueva se separa de lo anterior
 
 
 def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
