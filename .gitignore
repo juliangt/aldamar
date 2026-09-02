@@ -217,10 +217,12 @@ __marimo__/
 #.zcode
 .zcode/ 
 
-#pindonga files 
+# pindonga files 
 pindonga/ 
 
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Partida guardada
 partida.json
