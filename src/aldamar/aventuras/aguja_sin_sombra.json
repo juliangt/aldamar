@@ -1,0 +1,633 @@
+{
+  "id": "aguja_sin_sombra",
+  "orden": 4,
+  "titulo": "La Aguja sin Sombra",
+  "descripcion": "Las Ascuas · III. Dos ascuas ahogadas y la Aguja Pálida sigue cantando: el humo vuelve a tejerse en Morvath. La saga entera, con más de un final.",
+  "prologo_base": "Dos ascuas cayeron del humo que el Monte Umbak escupió al mar, y dos\nse ahogaron: una en el agua limpia de Vegaverde, otra en la salmuera\nde la costa. Lo cuentan en las posadas, y lo firma Belthar el Errante.\n\nPero las ascuas no eran fragmentos: eran llamadas. La Aguja Pálida,\nla atalaya de Morvath sobre los Yermos, lleva un año cantando en\nsilencio, y el humo vuelve a tejerse en su cima. Belthar convoca a los\nque ya cortaron una ascua: los Yermos solo se cruzan bajo el estandarte\ndel consejo, y esta vez el consejo no llama a uno. Llama a quien venga.\n",
+  "texto_nombre": "¿Cómo te llamas, convocado de Aldamar? ({nombre}): ",
+  "lugar_inicial": "vegaverde",
+  "jugador_inicial": "renco",
+  "epilogos": {
+    "muerte": "Caes con la Aguja encima y el canto a medio oír. Aldamar entera\nte entierra con el nombre bien dicho: {quien} que vino cuando\nllamaron.\n\nLa Aguja sigue en pie. Los cuervos del este, que ya saben de esperas,\nvuelven a posarse en su cima.",
+    "caida": "La grieta se abre del todo en la escalera de la Aguja. Ya no subes\ntú: el canto te sube.\n\nEn la cima, el humo estrena un sitio a tu medida, y en Ríoclaro el\npuente estrena un guardián que no cobra peaje ni habla."
+  },
+  "personajes": {
+    "renco": {
+      "nombre": "Renco del Vado",
+      "titulo": "guardián del puente de Ríoclaro",
+      "presentacion": "Dejas el peaje a cargo del aprendiz y coges la lanza de servicio.\nCuando la marea gris subió el río, nadie defendió el puente; esta vez\nel consejo llama y el puente contesta.\nRasgo · Lengua de mercado: pagas 1 moneda menos en cada compra.",
+      "vida": 50,
+      "ataque": 4,
+      "monedas": 10,
+      "inventario": [
+        "lanza"
+      ],
+      "rasgos": [
+        "lengua_mercado"
+      ],
+      "prologo_extra": "Guardas el puente de Ríoclaro desde los quince años y has visto\ncruzar todo lo que cruza: caravanas de tomillas, novios, soldados y,\nuna luna gris, una marea que subía con la sal mal de la costa.\n\nBelthar escribe que la Aguja canta y que llama a quien venga. El\nconsejo manda estandarte; tú mandas peaje cobrado. Vienes.\n",
+      "texto_nombre": "¿Cómo te llamas, guardián? ({nombre}): ",
+      "trato": "guardián",
+      "quien": "el guardián"
+    },
+    "vela": {
+      "nombre": "Vela Farolera",
+      "titulo": "farolera sylva del Bosque Umbrío",
+      "presentacion": "Cuelgas tu farol del ramo más alto para que el bosque sepa dónde\nestás, y tomas el arco corto. La Aguja canta; los del bosque afinamos.\nRasgo · Ojo de halcón: +1 de daño mientras la bestia conserve más\nde la mitad de su vida.",
+      "vida": 38,
+      "ataque": 4,
+      "monedas": 12,
+      "inventario": [
+        "hoja_clara"
+      ],
+      "rasgos": [
+        "ojo_halcon"
+      ],
+      "prologo_extra": "Los faroles de musgo del Bosque Umbrío se apagan desde la luna en\nque la Aguja empezó a cantar: la ceniza aprendió a imitar su luz y\nlos espectros rondan la orilla norte. La señales del bosque piden\nquien mire lejos y no se equivoque.\n\nLa carta de Belthar llegó con una pluma verde que el bosque debía.\nFuiste, porque el bosque no pide dos veces.\n",
+      "texto_nombre": "¿Cómo te llamas, farolera? ({nombre}): ",
+      "trato": "farolera",
+      "quien": "la farolera"
+    },
+    "bram": {
+      "nombre": "Bram Hachagris",
+      "titulo": "goran de las Profundidades de Barrok",
+      "presentacion": "Bajas de las galerías azules con la maza al hombro y las honras a\ncuestas: tu clan manda una mano y la tuya es la que llega.\nRasgo · Piel de piedra: cada golpe te quita un punto menos de vida.",
+      "vida": 58,
+      "ataque": 3,
+      "monedas": 8,
+      "inventario": [
+        "maza_goran"
+      ],
+      "rasgos": [
+        "piel_piedra"
+      ],
+      "prologo_extra": "Sobrino de Torkan Hachagris, última mano de la fragua de Barrok,\ncreiste oyendo que el acero se templa dos veces: en el fuego y en el\ncamino. La Aguja cantó y la fragua se quedó en silencio un latido\nentero.\n\nLos clanes no olvidan que el consejo les devolvió las minas. Bram\nHachagris baja a pagar la parte que toca: con golpes.\n",
+      "texto_nombre": "¿Cómo te llamas, hijo de Barrok? ({nombre}): ",
+      "trato": "herrerillo",
+      "quien": "el herrerillo"
+    }
+  },
+  "items": {
+    "estandarte": {
+      "nombre": "estandarte del consejo",
+      "tipo": "clave",
+      "precio": null,
+      "desc": "El Sol Levantado bordado en hilo de oro, cosido otra vez con hilo\nnuevo. Los Yermos solo se cruzan bajo su sombra: la ceniza lo recuerda."
+    },
+    "campanilla": {
+      "nombre": "la campanilla de Belthar",
+      "tipo": "clave",
+      "precio": null,
+      "desc": "Bronce chico de la Torre de Belthar: un solo toque y los ecos de la\nAguja se callan para quien la lleva. Sin ella, la escalera no se sube."
+    },
+    "lanza": {
+      "nombre": "lanza de servicio",
+      "tipo": "arma",
+      "bonus": 1,
+      "precio": 8,
+      "desc": "La del peaje de Ríoclaro, con muescas de contar viajeros. Y de lo\ndemás."
+    },
+    "hoja_clara": {
+      "nombre": "hoja clara",
+      "tipo": "arma",
+      "bonus": 3,
+      "precio": 25,
+      "desc": "Filo sylva claro como agua de deshielo: corta lo que imita y lo que\nes."
+    },
+    "maza_goran": {
+      "nombre": "maza goran",
+      "tipo": "arma",
+      "bonus": 4,
+      "precio": 40,
+      "desc": "Pesa como un veredicto y firma como un martillo de clausura."
+    },
+    "capa_gris": {
+      "nombre": "capa gris",
+      "tipo": "armadura",
+      "bonus": 1,
+      "precio": 18,
+      "desc": "Lana de tolvanera: abriga, desvía golpes y no se mancha de ceniza."
+    },
+    "coraza_barrok": {
+      "nombre": "coraza de Barrok",
+      "tipo": "armadura",
+      "bonus": 2,
+      "precio": 35,
+      "desc": "Placas azules de las galerías profundas: la piedra que aprendió a\nacompañar."
+    },
+    "hogaza": {
+      "nombre": "hogaza de Oldo",
+      "tipo": "consumible",
+      "curacion": 12,
+      "precio": 6,
+      "desc": "Pan de masa madre de Vegaverde: el viaje entero huele mejor con una."
+    },
+    "jerba": {
+      "nombre": "jerba de los faroles",
+      "tipo": "consumible",
+      "curacion": 10,
+      "precio": 5,
+      "desc": "Hoja de sanjuanera torcida en ramillete: amarga sana."
+    },
+    "vino_hondo": {
+      "nombre": "vino hondo de Barrok",
+      "tipo": "consumible",
+      "curacion": 15,
+      "precio": 9,
+      "desc": "Se bebe en un trago y se recuerda en tres días. Levanta mineros y\nlo que venga a ser mineros."
+    }
+  },
+  "enemigos": {
+    "sombra": {
+      "nombre": "sombra cosida",
+      "vida": 12,
+      "ataque": 4
+    },
+    "mirlo": {
+      "nombre": "mirlo de ceniza",
+      "vida": 14,
+      "ataque": 4
+    },
+    "espectro": {
+      "nombre": "espectro de ceniza",
+      "vida": 16,
+      "ataque": 5
+    },
+    "trasgo": {
+      "nombre": "trasgo de las cavernas",
+      "vida": 15,
+      "ataque": 5
+    },
+    "lobero": {
+      "nombre": "lóbero de ceniza",
+      "vida": 18,
+      "ataque": 6
+    },
+    "capitan_ceniza": {
+      "nombre": "el Capitán de Ceniza",
+      "vida": 20,
+      "ataque": 5,
+      "defensa": 0,
+      "sin_huida": false
+    },
+    "capitan": {
+      "nombre": "el Capitán de Ceniza",
+      "vida": 24,
+      "ataque": 7,
+      "defensa": 1,
+      "sin_huida": false
+    },
+    "capitan_rehecho": {
+      "nombre": "el Capitán de Ceniza, rehecho",
+      "vida": 28,
+      "ataque": 8,
+      "defensa": 1,
+      "sin_huida": true
+    },
+    "eco_voz": {
+      "nombre": "la Voz de la Aguja",
+      "vida": 24,
+      "ataque": 7,
+      "defensa": 0,
+      "sin_huida": true
+    },
+    "morvath": {
+      "nombre": "Morvath, tejido de humo",
+      "vida": 36,
+      "ataque": 9,
+      "defensa": 1,
+      "sin_huida": true
+    }
+  },
+  "reclutas": {
+    "enebro": {
+      "nombre": "Enebro Panverde",
+      "vida": 22,
+      "ataque": 4,
+      "defensa": 0
+    },
+    "tilo": {
+      "nombre": "Tilo Panverde",
+      "vida": 20,
+      "ataque": 4,
+      "defensa": 0
+    },
+    "maruxa": {
+      "nombre": "Maruxa la Salinera",
+      "vida": 22,
+      "ataque": 4,
+      "defensa": 0
+    }
+  },
+  "tiendas": {
+    "rioclaro": [
+      "hogaza",
+      "jerba",
+      "capa_gris",
+      "lanza"
+    ],
+    "barrok": [
+      "vino_hondo",
+      "coraza_barrok",
+      "hoja_clara",
+      "maza_goran"
+    ]
+  },
+  "dialogos": {
+    "oldo_aguja": "Oldo Panverde reparte hogazas a los convocados como quien reparte\nordenes de trabajo, y a ti te guarda la de siempre.\n  «Dos ascuas ahogadas y aquí seguimos: la Aguja canta y el humo\n   vuelve a tejerse. Mi nieto Tilo va al molino con su lanza nueva;\n   mi sobrino nieto Enebro manda en el huerto.»\n  «El estandarte te lo dará el consejo, en Valoria: ya sabes que los\n   Yermos no se cruzan sin él. Toma pan. Y vuelve con las manos\n   limpias, como tu primo.»",
+    "enebro": "Enebro Panverde riega las hileras nuevas con la hoz al cinto y el\nvelo de cera en la frente, que él ya no se lo quita.\n  «El Parche de las Dos da cebada este año: la brasa ahogada dejó\n   tierra buena, no preguntes cómo. Bruna dice que es la cera; Oldo\n   dice que es el agua; los cuervos no dicen nada.»\n  «La Aguja me toca por lo que sé de apagar ascuas. Voy contigo:\n   dos ya, y la tercera es la de las tres.»\n  (Escribe  reclutar enebro  si lo quieres en tu grupo.)",
+    "tilo": "En el camino del molino, un falro de lanza al hombro ensaya con un\nespantapájaros vestido de capitán. No es mala idea del todo.\n  «Tilo Panverde. Cargué el Corazón hasta la Forja Eterna cuando el\n   mundo pesaba más; ahora cargo esta lanza, que pesa menos y no\n   susurra.»\n  «Dicen que el humo viste un capitán viejo. Yo lo derribé una vez\n   de lejos. Esta vez será de cerca.»\n  (Escribe  reclutar tilo  si lo quieres en tu grupo.)",
+    "dorotea": "La posadera de Ríoclaro, más blanca que la sal que le compraba,\nllena el cuenco hasta el borde y encima pone la historia.\n  «La marea gris subió por aquí hace un año; la ahogaron en la costa,\n   dicen, con un farol encendido a conciencia. Maruxa dejó las\n   terrazas y sirve mesas en mi casa desde entonces.»\n  «Si vas a la Aguja, ve con el estandarte: la ceniza tiene memoria\n   de paño. El descanso va por la casa.»",
+    "maruxa": "Maruxa la Salinera aprieta el paño de mesa como antes apretaba el\nrastrillo, y escupe al suelo, por permiso.\n  «Costa limpia, sal blanca, faro encendido: lo demás ya se cuida\n   solo. Pero la Aguja canta, y una ascua que canta es una ascua que\n   no está ahogada del todo.»\n  «Voy. No por valentía: por acabarlo.»\n  (Escribe  reclutar maruxa  si la quieres en tu grupo.)",
+    "heraldo": "El heraldo del Sol Levantado te mide con la vista de quien mide\ntelas para ajeno entierro o ajena boda.\n  «La Aguja canta y el consejo desentierra paños. El estandarte va\n   contigo si juras la Alianza de las cuatro razas, que ya venció\n   una vez y no es de mal recuerdo.»\n  «O te quedas a mandar la guardia de los puentes, si tu orgullo\n   pesa más que tu prudencia. El estandarte va contigo igual: el\n   consejo prefiere sobrarnos a faltarnos.»",
+    "torkan": "Torkan Hachagris atiende la fragua abierta y no se sorprende de\nnada, que ya Templó para la última vez que el mundo estuvo a punto.\n  «Mi sobrino baja contigo, ¿verdad? Los Hachagris pagamos nuestra\n   parte con golpes desde antes de que nacieras.»\n  «El vino hondo si vas a los Yermos; la coraza si vas a la Aguja.\n   Y si ves a un capitán de ceniza, salúdalo con maza: es viejo\n   conocido del este.»\n  (Escribe  reclutar torkan  si lo quieres en tu grupo.)",
+    "belthar": "Belthar el Errante moja las manos en la fuente de la torre y las\nlevanta secándose solas, como todo lo que hace.\n  «Dos ascuas ahogadas y la tercera no cayó del cielo: la llamamos\n   nosotros con un siglo de silencio. La Aguja canta el nombre de\n   Morvath y el humo aprende de memoria.»\n  «Toma la campanilla: bronce que calla ecos. Sin ella, la escalera\n   te escucha y te sube mal. Y escúchame, {trato}: en la cima hay\n   tres faenas, no una. Vino, pan y companions; los héroes van después.»"
+  },
+  "lugares": {
+    "vegaverde": {
+      "nombre": "Vegaverde",
+      "descripcion": "La casa-redil llena de convocados: falros, sylvos, goran y gente de\ntodos los caminos, y hogazas de Oldo para todos. Al este, el camino\ndel molino; muy lejos, al este del este, la Aguja se ve en los días\nclaros, y estos días no están claros.",
+      "salidas": {
+        "este": "molino",
+        "molino": "molino"
+      },
+      "objetos": [
+        "hogaza"
+      ],
+      "monedas": 8,
+      "enemigos": [],
+      "npcs": {
+        "oldo": "oldo_aguja",
+        "enebro": "enebro"
+      },
+      "tienda": false,
+      "descanso": true,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "molino": {
+      "nombre": "el Camino del Molino",
+      "descripcion": "El viejo molino chirría ensayando para la guerra y las palomas han\ndesertado. Alguien ha clavado en el camino un espantapájaros con\ncapa de capitán: el viento lo mueve más de lo que el viento suele.",
+      "salidas": {
+        "oeste": "vegaverde",
+        "vegaverde": "vegaverde",
+        "este": "encrucijada",
+        "encrucijada": "encrucijada"
+      },
+      "objetos": [],
+      "monedas": 6,
+      "enemigos": [
+        "capitan_ceniza"
+      ],
+      "npcs": {
+        "tilo": "tilo"
+      },
+      "tienda": false,
+      "descanso": false,
+      "evento": "arranque",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "encrucijada": {
+      "nombre": "la Encrucijada",
+      "descripcion": "El cruce de todos los caminos que van al este: piedras de mil pies\ny postes con flechas pintadas hacia la Aguja. Al norte, Ríoclaro; al\nsur, el Bosque Umbrío.",
+      "salidas": {
+        "oeste": "molino",
+        "molino": "molino",
+        "norte": "rioclaro",
+        "rioclaro": "rioclaro",
+        "sur": "bosque",
+        "bosque": "bosque"
+      },
+      "objetos": [],
+      "monedas": 6,
+      "enemigos": [
+        "sombra"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "rioclaro": {
+      "nombre": "la Aldea de Ríoclaro",
+      "descripcion": "La posadera de Dorotea funciona de cuartel, mercado y consejo de\n Guerra por turnos. Maruxa sirve mesas con un rastrillo al lado de la\npizarra. Hacia el este, la Ciudad Dorada; el estofado, por la casa.",
+      "salidas": {
+        "sur": "encrucijada",
+        "encrucijada": "encrucijada",
+        "este": "valoria",
+        "valoria": "valoria"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [],
+      "npcs": {
+        "dorotea": "dorotea",
+        "maruxa": "maruxa"
+      },
+      "tienda": true,
+      "descanso": true,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "valoria": {
+      "nombre": "la Ciudad Dorada de Valoria",
+      "descripcion": "Torres blancas con andamios de guerra y el estandarte del Sol\nLevantado descolgado para que le vuelvan a pasar el hilo. En la gran\nsala, el heraldo del consejo reparte juramentos y paños. Al norte,\nlas Profundidades de Barrok.",
+      "salidas": {
+        "oeste": "rioclaro",
+        "rioclaro": "rioclaro",
+        "norte": "barrok",
+        "barrok": "barrok"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [],
+      "npcs": {
+        "heraldo": "heraldo"
+      },
+      "tienda": false,
+      "descanso": true,
+      "evento": "juramento",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "bosque": {
+      "nombre": "el Bosque Umbrío",
+      "descripcion": "Los faroles de musgo vuelven a encenderse de uno en uno, despacio,\ncomo quien se despierta de mal sueño. Flechas antiguas señalan el\ncamino al puente, al este, y en las ramas altas faltan tres faroles\nque nadie reemplaza.",
+      "salidas": {
+        "norte": "encrucijada",
+        "encrucijada": "encrucijada",
+        "este": "puente",
+        "puente": "puente"
+      },
+      "objetos": [
+        "jerba"
+      ],
+      "monedas": 6,
+      "enemigos": [
+        "mirlo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "puente": {
+      "nombre": "el Puente de Piedra",
+      "descripcion": "El puente que ya cruzó un Corazón camina hacia las Ciénagas, al\neste, con la solemnidad de los que saben de idas. Un espectro de\nceniza ronda la barandilla sur como un peón que no le pagan. Al\nnorte, la Torre de Belthar.",
+      "salidas": {
+        "oeste": "bosque",
+        "bosque": "bosque",
+        "norte": "refugio",
+        "refugio": "refugio",
+        "este": "cienagas",
+        "cienagas": "cienagas"
+      },
+      "objetos": [],
+      "monedas": 8,
+      "enemigos": [
+        "espectro"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": null,
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "refugio": {
+      "nombre": "la Torre de Belthar",
+      "descripcion": "Un dedo de piedra sobre el islote seco, con la fuente de agua clara\nsonando más vieja que nunca y mapas nuevos de una Aguja vieja. Belthar\nelige convocados desde el umbral, como quien elige semillas.",
+      "salidas": {
+        "sur": "puente",
+        "puente": "puente"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [],
+      "npcs": {
+        "belthar": "belthar"
+      },
+      "tienda": false,
+      "descanso": true,
+      "evento": "campanilla",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "barrok": {
+      "nombre": "las Profundidades de Barrok",
+      "descripcion": "Galerías azules de vuelta al trabajo: fraguas abiertas, picos que\nsí son picos y Torkan Hachagris firmando acero. La fragua templa\nhuesos además de hojas. Al este, las Ciénagas del Olvido.",
+      "salidas": {
+        "sur": "valoria",
+        "valoria": "valoria",
+        "este": "cienagas",
+        "cienagas": "cienagas"
+      },
+      "objetos": [],
+      "monedas": 12,
+      "enemigos": [
+        "trasgo"
+      ],
+      "npcs": {
+        "torkan": "torkan"
+      },
+      "tienda": true,
+      "descanso": false,
+      "evento": "fragua",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "cienagas": {
+      "nombre": "las Ciénagas del Olvido",
+      "descripcion": "El barro sigue guardando caras de los que dudaron demasiado, y ahora\nrecuerda otras: capitán, custodios, el humo de un amuleto que ardió.\nAl este, los Yermos; el aire de ceniza se nota desde aquí.",
+      "salidas": {
+        "oeste": "puente",
+        "puente": "puente",
+        "norte": "barrok",
+        "barrok": "barrok",
+        "este": "yerma",
+        "yerma": "yerma"
+      },
+      "objetos": [],
+      "monedas": 12,
+      "enemigos": [
+        "espectro"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "cienizas",
+      "requiere": null,
+      "requiere_texto": ""
+    },
+    "yerma": {
+      "nombre": "los Yermos de Ceniza",
+      "descripcion": "La tierra acaba y empieza el reino del polvo, otra vez. Grietas rojas\npulsan al compás de un canto que ya no es tan lejos, y al este la\nAguja Pálida se alza alta y despierta.",
+      "salidas": {
+        "oeste": "cienagas",
+        "cienagas": "cienagas",
+        "este": "aguja_pies",
+        "aguja_pies": "aguja_pies"
+      },
+      "objetos": [],
+      "monedas": 20,
+      "enemigos": [
+        "lobero",
+        "lobero"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "ceniza_viva",
+      "requiere": "estandarte",
+      "requiere_texto": "El aire de ceniza te empuja hacia atrás: los Yermos solo se cruzan\nbajo el estandarte del consejo."
+    },
+    "aguja_pies": {
+      "nombre": "la Escalera de la Aguja",
+      "descripcion": "La atalaya se levanta de una base de piedra que respira despacio.\nLa escalera sube enroscándose hacia la cumbre, y el primer peldaño\nsuena a bronce, como si esperara una campanilla.",
+      "salidas": {
+        "oeste": "yerma",
+        "yerma": "yerma",
+        "este": "aguja_cima",
+        "aguja_cima": "aguja_cima"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [
+        "mirlo"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "regreso",
+      "requiere": "campanilla",
+      "requiere_texto": "El primer peldaño zumba y te devuelve al suelo: la escalera solo la\nsube quien lleva bronce que sepa callar ecos."
+    },
+    "aguja_cima": {
+      "nombre": "la Cumbre de la Aguja",
+      "descripcion": "La cima abierta al cielo de ceniza, con el trono vacío donde un día\nhubo un amuleto y el humo tejiéndose en el aire como una mano que\nrecuerda. Tres faenas custodian la cima: una Voz, un Capitán rehecho\ny lo que el humo aprendió de Morvath.",
+      "salidas": {
+        "oeste": "aguja_pies",
+        "aguja_pies": "aguja_pies"
+      },
+      "objetos": [],
+      "monedas": 0,
+      "enemigos": [
+        "eco_voz",
+        "capitan_rehecho",
+        "morvath"
+      ],
+      "npcs": {},
+      "tienda": false,
+      "descanso": false,
+      "evento": "final",
+      "requiere": null,
+      "requiere_texto": ""
+    }
+  },
+  "eventos": {
+    "arranque": {
+      "tipo": "narrar",
+      "una_vez": "arranque",
+      "texto": "En el poste de la encrucijada alguien ha clavado un aviso con cera\nverde, la letra torcida e inconfundible:\n  «Convocados: el estandarte se reparte en Valoria. La campanilla,\n   en mi torre. Los Yermos solo se cruzan bajo paño del consejo, y\n   la escalera solo la sube quien sepa callar ecos. Tres faenas en\n   la cima; el vino, en Barrok. — B.»"
+    },
+    "fragua": {
+      "tipo": "curar_grupo",
+      "una_vez": "fragua",
+      "corrupcion": -10,
+      "texto": "Torkan te mete a ti y a los tuyos en el calor de la fragua abierta,\nte da vino hondo templado y te pone en fila como a hoja que revisa.\n  «Templados. Lo que la grieta os pudo, el fuego lo deshace. Lo que\n   el humo os hizo, eso lo veremos en la cima.»\n(El grupo se cura por completo; la corrupción baja.)"
+    },
+    "cienizas": {
+      "tipo": "corrupcion",
+      "puntos": 6,
+      "aviso": "El barro susurra nombres viejos de ceniza…"
+    },
+    "campanilla": {
+      "tipo": "otorgar",
+      "item": "campanilla",
+      "una_vez": "campanilla",
+      "texto": "Belthar descolga del cuello un bronce chico, torcido como su letra,\ny te lo cuelga con dos nudos apretados.\n  «La campanilla de la torre: un toque y los ecos se callan para\n   ti. La Aguja no soporta la compañía callada; sube y hazle la\n   faena.»\n(Recibes: la campanilla de Belthar.)"
+    },
+    "ceniza_viva": {
+      "tipo": "corrupcion",
+      "puntos": 5,
+      "aviso": "Las grietas rojas te cantan por tu nombre…"
+    },
+    "regreso": {
+      "tipo": "emboscar",
+      "enemigos": [
+        "capitan"
+      ],
+      "condicion": {
+        "no_flag": "consejo"
+      },
+      "texto": "Del humo parado entre los pilares sale, recordándose a sí mismo, un\nhombre de capa y mirada de ascua: el Capitán de Ceniza, que cae y\ncae y siempre vuelve a tejerse.\n  «Sin paño jurado no hay Alianza que te cubra. Aquí te tengo.»"
+    },
+    "final": {
+      "tipo": "final",
+      "texto": "Morvath, tejido de humo, se deshace con un alivio enorme y antiguo,\ncomo se deshace un gesto que llevaba mil lunas haciendo. La Voz ya no\ncanta, el Capitán no vuelve a tejerse, y la Aguja entera se queda\nsin palabra: la cima, el trono vacío y la grieta abierta en el centro\ndel aire, respirando despacio. El canto se acabó. Queda decidir qué\nse cuenta de él.",
+      "pregunta": "¿Qué haces con la Aguja?",
+      "opciones": [
+        {
+          "clave": "quebrar",
+          "titulo": "Quebrantar la Aguja para siempre",
+          "detalle": "que no quede piedra con memoria"
+        },
+        {
+          "clave": "alianza",
+          "titulo": "Alzar el estandarte y cantar la Alianza",
+          "detalle": "la respuesta de las cuatro razas, en su sitio",
+          "requiere_flag": "consejo",
+          "epilogo": "Despliegas el estandarte del Sol Levantado en la cima de la Aguja y\nel viento de ceniza, que nunca supo de paños jurados, se dobla como\nuna cuerda vencida. Cantas la Alianza con la voz que te queda; abajo,\ny luego a lo lejos, la cantan los puentes, las salinas, las fraguas y\nlos huertos, cada cual en su lengua y sin equivocarse.\n\nLa Aguja se quebranta sola, de vergüenza bien entendida. En Vegaverde\nplantan un huerto nuevo y le ponen cuatro nombres, uno por raza, y el\ncuarto es el de todos.",
+          "estilo": "epico",
+          "final": "la Alianza de las Cuatro"
+        }
+      ],
+      "umbral_tentado": 60,
+      "epilogo_puro": "La campanilla da un último toque y la grieta se cierra como se cierra\nun ojo que decide dormir. La Aguja se queda sin canto y Aldamar se\nqueda sin sombra nueva: dos ascuas ahogadas y una llamada sin quien\nla escuche.\n\nBelthar escribe la crónica con su letra torcida y la firma con los\ntodos: los convocados, los que juraron y los que solo vinieron. En el\nrenglón del Honor, tú estás donde toca, con las manos limpias.",
+      "final_puro": "la Aguja sin Sombra",
+      "epilogo_tentado": "La grieta se cierra — pero a medias, mirándote. El canto se acabó y\nsu última nota se quedó dentro de ti, afinada y paciente. En los\npuentes, de noche, el agua suena a aplausos lejanos; en los espejos,\nun segundo tarde.\n\nAldamar te llama salvador y reserva tu nombre para las veladas\ntristes. Apagaste la Aguja. La grieta que te queda sabe cantar.",
+      "final_tentado": "la Aguja calla, la grieta canta",
+      "texto_companeros": "Junto a ti, en la cima y en la crónica: {nombres}."
+    },
+    "juramento": {
+      "tipo": "decision",
+      "texto": "El heraldo extiende el estandarte del consejo sobre la mesa, con el\nSol Levantado cosido con hilo nuevo sobre hilo viejo, y pone al lado\nun pliego del juramento de la Alianza.\n  «La Aguja canta y el consejo desentierra paños. Jura la Alianza\n   de las cuatro razas y el estandarte va contigo; o encabeza la\n   guardia de los puentes, y el estandarte va contigo igual.»\n  «Pero que quede dicho: la ceniza distingue lo que jura de lo que\n   promete.»",
+      "pregunta": "¿Qué respondes al consejo?",
+      "opciones": [
+        {
+          "clave": "alianza",
+          "titulo": "Jurar la Alianza del Sol Levantado",
+          "detalle": "cuatro razas, una deuda vieja y un paño",
+          "item": "estandarte",
+          "flag": "consejo",
+          "texto": "Firmas el pliego con tu nombre bien dicho y el heraldo dobla el\nestandarte con dos brazos, como se dobla una promesa.\n  «Que la ceniza lo recuerde: la Alianza vuelve a caminar.»\n(Recibes: estandarte del consejo.)"
+        },
+        {
+          "clave": "guardia",
+          "titulo": "Encabezar la guardia de los puentes",
+          "detalle": "el deber corto y el paño igual",
+          "item": "estandarte",
+          "flag": "guardia",
+          "texto": "El heraldo te entrega el estandarte sin ceremonia, con un gesto de\nquien guarda las formas.\n  «El consejo prefiere sobrarnos a faltarnos. Pero la ceniza sabe\n   leer: un paño sin juramento pesa menos al viento.»\n(Recibes: estandarte del consejo.)"
+        }
+      ]
+    }
+  },
+  "comando_especial": {
+    "comando": "eco",
+    "texto_fuera": "Agitas la vieja grieta, pero aquí no hay eco que reclamar.",
+    "efecto": {
+      "dano_base": 12,
+      "dano_por_corrupcion": 3,
+      "corrupcion_coste": 12,
+      "mensaje": "Reclamas el eco de la Aguja y golpea por −{efectivo}…"
+    }
+  }
+}

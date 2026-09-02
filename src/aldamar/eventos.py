@@ -10,8 +10,15 @@ Eventos de lugar:
 - "otorgar": entrega un objeto, una sola vez si declara `una_vez`.
 - "curar_grupo": cura al héroe, resucita y cura a los compañeros.
 - "corrupcion": un aviso y puntos de corrupción, cada vez que se entra.
+- "narrar": un texto de puro relato, una sola vez si declara `una_vez`.
+- "decision": un texto y una elección con efectos inmediatos (objeto,
+  corrupción, bandera); la bandera es la que después leen los eventos
+  que quieran reaccionar a la decisión.
+- "emboscar": suma enemigos al lugar al entrar, solo si se cumple su
+  condición de banderas (decisiones tardías que cobran su precio).
 - "final": un texto, una elección y el desenlace (el epílogo cambia si
-  la corrupción del héroe superó el umbral).
+  la corrupción del héroe superó el umbral; una opción puede exigir
+  `requiere_flag` para aparecer solo si hubo cierta decisión).
 
 Golpe especial de combate: daño base más corrupción // divisor, con
 coste de corrupción y mensaje parametrizados.
@@ -33,7 +40,7 @@ Evento = Callable[["Juego", Lugar], None]
 # Un golpe especial de combate recibe (juego, enemigo).
 AtaqueEspecial = Callable[["Juego", Enemigo], None]
 
-TIPOS_EVENTOS = {"otorgar", "curar_grupo", "corrupcion", "final"}
+TIPOS_EVENTOS = {"otorgar", "curar_grupo", "corrupcion", "narrar", "decision", "emboscar", "final"}
 
 
 def evento_otorgar(item: str, texto: str, una_vez: str | None = None) -> Evento:
@@ -74,22 +81,30 @@ def evento_corrupcion(puntos: int, aviso: str | None = None) -> Evento:
     return evento
 
 
-def evento_final(
-    texto: str,
-    pregunta: str,
-    opciones: list[dict],
-    epilogo_puro: str,
-    final_puro: str,
-    epilogo_tentado: str,
-    final_tentado: str,
-    umbral_tentado: int,
-    texto_companeros: str = "",
-) -> Evento:
-    """La opción sin `epilogo` es el desenlace por defecto: el epílogo
-    elegido depende de la corrupción del héroe contra el umbral."""
+def evento_narrar(texto: str, una_vez: str | None = None) -> Evento:
+    def evento(j: "Juego", lugar: "Lugar") -> None:
+        if una_vez and j.flags.get(una_vez):
+            return
+        if una_vez:
+            j.flags[una_vez] = True
+        j.epico("\n" + texto)
+
+    return evento
+
+
+def evento_decision(texto: str, pregunta: str, opciones: list[dict], una_vez: str) -> Evento:
+    """Una elección con efectos inmediatos: la escena no se repite.
+
+    Cada opción puede declarar `texto` (lo que se lee al elegirla),
+    `item` (se suma al inventario), `corrupcion` (positiva o negativa) y
+    `flag` (la bandera que dejan encendida para el resto de la aventura).
+    Cancelar la elección no decide: la escena espera otra visita.
+    """
 
     def evento(j: "Juego", lugar: "Lugar") -> None:
-        j.escribir("\n" + texto)
+        if j.flags.get(una_vez):
+            return
+        j.epico("\n" + texto)
         clave = elegir_opcion(
             pregunta,
             [
@@ -102,6 +117,83 @@ def evento_final(
             flechas=getattr(j, "flechas", None),
         )
         elegida = next((op for op in opciones if op["clave"] == clave), None)
+        if elegida is None:
+            return  # canceló: la decisión sigue abierta
+        j.flags[una_vez] = True
+        if elegida.get("flag"):
+            j.flags[elegida["flag"]] = True
+        if elegida.get("item"):
+            j.jugador.inventario.append(elegida["item"])
+        if elegida.get("corrupcion"):
+            j.corruptear(elegida["corrupcion"])
+        if elegida.get("texto"):
+            j.epico("\n" + elegida["texto"])
+
+    return evento
+
+
+def evento_emboscar(
+    enemigos: list[str],
+    texto: str,
+    flag: str | None = None,
+    no_flag: str | None = None,
+) -> Evento:
+    """Al entrar, si la condición de banderas se cumple, suma enemigos.
+
+    `flag` exige una decisión tomada; `no_flag` exige una no tomada.
+    Los enemigos quedan en el lugar hasta resolverse: la emboscada no se
+    repite, pero tampoco se olvida.
+    """
+
+    def evento(j: "Juego", lugar: "Lugar") -> None:
+        if flag and not j.flags.get(flag):
+            return
+        if no_flag and j.flags.get(no_flag):
+            return
+        pendientes = j.enemigos[lugar.id]
+        nuevos = [e for e in enemigos if e not in pendientes]
+        if not nuevos:
+            return
+        pendientes.extend(nuevos)
+        j.peligro("\n" + texto)
+
+    return evento
+
+
+def evento_final(
+    texto: str,
+    pregunta: str,
+    opciones: list[dict],
+    epilogo_puro: str,
+    final_puro: str,
+    epilogo_tentado: str,
+    final_tentado: str,
+    umbral_tentado: int,
+    texto_companeros: str = "",
+) -> Evento:
+    """La opción sin `epilogo` es el desenlace por defecto: el epílogo
+    elegido depende de la corrupción del héroe contra el umbral. Una
+    opción puede declarar `requiere_flag`: solo se ofrece si la decisión
+    que encendió esa bandera ocurrió."""
+
+    def evento(j: "Juego", lugar: "Lugar") -> None:
+        j.escribir("\n" + texto)
+        visibles = [
+            op for op in opciones
+            if not op.get("requiere_flag") or j.flags.get(op["requiere_flag"])
+        ]
+        clave = elegir_opcion(
+            pregunta,
+            [
+                (str(op["clave"]), str(op["titulo"]), str(op.get("detalle", "")))
+                for op in visibles
+            ],
+            entrada=j.entrada,
+            salida=j.salida,
+            color=j.color,
+            flechas=getattr(j, "flechas", None),
+        )
+        elegida = next((op for op in visibles if op["clave"] == clave), None)
         if elegida is not None and "epilogo" in elegida:
             mostrar = j.aviso if elegida.get("estilo", "aviso") == "aviso" else j.epico
             mostrar("\n" + elegida["epilogo"])
@@ -137,8 +229,12 @@ def ataque_con_corrupcion(
     return ataque
 
 
-def evento_desde(datos: dict) -> Evento:
-    """Construye el evento declarado en el JSON (ya validado por el cargador)."""
+def evento_desde(datos: dict, clave: str | None = None) -> Evento:
+    """Construye el evento declarado en el JSON (ya validado por el cargador).
+
+    `clave` es la clave con la que la aventura registra el evento: la
+    decisión que no declara `una_vez` usa la suya para marcarse hecha.
+    """
     tipo = datos["tipo"]
     if tipo == "otorgar":
         return evento_otorgar(datos["item"], datos["texto"], datos.get("una_vez"))
@@ -148,6 +244,23 @@ def evento_desde(datos: dict) -> Evento:
         )
     if tipo == "corrupcion":
         return evento_corrupcion(datos["puntos"], datos.get("aviso"))
+    if tipo == "narrar":
+        return evento_narrar(datos["texto"], datos.get("una_vez"))
+    if tipo == "decision":
+        return evento_decision(
+            datos["texto"],
+            datos["pregunta"],
+            datos["opciones"],
+            datos.get("una_vez") or clave or "",
+        )
+    if tipo == "emboscar":
+        condicion = datos.get("condicion") or {}
+        return evento_emboscar(
+            datos["enemigos"],
+            datos["texto"],
+            condicion.get("flag"),
+            condicion.get("no_flag"),
+        )
     if tipo == "final":
         return evento_final(
             datos["texto"],

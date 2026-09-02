@@ -74,6 +74,9 @@ class Aventura:
     # eventos por clave de Lugar.evento; el evento "final" se dispara
     # cuando el lugar queda limpio de enemigos, el resto al entrar.
     eventos: dict[str, Evento] = field(default_factory=dict)
+    # posición sugerida en el menú (menor primero); None = al final, por
+    # orden alfabético. Las series lo usan para contarse en orden.
+    orden: int | None = None
 
     def crear_enemigo(self, clave: str, dif: Dificultad) -> Enemigo:
         d = self.enemigos[clave]

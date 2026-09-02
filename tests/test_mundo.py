@@ -93,6 +93,12 @@ def test_los_eventos_y_el_ataque_especial_son_llamables(av):
         assert av.texto_especial_fuera
 
 
+@param_all_aventuras()
+def test_cada_aventura_declara_eventos_propios(av):
+    """Toda aventura trae sus propios eventos: sin ellos no hay historia."""
+    assert av.eventos, f"{av.id} no declara ningún evento"
+
+
 def test_normaliza_quita_tildes_y_mayusculas():
     assert normaliza("Ciénagas  ") == "cienagas"
     assert normaliza("CORAZÓN") == "corazon"

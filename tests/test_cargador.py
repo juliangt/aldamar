@@ -164,6 +164,108 @@ def test_el_final_exige_un_desenlace_por_defecto():
         cargar_aventura_dict(datos, "prueba.json")
 
 
+# ── los eventos nuevos del vocabulario ──────────────────────────────────
+
+def _minima_con_evento(evento: dict, **extras):
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos.update(extras)
+    datos["eventos"] = {"prueba": evento}
+    return datos
+
+
+def test_la_decision_rechaza_items_fantasma():
+    datos = _minima_con_evento({
+        "tipo": "decision",
+        "texto": "Elige.",
+        "pregunta": "¿Qué haces?",
+        "opciones": [
+            {"clave": "a", "titulo": "A", "item": "fantasma"},
+        ],
+    })
+    with pytest.raises(AventuraInvalida, match="fantasma"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_la_decision_rechaza_claves_repetidas():
+    datos = _minima_con_evento({
+        "tipo": "decision",
+        "texto": "Elige.",
+        "pregunta": "¿Qué haces?",
+        "opciones": [
+            {"clave": "a", "titulo": "A"},
+            {"clave": "a", "titulo": "B"},
+        ],
+    })
+    with pytest.raises(AventuraInvalida, match="repetida"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_la_emboscada_rechaza_enemigos_fantasma():
+    datos = _minima_con_evento({
+        "tipo": "emboscar",
+        "enemigos": ["dragon"],
+        "texto": "¡Sorpresa!",
+    })
+    with pytest.raises(AventuraInvalida, match="dragon"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_la_emboscada_exige_al_menos_un_enemigo():
+    datos = _minima_con_evento({"tipo": "emboscar", "enemigos": [], "texto": "..."})
+    with pytest.raises(AventuraInvalida, match="al menos un enemigo"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_narrar_exige_su_texto():
+    datos = _minima_con_evento({"tipo": "narrar"})
+    with pytest.raises(AventuraInvalida, match="texto"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_el_desenlace_por_defecto_no_puede_exigir_bandera():
+    datos = _minima_con_evento({
+        "tipo": "final",
+        "texto": "El fin.",
+        "pregunta": "¿Qué haces?",
+        "opciones": [
+            {"clave": "a", "titulo": "A", "requiere_flag": "x"},
+            {"clave": "b", "titulo": "B", "epilogo": "Epi B.", "final": "b"},
+        ],
+        "umbral_tentado": 60,
+        "epilogo_puro": "puro",
+        "final_puro": "puro",
+        "epilogo_tentado": "tentado",
+        "final_tentado": "tentado",
+    })
+    with pytest.raises(AventuraInvalida, match="requiere_flag"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_el_orden_invalido_se_rechaza():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["orden"] = "primera"
+    with pytest.raises(AventuraInvalida, match="orden"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_el_orden_de_registro_lo_fija_el_campo_orden(tmp_path, monkeypatch):
+    segunda = copy.deepcopy(AVENTURA_MINIMA)
+    segunda.update(id="segunda", titulo="La Segunda", orden=1)
+    primera = copy.deepcopy(AVENTURA_MINIMA)
+    primera.update(id="primera", titulo="La Primera", orden=0)
+    ultima = copy.deepcopy(AVENTURA_MINIMA)
+    ultima.update(id="ultima", titulo="La Última")  # sin orden: al final
+    (tmp_path / "c_segunda.json").write_text(json.dumps(segunda, ensure_ascii=False), encoding="utf-8")
+    (tmp_path / "a_primera.json").write_text(json.dumps(primera, ensure_ascii=False), encoding="utf-8")
+    (tmp_path / "b_ultima.json").write_text(json.dumps(ultima, ensure_ascii=False), encoding="utf-8")
+
+    capturadas = []
+    monkeypatch.setattr(cargador, "registrar", capturadas.append)
+    cargar_todas(raiz=tmp_path)
+
+    assert [av.id for av in capturadas] == ["primera", "segunda", "ultima"]
+
+
 # ── los eventos declarativos se comportan como deben ────────────────────
 
 def test_el_consejo_entrega_el_estandarte_una_sola_vez():

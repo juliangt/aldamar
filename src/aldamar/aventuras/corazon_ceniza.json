@@ -1,5 +1,6 @@
 {
   "id": "corazon_ceniza",
+  "orden": 1,
   "titulo": "El Corazón de Ceniza",
   "descripcion": "El amuleto que durmió veinte generaciones acaba de despertar: cruza medio continente para devolverlo al fuego que lo vio nacer.",
   "prologo_base": "Hace mil lunas, el hechicero Morvath forjó en el corazón ardiente del\nMonte Umbak un amuleto al que llamó el Corazón de Ceniza. Con su aliento\noscuro doblegó a los reinos del oeste, y solo la alianza de las razas\nlibres —humanos, sylvos, goran y falros— logró arrancárselo.\n\nMorvath cayó, pero su obra no supo morir: solo la Forja Eterna que lo\nvio nacer puede devolverlo al fuego. Los consejeros de antaño lo\nescondieron y juraron olvidar. El olvido cumplió.\n",
