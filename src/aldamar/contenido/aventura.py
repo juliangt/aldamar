@@ -1,9 +1,9 @@
 """El contrato de una aventura: todo el contenido de una campaña en un objeto.
 
-El motor (`juego.py`) no conoce ninguna aventura concreta: lee mapa,
-objetos, criaturas, textos y eventos desde aquí. Sumar una aventura
-nueva = soltar su JSON en `aventuras/` (lo carga y registra
-`cargador.py`).
+El motor (`motor/juego.py`) no conoce ninguna aventura concreta: lee
+mapa, objetos, criaturas, textos y eventos desde aquí. Sumar una
+aventura nueva = soltar su JSON en `datos/aventuras/` (lo carga y
+registra `cargador.py`).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Callable
 
-from .dificultad import Dificultad, ajusta
+from ..motor.dificultad import Dificultad, ajusta
 from .mundo import Lugar
 from .personajes import (
     Companero,
@@ -23,7 +23,7 @@ from .personajes import (
 from .rasgos import RASGOS
 
 if TYPE_CHECKING:  # solo para anotaciones; evita import circular en runtime
-    from .juego import Juego
+    from ..motor.juego import Juego
 
 # Un evento de lugar recibe (juego, lugar) y hace su magia narrativa.
 Evento = Callable[["Juego", Lugar], None]
@@ -161,7 +161,7 @@ class Aventura:
 
 # ── Registro de aventuras conocidas ─────────────────────────────────────
 # Los módulos de contenido se autorregistran al importarse; el paquete
-# `aldamar.aventuras` importa los conocidos.
+# `aldamar.datos` importa los conocidos.
 AVENTURAS: dict[str, Aventura] = {}
 
 

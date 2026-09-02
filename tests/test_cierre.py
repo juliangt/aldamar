@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar.juego import Juego, main
-from aldamar.personajes import Companero
+from aldamar.motor.juego import Juego, main
+from aldamar.contenido.personajes import Companero
 
 from conftest import AVENTURA, EntradaTipeada
 from test_flujo import RUTA_BASE

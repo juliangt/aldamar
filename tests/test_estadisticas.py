@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import json
 
-from aldamar.estadisticas import Estadisticas
-from aldamar.juego import main
+from aldamar.motor.estadisticas import Estadisticas
+from aldamar.motor.juego import main
 
 from conftest import EntradaTipeada
 

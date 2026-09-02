@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import aldamar.opciones as opciones_mod
+import aldamar.interfaz.opciones as opciones_mod
 from aldamar import __version__
-from aldamar.juego import (
+from aldamar.motor.juego import (
     COMPRAR,
     ESCRIBIR,
     HABLAR,

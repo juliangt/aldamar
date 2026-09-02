@@ -33,12 +33,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
+from ..interfaz.opciones import elegir_opcion
 from .mundo import Lugar
-from .opciones import elegir_opcion
 from .personajes import Enemigo
 
 if TYPE_CHECKING:  # solo anotaciones
-    from .juego import Juego
+    from ..motor.juego import Juego
 
 # Un evento de lugar recibe (juego, lugar) y hace su magia narrativa.
 Evento = Callable[["Juego", Lugar], None]

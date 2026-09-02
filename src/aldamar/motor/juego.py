@@ -15,22 +15,10 @@ import os
 import random
 import sys
 
-from . import __version__, aventuras  # noqa: F401  (aventuras: registra el contenido)
-from . import guardado
-from .aventura import AVENTURAS, Aventura, obtener_aventura
-from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
-from . import legado as modulo_legado
-from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
-from .guardado import PartidaInvalida
-from .menu import ARCHIVO_PARTIDA, ayuda, menu_principal
-from .mundo import Lugar, normaliza
-from .opciones import (
-    LIMPIAR,
-    _es_interactivo,
-    elegir_opcion,
-    pantalla_completa,
-)
-from .personajes import (
+from .. import __version__, datos  # noqa: F401  (datos: registra el contenido)
+from ..contenido.aventura import AVENTURAS, Aventura, obtener_aventura
+from ..contenido.mundo import Lugar, normaliza
+from ..contenido.personajes import (
     CORRUPCION_MAXIMA,
     SUBIDA_ATAQUE,
     SUBIDA_VIDA,
@@ -41,7 +29,19 @@ from .personajes import (
     Habilidad,
     Jugador,
 )
-from .rasgos import RASGOS
+from ..contenido.rasgos import RASGOS
+from ..interfaz.menu import ARCHIVO_PARTIDA, ayuda, menu_principal
+from ..interfaz.opciones import (
+    LIMPIAR,
+    _es_interactivo,
+    elegir_opcion,
+    pantalla_completa,
+)
+from . import guardado
+from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
+from . import legado as modulo_legado
+from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
+from .guardado import PartidaInvalida
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 

@@ -13,20 +13,20 @@ from importlib import resources
 
 import pytest
 
-from aldamar import aventuras  # noqa: F401  (descubre y registra las del paquete)
-from aldamar import cargador
-from aldamar.aventura import AVENTURAS, obtener_aventura, registrar
-from aldamar.cargador import AventuraInvalida, cargar_aventura, cargar_aventura_dict, cargar_todas
-from aldamar.dificultad import obtener_dificultad
-from aldamar.juego import Juego
-from aldamar.personajes import CORRUPCION_TENTADO, Companero
+from aldamar import datos  # noqa: F401  (descubre y registra las de datos/)
+from aldamar.contenido import cargador
+from aldamar.contenido.aventura import AVENTURAS, obtener_aventura, registrar
+from aldamar.contenido.cargador import AventuraInvalida, cargar_aventura, cargar_aventura_dict, cargar_todas
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.motor.juego import Juego
+from aldamar.contenido.personajes import CORRUPCION_TENTADO, Companero
 from conftest import EntradaTipeada
 from test_flujo import RUTA_BASE
 
 CAMINO = obtener_dificultad("camino")
 TEXTO_CORAZON = (
-    resources.files("aldamar.aventuras")
-    .joinpath("corazon_ceniza.json")
+    resources.files("aldamar")
+    .joinpath("datos", "aventuras", "corazon_ceniza.json")
     .read_text(encoding="utf-8")
 )
 AV = cargar_aventura(TEXTO_CORAZON, "corazon_ceniza.json")
@@ -67,7 +67,7 @@ def _juego(lineas: list[str]):
 
 # ── descubrimiento ───────────────────────────────────────────────────────
 
-def test_las_aventuras_del_paquete_se_registran_solas():
+def test_las_aventuras_de_datos_se_registran_solas():
     assert "corazon_ceniza" in AVENTURAS
     assert obtener_aventura("corazon_ceniza").titulo == "El Corazón de Ceniza"
 

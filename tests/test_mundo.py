@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar.aventura import AVENTURAS
-from aldamar.mundo import alcanzables, normaliza
+from aldamar.contenido.aventura import AVENTURAS
+from aldamar.contenido.mundo import alcanzables, normaliza
 
 
 def param_all_aventuras():

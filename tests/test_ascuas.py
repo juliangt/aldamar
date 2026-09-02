@@ -13,10 +13,10 @@ import json
 
 import pytest
 
-from aldamar.aventura import obtener_aventura
-from aldamar.dificultad import DIFICULTADES, obtener_dificultad
-from aldamar.juego import Juego
-from aldamar.personajes import CORRUPCION_TENTADO, Companero
+from aldamar.contenido.aventura import obtener_aventura
+from aldamar.motor.dificultad import DIFICULTADES, obtener_dificultad
+from aldamar.motor.juego import Juego
+from aldamar.contenido.personajes import CORRUPCION_TENTADO, Companero
 from conftest import EntradaTipeada
 
 BRASA = obtener_aventura("brasa_vegaverde")
@@ -95,7 +95,7 @@ def test_cancelar_con_esc_limpia_la_pantalla_y_la_escena_se_vuelve_a_contar(monk
     """Con flechas, Esc sale de la elección limpiando la pantalla (issue 24):
     el relato del lugar se va, pero la decisión sigue abierta y la escena
     se vuelve a contar tal y como era al re-entrar."""
-    import aldamar.opciones as opciones_mod
+    import aldamar.interfaz.opciones as opciones_mod
 
     salida: list[str] = []
     juego = Juego(

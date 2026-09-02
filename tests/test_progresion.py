@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import json
 
-from aldamar.dificultad import DIFICULTADES, obtener_dificultad
-from aldamar.juego import Juego
-from aldamar.personajes import SUBIDA_ATAQUE, SUBIDA_VIDA, XP_NIVEL
+from aldamar.motor.dificultad import DIFICULTADES, obtener_dificultad
+from aldamar.motor.juego import Juego
+from aldamar.contenido.personajes import SUBIDA_ATAQUE, SUBIDA_VIDA, XP_NIVEL
 
 from conftest import AVENTURA, CAMINO, EntradaTipeada
 

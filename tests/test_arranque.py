@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import aldamar.juego as juego_mod
-from aldamar.juego import main
-from aldamar.opciones import LIMPIAR
+import aldamar.motor.juego as juego_mod
+from aldamar.motor.juego import main
+from aldamar.interfaz.opciones import LIMPIAR
 
 from conftest import EntradaTipeada
 

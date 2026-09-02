@@ -18,7 +18,7 @@ dependencies = []
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-aldamar = "aldamar.juego:main"
+aldamar = "aldamar.motor.juego:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aldamar"]
