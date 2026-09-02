@@ -14,13 +14,13 @@ from typing import TYPE_CHECKING, Callable
 from .dificultad import Dificultad, ajusta
 from .mundo import Lugar
 from .personajes import (
-    RASGOS,
     Companero,
     Enemigo,
     Jugador,
     fase_desde,
     habilidad_desde,
 )
+from .rasgos import RASGOS
 
 if TYPE_CHECKING:  # solo para anotaciones; evita import circular en runtime
     from .juego import Juego

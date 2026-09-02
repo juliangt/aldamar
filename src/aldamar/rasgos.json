@@ -1,0 +1,24 @@
+{
+  "ojo_halcon": {
+    "nombre": "Ojo de halcón",
+    "descripcion": "+1 de daño mientras el enemigo conserve más de la mitad de su vida",
+    "efecto": {
+      "dano_extra": 1,
+      "condicion": { "vida_enemigo_mayor_que": 50 }
+    }
+  },
+  "piel_piedra": {
+    "nombre": "Piel de piedra",
+    "descripcion": "recibes 1 punto menos de daño de cualquier golpe",
+    "efecto": {
+      "dano_recibido_menos": 1
+    }
+  },
+  "lengua_mercado": {
+    "nombre": "Lengua de mercado",
+    "descripcion": "pagas 1 moneda menos en cada compra",
+    "efecto": {
+      "descuento_compra": 1
+    }
+  }
+}

@@ -6,7 +6,8 @@ import pytest
 
 from aldamar.aventura import PersonajeInicial
 from aldamar.juego import Juego
-from aldamar.personajes import RASGOS, Enemigo
+from aldamar.personajes import Enemigo
+from aldamar.rasgos import RASGOS
 
 from conftest import AVENTURA, CAMINO, EntradaTipeada
 
