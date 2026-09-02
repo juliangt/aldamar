@@ -11,19 +11,29 @@ from .. import __version__
 from . import audio as modulo_audio
 from .opciones import DIM, LIMPIAR, TITULO, _c, _es_interactivo, _leer_tecla
 
-# El Corazón de Ceniza colgado de su cordón: la gema tallada, el brillo
-# y el resplandor del amuleto que durmió veinte generaciones.
-_SELO = """
-      ✦          ·
-            ╲ ╱
-             ◇
-            ╱╲
-           ╱  ╲
-          ╱    ╲
-         ═══✦═══
-          ╲    ╱
-           ╲  ╱
-            ╲╱
+# El héroe de la historia: el guerrero que despierta al amuleto, con el
+# Corazón de Ceniza al pecho y la espada clavada a su costado, esperando
+# a quien tome su lugar.
+_SELO = r"""
+         .-'''''-.
+        /  _   _  \
+       |  (o) (o)  |
+       |     __    |
+        \ '~~~~~~' /
+         '-.____.-'
+       ___|      |___
+      /   |  (✦)  |   \
+     |    |       |    \
+     |    |       |     \
+      \   |      |       o
+       \  |      |      /=\
+        \ |      |       |
+         \|      |       |
+          |      |       |
+          |      |     ✦ |
+         _|      |_       |
+        (_|      |_)______|
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   ###  #     ####   ###  #   #  ###  ####
  #   # #     #   # #   # ## ## #   # #   #

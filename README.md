@@ -43,8 +43,8 @@ ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
 ```
 
 Antes del menú —si hay teclado y pantalla de verdad— el juego se
-presenta: el **sello de Aldamar** en ASCII (el Corazón de Ceniza
-colgado de su cordón), un **jingle 8-bit** de dos segundos y
+presenta: el **sello de Aldamar** en ASCII —el héroe de la historia,
+el Corazón de Ceniza al pecho y la espada clavada a su costado—, un **jingle 8-bit** de dos segundos y
 «Presiona cualquier tecla para comenzar…». El mismo jingle suena en la
 pantalla de cierre al terminar una aventura, victoria o desgracia. Los
 atajos que saltan el menú (`--cargar`, aventura y dificultad por CLI)
