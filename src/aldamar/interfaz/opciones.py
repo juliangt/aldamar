@@ -18,7 +18,7 @@ import sys
 import textwrap
 from contextlib import contextmanager
 
-from .mundo import normaliza
+from ..contenido.mundo import normaliza
 
 TITULO, SELECCION, AMARILLO, DIM = "1;36", "1;36", "33", "2"
 

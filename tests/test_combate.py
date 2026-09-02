@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar.personajes import Combatiente
+from aldamar.contenido.personajes import Combatiente
 
 from conftest import AVENTURA, CAMINO
 

@@ -1,11 +1,11 @@
 """Carga y validación de aventuras definidas en archivos JSON.
 
-Cada aventura de Aldamar es un `*.json` dentro de `aldamar.aventuras`:
+Cada aventura de Aldamar es un `*.json` dentro de `aldamar.datos.aventuras`:
 este módulo lo lee, valida el contrato —campos obligatorios, tipos y
 referencias entre secciones, además del vocabulario de eventos de
 `eventos.py`— y arma el objeto `Aventura` que el motor consume.
 
-Sumar una aventura al juego = soltar su JSON en el paquete: el
+Sumar una aventura al juego = soltar su JSON en `datos/aventuras/`: el
 descubrimiento (`cargar_todas`) es automático y el orden de registro —
 el del menú— lo fija el campo opcional `orden` (a igualdad o ausencia,
 alfabético por nombre de archivo). Ante un archivo roto, el error
@@ -661,20 +661,20 @@ def cargar_aventura(texto: str, origen: str) -> Aventura:
 
 
 def cargar_todas(raiz: Any | None = None) -> None:
-    """Descubre y registra todos los `*.json` del paquete de aventuras.
+    """Descubre y registra todos los `*.json` de `datos/aventuras`.
 
     `raiz` permite apuntar a otro directorio (los tests); por defecto es
-    `aldamar.aventuras`. El orden de registro —el del menú— lo fija el
+    `aldamar.datos.aventuras`. El orden de registro —el del menú— lo fija el
     campo opcional `orden` (menor primero, y antes que quien no lo
     declara); a igualdad, alfabético por nombre de archivo.
     """
     if raiz is None:
-        raiz = resources.files("aldamar.aventuras")
+        raiz = resources.files("aldamar").joinpath("datos", "aventuras")
     cargadas = []
     for entrada in raiz.iterdir():
         if not entrada.name.endswith(".json"):
             continue
-        av = cargar_aventura(entrada.read_text(encoding="utf-8"), f"aventuras/{entrada.name}")
+        av = cargar_aventura(entrada.read_text(encoding="utf-8"), f"datos/aventuras/{entrada.name}")
         cargadas.append((av.orden if av.orden is not None else float("inf"), entrada.name, av))
     # el legado cruza aventuras: toda canónica importada tiene que
     # exportarla alguna (el error nombra el archivo que la espera)
@@ -685,7 +685,7 @@ def cargar_todas(raiz: Any | None = None) -> None:
         for canonica in av.legado.importa:
             if canonica not in canonicas:
                 raise _mal(
-                    f"aventuras/{nombre}",
+                    f"datos/aventuras/{nombre}",
                     f"legado.importa: la bandera canónica {canonica!r} "
                     f"no la exporta ninguna aventura",
                 )

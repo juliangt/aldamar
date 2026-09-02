@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar.juego import Juego
-from aldamar.personajes import Enemigo
-from aldamar.rasgos import RASGOS, cargar_rasgos
+from aldamar.motor.juego import Juego
+from aldamar.contenido.personajes import Enemigo
+from aldamar.contenido.rasgos import RASGOS, cargar_rasgos
 
 
 def _saco(vida: int) -> Enemigo:

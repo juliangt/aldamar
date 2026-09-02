@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from aldamar.dificultad import obtener_dificultad
-from aldamar.menu import Eleccion, elegir_opcion, menu_principal
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.interfaz.menu import Eleccion, elegir_opcion, menu_principal
 
 from conftest import EntradaTipeada
 
@@ -144,7 +144,7 @@ def test_menu_principal_salir_y_eof():
 
 def menu_flechas(monkeypatch, teclas):
     """menu_principal en modo flechas con teclas sintéticas."""
-    import aldamar.opciones as opciones_mod
+    import aldamar.interfaz.opciones as opciones_mod
 
     pendientes = list(teclas)
     monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))

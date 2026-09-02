@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from aldamar import guardado
-from aldamar.guardado import PartidaInvalida, migrar, preparar
+from aldamar.motor import guardado
+from aldamar.motor.guardado import PartidaInvalida, migrar, preparar
 
 FIXTURE = str(Path(__file__).parent / "datos" / "partida_v0.json")
 
@@ -54,7 +54,7 @@ def test_la_migracion_va_campo_a_campo():
 
 def test_el_guardado_migrado_se_juega(tmp_path):
     """La partida real pre-versionada se carga, se viste sola y sigue."""
-    from aldamar.juego import Juego
+    from aldamar.motor.juego import Juego
 
     juego = Juego.desde_archivo(
         FIXTURE,
@@ -75,7 +75,7 @@ def test_el_guardado_migrado_se_juega(tmp_path):
 # ── el guardado de la versión actual ────────────────────────────────────
 
 def test_guardar_escribe_la_version(tmp_path, fabrica):
-    from aldamar.juego import Juego
+    from aldamar.motor.juego import Juego
 
     ruta = str(tmp_path / "partida.json")
     juego, _ = fabrica(["", f"guardar {ruta}", "salir"], semilla=5)

@@ -110,7 +110,7 @@ siguiente.
   errante proscrito de Valoria (*Lengua de mercado*: paga 1 moneda
   menos en cada compra; viaja con provisiones y antorcha). Belthar y
   los textos saben a quién le hablan. Los dones viven en
-  `rasgos.json`: cada uno declara nombre, descripción y su efecto con
+  `datos/rasgos.json`: cada uno declara nombre, descripción y su efecto con
   un vocabulario de modificadores que el motor aplica sin conocer
   ningún don en concreto.
 - **Grupo**: puedes reclutar a **Sylvana** (arquera sylva), **Sir
@@ -199,24 +199,31 @@ sobre cada aventura registrada.
 
 ```
 src/aldamar/
-├── personajes.py             # jugador, compañeros, enemigos, corrupción, progresión, habilidades y fases
-├── rasgos.py                 # el catálogo de dones: lee y valida rasgos.json
-├── rasgos.json               # los dones de héroe: nombre, descripción y efecto en datos
-├── mundo.py                  # primitivas: Lugar, normaliza, alcanzables
-├── dificultad.py             # presets de balance (paseo / camino / ceniza)
-├── aventura.py               # el contrato Aventura + registro de aventuras
-├── eventos.py                # vocabulario declarativo de eventos y golpes especiales
-├── legado.py                 # el hilo de la serie: legado.json, fama y banderas canónicas
-├── cargador.py               # lee y valida los JSON de aventura
-├── opciones.py               # selector de opciones: flechas ↑/↓ o texto
-├── menu.py                   # menú principal interactivo y ayuda
-├── juego.py                  # motor: bucle, comandos, combate, guardado
-└── aventuras/
-    ├── corazon_ceniza.json    # la campaña original, en datos
-    ├── brasa_vegaverde.json   # Las Ascuas · I (corta)
-    ├── sal_y_ceniza.json      # Las Ascuas · II (media)
-    └── aguja_sin_sombra.json  # Las Ascuas · III (saga)
-tests/                        # mapa, combate, cargador, menú y partidas completas
+├── __main__.py               # punto de entrada: python -m aldamar
+├── contenido/                # el modelo y la carga del contenido
+│   ├── aventura.py           # el contrato Aventura + registro de aventuras
+│   ├── cargador.py           # lee y valida los JSON de aventura
+│   ├── rasgos.py             # el catálogo de dones: lee y valida rasgos.json
+│   ├── personajes.py         # jugador, compañeros, enemigos, corrupción, progresión, habilidades y fases
+│   ├── mundo.py              # primitivas: Lugar, normaliza, alcanzables
+│   └── eventos.py            # vocabulario declarativo de eventos y golpes especiales
+├── motor/                    # las reglas y el estado del juego
+│   ├── juego.py              # motor: bucle, comandos, combate, guardado
+│   ├── dificultad.py         # presets de balance (paseo / camino / ceniza)
+│   ├── guardado.py           # partida.json: versionado y migración
+│   ├── legado.py             # el hilo de la serie: legado.json, fama y banderas canónicas
+│   └── estadisticas.py       # estadisticas.json para el playtesting
+├── interfaz/                 # la entrada del usuario
+│   ├── menu.py               # menú principal interactivo y ayuda
+│   └── opciones.py           # selector de opciones: flechas ↑/↓ o texto
+└── datos/                    # el contenido del juego, en JSON y fuera del código
+    ├── rasgos.json           # los dones de héroe: nombre, descripción y efecto en datos
+    └── aventuras/
+        ├── corazon_ceniza.json    # la campaña original, en datos
+        ├── brasa_vegaverde.json   # Las Ascuas · I (corta)
+        ├── sal_y_ceniza.json      # Las Ascuas · II (media)
+        └── aguja_sin_sombra.json  # Las Ascuas · III (saga)
+tests/                         # mapa, combate, cargador, menú y partidas completas
 ```
 
 El motor no sabe nada de ninguna aventura en concreto: lee el mapa, los
@@ -227,7 +234,7 @@ convierte en funciones del motor).
 
 ## Cómo sumar contenido
 
-**Una aventura nueva.** Crea `src/aldamar/aventuras/mi_aventura.json`:
+**Una aventura nueva.** Crea `src/aldamar/datos/aventuras/mi_aventura.json`:
 un objeto con `id`, `titulo`, `descripcion`, `prologo_base`,
 `texto_nombre`, `lugar_inicial`, `jugador_inicial`, `epilogos`
 (`muerte` y `caida`) y las secciones `personajes`, `items`, `enemigos`,
@@ -329,13 +336,13 @@ declara un `legado` junto a las secciones del JSON:
 
 **Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,
-un `rasgo` (clave del catálogo de dones `rasgos.json`), `prologo_extra`
+un `rasgo` (clave del catálogo de dones `datos/rasgos.json`), `prologo_extra`
 y `texto_nombre` propios y los apodos con los que los textos le hablan
 (`trato`, `quien`). El menú lo ofrece automáticamente cuando hay más de
 un héroe. Para acompañantes reclutables, otra entrada en `reclutas` más
 su diálogo y su lugar en el mapa.
 
-**Un don (rasgo) nuevo.** Agrega una entrada a `rasgos.json` con su
+**Un don (rasgo) nuevo.** Agrega una entrada a `datos/rasgos.json` con su
 `nombre`, su `descripcion` (la que muestra `estado`) y su `efecto`, y
 referénciala desde la ficha de un héroe: el motor lo aplica sin tocar
 Python. El vocabulario de efectos son modificadores genéricos que se

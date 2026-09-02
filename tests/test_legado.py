@@ -12,11 +12,11 @@ from importlib import resources
 
 import pytest
 
-from aldamar.aventura import obtener_aventura
-from aldamar import cargador
-from aldamar.cargador import AventuraInvalida, cargar_aventura_dict, cargar_todas
-from aldamar.juego import Juego, _escribir_legado
-from aldamar.legado import escribir, leer
+from aldamar.contenido.aventura import obtener_aventura
+from aldamar.contenido import cargador
+from aldamar.contenido.cargador import AventuraInvalida, cargar_aventura_dict, cargar_todas
+from aldamar.motor.juego import Juego, _escribir_legado
+from aldamar.motor.legado import escribir, leer
 from conftest import AVENTURA, EntradaTipeada
 from test_cargador import AVENTURA_MINIMA
 
@@ -39,8 +39,8 @@ def _juego(av, lineas=None, salida=None, **kw):
 
 def _datos_aventura(nombre: str) -> dict:
     texto = (
-        resources.files("aldamar.aventuras")
-        .joinpath(nombre)
+        resources.files("aldamar")
+        .joinpath("datos", "aventuras", nombre)
         .read_text(encoding="utf-8")
     )
     return json.loads(texto)

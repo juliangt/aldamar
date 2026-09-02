@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar.aventura import PersonajeInicial
-from aldamar.juego import Juego
-from aldamar.personajes import Enemigo
-from aldamar.rasgos import RASGOS
+from aldamar.contenido.aventura import PersonajeInicial
+from aldamar.motor.juego import Juego
+from aldamar.contenido.personajes import Enemigo
+from aldamar.contenido.rasgos import RASGOS
 
 from conftest import AVENTURA, CAMINO, EntradaTipeada
 

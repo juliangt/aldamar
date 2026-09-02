@@ -7,8 +7,8 @@ import re
 
 import pytest
 
-import aldamar.opciones as opciones_mod
-from aldamar.opciones import elegir_opcion
+import aldamar.interfaz.opciones as opciones_mod
+from aldamar.interfaz.opciones import elegir_opcion
 
 from conftest import EntradaTipeada
 

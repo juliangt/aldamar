@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from aldamar.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
+from aldamar.motor.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
 
 from conftest import AVENTURA, CAMINO, EntradaTipeada
-from aldamar.juego import Juego
+from aldamar.motor.juego import Juego
 
 
 def test_camino_es_el_balance_original():

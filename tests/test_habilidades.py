@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import copy
 
-from aldamar.aventura import Aventura, obtener_aventura
-from aldamar.cargador import cargar_aventura_dict
-from aldamar.dificultad import obtener_dificultad
-from aldamar.juego import Juego
+from aldamar.contenido.aventura import Aventura, obtener_aventura
+from aldamar.contenido.cargador import cargar_aventura_dict
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.motor.juego import Juego
 
 from conftest import AVENTURA, EntradaTipeada
 

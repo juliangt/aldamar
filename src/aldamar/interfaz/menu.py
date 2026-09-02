@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from . import aventuras  # noqa: F401  (garantiza el registro del contenido)
-from .aventura import AVENTURAS, Aventura, obtener_aventura
-from .dificultad import DIFICULTADES, Dificultad, obtener_dificultad
+from .. import datos  # noqa: F401  (garantiza el registro del contenido)
+from ..contenido.aventura import AVENTURAS, Aventura, obtener_aventura
+from ..motor.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
 from .opciones import LIMPIAR, _es_interactivo, elegir_opcion, pantalla_completa  # noqa: F401  (elegir_opcion re-exportado)
 
 ARCHIVO_PARTIDA = "partida.json"

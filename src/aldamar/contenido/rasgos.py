@@ -136,8 +136,8 @@ def cargar_rasgos(datos: object, origen: str = "rasgos.json") -> dict[str, Rasgo
 
 
 def cargar_catalogo() -> dict[str, Rasgo]:
-    """Lee el `rasgos.json` del paquete; el catálogo vivo del juego."""
-    texto = resources.files("aldamar").joinpath("rasgos.json").read_text(encoding="utf-8")
+    """Lee el `rasgos.json` de `aldamar.datos`; el catálogo vivo del juego."""
+    texto = resources.files("aldamar").joinpath("datos", "rasgos.json").read_text(encoding="utf-8")
     return cargar_rasgos(json.loads(texto), "rasgos.json")
 
 

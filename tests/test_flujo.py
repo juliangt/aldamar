@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from aldamar.dificultad import obtener_dificultad
-from aldamar.juego import Juego, main
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.motor.juego import Juego, main
 
 from conftest import AVENTURA, CAMINO, EntradaTipeada
 

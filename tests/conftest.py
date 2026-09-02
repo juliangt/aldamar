@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar import aventuras  # noqa: F401  (registra el contenido)
-from aldamar.aventura import obtener_aventura
-from aldamar.dificultad import obtener_dificultad
-from aldamar.juego import Juego
+from aldamar import datos  # noqa: F401  (registra el contenido)
+from aldamar.contenido.aventura import obtener_aventura
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.motor.juego import Juego
 
 AVENTURA = obtener_aventura("corazon_ceniza")
 CAMINO = obtener_dificultad("camino")
