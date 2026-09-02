@@ -21,7 +21,9 @@ Eventos de lugar:
   `requiere_flag` para aparecer solo si hubo cierta decisión).
 
 Golpe especial de combate: daño base más corrupción // divisor, con
-coste de corrupción y mensaje parametrizados.
+coste de corrupción y mensaje parametrizados. Las otras dos piezas del
+vocabulario de combate —`habilidades` de enemigo y `fases` de jefe— se
+declaran dentro de cada enemigo del JSON y viven en `personajes.py`.
 """
 
 from __future__ import annotations
@@ -49,7 +51,7 @@ def evento_otorgar(item: str, texto: str, una_vez: str | None = None) -> Evento:
             return
         if una_vez:
             j.flags[una_vez] = True
-        j.jugador.inventario.append(item)
+        j.adquirir(item)
         j.epico("\n" + texto)
 
     return evento
@@ -123,7 +125,7 @@ def evento_decision(texto: str, pregunta: str, opciones: list[dict], una_vez: st
         if elegida.get("flag"):
             j.flags[elegida["flag"]] = True
         if elegida.get("item"):
-            j.jugador.inventario.append(elegida["item"])
+            j.adquirir(elegida["item"])
         if elegida.get("corrupcion"):
             j.corruptear(elegida["corrupcion"])
         if elegida.get("texto"):

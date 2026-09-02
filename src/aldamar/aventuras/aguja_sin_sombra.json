@@ -141,62 +141,123 @@
     "sombra": {
       "nombre": "sombra cosida",
       "vida": 12,
-      "ataque": 4
+      "ataque": 4,
+      "experiencia": 12
     },
     "mirlo": {
       "nombre": "mirlo de ceniza",
       "vida": 14,
-      "ataque": 4
+      "ataque": 4,
+      "experiencia": 14
     },
     "espectro": {
       "nombre": "espectro de ceniza",
       "vida": 16,
-      "ataque": 5
+      "ataque": 5,
+      "experiencia": 18,
+      "habilidades": [
+        {
+          "tipo": "veneno",
+          "texto": "El espectro hunde su toque frío en tu sangre",
+          "dano": 2,
+          "turnos": 3,
+          "condicion": { "cada_n_turnos": 3 }
+        }
+      ]
     },
     "trasgo": {
       "nombre": "trasgo de las cavernas",
       "vida": 15,
-      "ataque": 5
+      "ataque": 5,
+      "experiencia": 12
     },
     "lobero": {
       "nombre": "lóbero de ceniza",
       "vida": 18,
-      "ataque": 6
+      "ataque": 6,
+      "experiencia": 18
     },
     "capitan_ceniza": {
       "nombre": "el Capitán de Ceniza",
       "vida": 20,
       "ataque": 5,
       "defensa": 0,
-      "sin_huida": false
+      "sin_huida": false,
+      "experiencia": 20
     },
     "capitan": {
       "nombre": "el Capitán de Ceniza",
       "vida": 24,
       "ataque": 7,
       "defensa": 1,
-      "sin_huida": false
+      "sin_huida": false,
+      "experiencia": 28,
+      "habilidades": [
+        {
+          "tipo": "golpe_fuerte",
+          "texto_aviso": "El Capitán clava los pies, alza el mandoble por encima de la cabeza y el acero empieza a silbar…",
+          "texto_golpe": "¡El mandoble del Capitán cae como una losa: −{efectivo}!",
+          "dano_extra": 6,
+          "peso": 3,
+          "condicion": { "cada_n_turnos": 3 }
+        }
+      ]
     },
     "capitan_rehecho": {
       "nombre": "el Capitán de Ceniza, rehecho",
       "vida": 28,
       "ataque": 8,
       "defensa": 1,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 32
     },
     "eco_voz": {
       "nombre": "la Voz de la Aguja",
       "vida": 24,
       "ataque": 7,
       "defensa": 0,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 30
     },
     "morvath": {
       "nombre": "Morvath, tejido de humo",
       "vida": 36,
       "ataque": 9,
       "defensa": 1,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 45,
+      "habilidades": [
+        {
+          "tipo": "curarse",
+          "texto": "El humo vuelve a tejerse sobre las heridas",
+          "puntos": 4,
+          "peso": 2,
+          "condicion": { "vida_menor_que": 75, "cada_n_turnos": 3 }
+        }
+      ],
+      "fases": [
+        {
+          "vida_menor_que": 50,
+          "texto": "El tejido de humo se rasga por dentro: algo pálido y enorme se abre paso entre las costuras. Morvath ya no guarda forma humana — la guarda peor.",
+          "nombre": "Morvath, la Aguja viva",
+          "ataque": 11,
+          "habilidades": [
+            {
+              "tipo": "curarse",
+              "texto": "La Aguja se bebe el humo del suelo y la herida se cierra",
+              "puntos": 5,
+              "peso": 3,
+              "condicion": { "vida_menor_que": 50, "cada_n_turnos": 2 }
+            },
+            {
+              "tipo": "refuerzo",
+              "texto": "Morvath corta un jirón de sí mismo y lo lanza al aire:",
+              "enemigo": "espectro",
+              "veces": 1
+            }
+          ]
+        }
+      ]
     }
   },
   "reclutas": {

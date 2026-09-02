@@ -166,36 +166,42 @@
     "lobo": {
       "nombre": "lobo de sombra",
       "vida": 9,
-      "ataque": 3
+      "ataque": 3,
+      "experiencia": 12
     },
     "espectro": {
       "nombre": "espectro de ceniza",
       "vida": 13,
-      "ataque": 5
+      "ataque": 5,
+      "experiencia": 18
     },
     "trasgo": {
       "nombre": "trasgo de las cavernas",
       "vida": 11,
-      "ataque": 4
+      "ataque": 4,
+      "experiencia": 12
     },
     "lobero": {
       "nombre": "lóbero alfa",
       "vida": 16,
-      "ataque": 6
+      "ataque": 6,
+      "experiencia": 25
     },
     "capitan": {
       "nombre": "Capitán de Ceniza",
       "vida": 26,
       "ataque": 8,
       "defensa": 1,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 28
     },
     "custodio": {
       "nombre": "Custodio Pálido",
       "vida": 38,
       "ataque": 9,
       "defensa": 1,
-      "sin_huida": true
+      "sin_huida": true,
+      "experiencia": 40
     }
   },
   "reclutas": {

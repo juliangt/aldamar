@@ -153,7 +153,7 @@ def test_el_combate_se_navega_con_flechas(monkeypatch):
     juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
     juego.jugador.vida = juego.jugador.vida_max = 200
     juego.enemigos[juego.lugar] = ["lobo"]
-    juego._combate(["lobo"])
+    juego._combate()
     assert not juego.enemigos[juego.lugar]  # Enter siempre elegía "Atacar"
     texto = "\n".join(salida)
     assert "Atacar" in texto  # el menú de combate ofreció sus opciones

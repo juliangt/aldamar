@@ -43,11 +43,13 @@ def ayuda(av: Aventura) -> str:
     return f"""Comandos:
   mirar              Mirar alrededor (salidas, objetos, gente)
   ir <destino>       Viajar: por número, dirección o nombre (ir 1, ir este)
-  estado             Tu vida, corrupción, equipo y compañeros
+  estado             Vida, nivel, corrupción, equipo y compañeros
   inventario         Lo que llevas
   tomar <cosa>       Recoger del suelo (tomar todo)
   comprar <cosa>     En las tiendas
   usar <cosa>        Consumir provisiones o hierbas
+  equipar <cosa>     Empuñar un arma o ponerte una pieza de armadura
+  desequipar <cosa>  Guardar lo que llevas puesto (o: desequipar arma)
   hablar <quién>     Escuchar a quien esté aquí
   reclutar <quién>   Sumar un aliado a tu grupo
   descansar          Curarte del todo donde haya cama
@@ -55,6 +57,10 @@ def ayuda(av: Aventura) -> str:
   cargar [archivo]   Cargar partida
   ayuda              Esta ayuda
   salir              Dejar de jugar
+
+Cada enemigo caído da experiencia; con la suficiente, subes de nivel
+(+1 ataque, +8 de vida máxima). Los enemigos con habilidades avisan lo
+que van a hacer: léelos y decide cuándo gastar provisiones.
 
 En combate:  atacar · usar <cosa>{especial} · cuerno · huir · estado
 """

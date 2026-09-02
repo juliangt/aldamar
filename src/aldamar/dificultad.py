@@ -22,6 +22,7 @@ class Dificultad:
     ataque_enemigos: float = 1.0
     corrupcion: float = 1.0
     curacion: float = 1.0
+    experiencia: float = 1.0
 
 
 DIFICULTADES: dict[str, Dificultad] = {
@@ -36,6 +37,7 @@ DIFICULTADES: dict[str, Dificultad] = {
         ataque_enemigos=0.7,
         corrupcion=0.6,
         curacion=1.25,
+        experiencia=1.25,  # crecer más rápido compensa al héroe suave
     ),
     "camino": Dificultad(
         clave="camino",
@@ -52,6 +54,7 @@ DIFICULTADES: dict[str, Dificultad] = {
         ataque_enemigos=1.25,
         corrupcion=1.25,
         curacion=0.85,
+        experiencia=0.85,  # crecer cuesta más donde la ceniza muerde
     ),
 }
 

@@ -248,6 +248,140 @@ def test_el_orden_invalido_se_rechaza():
         cargar_aventura_dict(datos, "prueba.json")
 
 
+# ── el vocabulario de combate: experiencia, habilidades y fases ─────────
+
+def _minima_con_enemigo(enemigo: dict):
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["enemigos"] = {"bestia": enemigo}
+    return datos
+
+
+def test_la_experiencia_negativa_se_rechaza():
+    datos = _minima_con_enemigo({"nombre": "bestia", "vida": 5, "ataque": 1, "experiencia": -1})
+    with pytest.raises(AventuraInvalida, match="experiencia"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_la_experiencia_es_opcional_y_sale_a_cero():
+    datos = _minima_con_enemigo({"nombre": "bestia", "vida": 5, "ataque": 1})
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert "experiencia" not in av.enemigos["bestia"]  # el JSON queda tal cual
+
+
+def test_un_tipo_de_habilidad_desconocido_se_rechaza():
+    datos = _minima_con_enemigo({
+        "nombre": "bestia", "vida": 5, "ataque": 1,
+        "habilidades": [{"tipo": "convertirse_en_dragon"}],
+    })
+    with pytest.raises(AventuraInvalida, match="convertirse_en_dragon"):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+@pytest.mark.parametrize(
+    "mutacion, pista",
+    [
+        # veneno mal declarado
+        (lambda e: e["habilidades"][0].pop("dano"), "dano"),
+        (lambda e: e["habilidades"][0].update(turnos=0), "turnos"),
+        (lambda e: e["habilidades"][0].pop("texto"), "texto"),
+        # curarse sin puntos
+        (lambda e: e["habilidades"][0].update(tipo="curarse", puntos=0), "puntos"),
+        # refuerzo fantasma, a sí mismo o sin veces razonables
+        (lambda e: e["habilidades"][0].update(tipo="refuerzo", enemigo="fantasma"), "fantasma"),
+        (lambda e: e["habilidades"][0].update(tipo="refuerzo", enemigo="bestia"), "sí mismo"),
+        (lambda e: e["habilidades"][0].update(tipo="refuerzo", enemigo="eco", veces=0), "veces"),
+        # golpe fuerte sin su telegrafía, sin golpe o sin {efectivo}
+        (lambda e: e["habilidades"][0].update(tipo="golpe_fuerte", dano_extra=0), "dano_extra"),
+        (lambda e: e["habilidades"][0].update(
+            tipo="golpe_fuerte", texto_aviso="Tensa…", texto_golpe="cae", dano_extra=3
+        ), "texto_golpe"),
+        # peso y condición
+        (lambda e: e["habilidades"][0].update(peso=0), "peso"),
+        (lambda e: e["habilidades"][0].update(condicion={"vida_menor_que": 150}), "porcentaje"),
+        (lambda e: e["habilidades"][0].update(condicion={"cada_n_turnos": -1}), "cada_n_turnos"),
+    ],
+)
+def test_las_habilidades_rotas_se_reportan_con_nombre_y_campo(mutacion, pista):
+    enemigo = {
+        "nombre": "bestia", "vida": 5, "ataque": 1,
+        "habilidades": [{
+            "tipo": "veneno", "texto": "Pica", "dano": 2, "turnos": 2,
+        }],
+    }
+    mutacion(enemigo)
+    datos = _minima_con_enemigo(enemigo)
+    if "eco" in json.dumps(datos):
+        datos["enemigos"]["eco"] = {"nombre": "eco", "vida": 3, "ataque": 1}
+    with pytest.raises(AventuraInvalida, match=pista):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_el_refuerzo_a_un_enemigo_existente_se_acepta():
+    datos = _minima_con_enemigo({
+        "nombre": "bestia", "vida": 5, "ataque": 1,
+        "habilidades": [{
+            "tipo": "refuerzo", "texto": "Llama:", "enemigo": "eco", "veces": 2,
+        }],
+    })
+    datos["enemigos"]["eco"] = {"nombre": "eco", "vida": 3, "ataque": 1}
+    av = cargar_aventura_dict(datos, "prueba.json")
+    enemigo = av.crear_enemigo("bestia", CAMINO)
+    assert enemigo.habilidades[0].enemigo == "eco"
+    assert enemigo.habilidades[0].veces == 2
+
+
+@pytest.mark.parametrize(
+    "mutacion, pista",
+    [
+        (lambda f: f.pop("vida_menor_que"), "vida_menor_que"),
+        (lambda f: f.update(vida_menor_que=0), "porcentaje"),
+        (lambda f: f.pop("texto"), "texto"),
+        (lambda f: f.update(ataque=-2), "ataque"),
+        (
+            lambda f: f.update(habilidades=[{"tipo": "levitarse"}]),
+            "levitarse",
+        ),  # las habilidades de una fase se validan igual
+    ],
+)
+def test_las_fases_rotas_se_reportan_con_nombre_y_campo(mutacion, pista):
+    fase = {
+        "vida_menor_que": 50,
+        "texto": "Cambia la piel.",
+        "ataque": 8,
+    }
+    mutacion(fase)
+    datos = _minima_con_enemigo({"nombre": "jefe", "vida": 20, "ataque": 5, "fases": [fase]})
+    with pytest.raises(AventuraInvalida, match=pista):
+        cargar_aventura_dict(datos, "prueba.json")
+
+
+def test_un_jefe_con_fases_se_carga_y_se_arma():
+    datos = _minima_con_enemigo({
+        "nombre": "jefe", "vida": 40, "ataque": 6, "experiencia": 45,
+        "habilidades": [{"tipo": "curarse", "texto": "Se recompone", "puntos": 3}],
+        "fases": [
+            {
+                "vida_menor_que": 60, "texto": "Se encrespa.", "nombre": "jefe airado",
+                "ataque": 8, "defensa": 1,
+                "habilidades": [{"tipo": "golpe_fuerte", "texto_aviso": "Tensa…",
+                                 "texto_golpe": "Cae: −{efectivo}.", "dano_extra": 5}],
+            },
+            {"vida_menor_que": 25, "texto": "Se deshace.", "ataque": 10},
+        ],
+    })
+    av = cargar_aventura_dict(datos, "prueba.json")
+    jefe = av.crear_enemigo("bestia", CAMINO)
+    assert [f.umbral for f in jefe.fases] == [60, 25]  # el cargador ordena de mayor a menor
+    assert jefe.habilidades[0].tipo == "curarse"
+    jefe.vida = 20
+    assert jefe.avanzar_fase() == "Se encrespa."
+    assert jefe.ataque == 8 and jefe.defensa == 1
+    assert jefe.habilidades[0].tipo == "golpe_fuerte"
+    jefe.vida = 5  # por debajo también del 25% de 40
+    assert jefe.avanzar_fase() == "Se deshace."
+    assert jefe.ataque == 10
+
+
 def test_el_orden_de_registro_lo_fija_el_campo_orden(tmp_path, monkeypatch):
     segunda = copy.deepcopy(AVENTURA_MINIMA)
     segunda.update(id="segunda", titulo="La Segunda", orden=1)
