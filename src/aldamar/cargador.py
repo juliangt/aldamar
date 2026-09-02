@@ -21,7 +21,8 @@ from typing import Any
 from .aventura import Legado, Aventura, PersonajeInicial, registrar
 from .eventos import TIPOS_EVENTOS, ataque_especial_desde, evento_desde
 from .mundo import Lugar
-from .personajes import RASGOS, TIPOS_HABILIDAD, Companero
+from .personajes import TIPOS_HABILIDAD, Companero
+from .rasgos import RASGOS
 
 _FALTA = object()  # sentinel: el campo no vino y no tiene valor por defecto
 

@@ -32,7 +32,6 @@ from .opciones import (
 )
 from .personajes import (
     CORRUPCION_MAXIMA,
-    RASGOS,
     SUBIDA_ATAQUE,
     SUBIDA_VIDA,
     XP_NIVEL,
@@ -42,6 +41,7 @@ from .personajes import (
     Habilidad,
     Jugador,
 )
+from .rasgos import RASGOS
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 
@@ -162,6 +162,27 @@ class Juego:
 
     def ataque_total(self) -> int:
         return self.jugador.ataque + self.bonus_arma()
+
+    def _modificador(self, campo: str, objetivo: Combatiente | None = None) -> int:
+        """La suma de un modificador del vocabulario de rasgos sobre los
+        dones del héroe: el único camino por el que un don toca la
+        mecánica. Cada don aporta el valor que declaró en `rasgos.json`
+        mientras cumpla su condición (`cond_vida_enemigo` compara la
+        vida del objetivo del golpe con un porcentaje de su vida_max).
+        """
+        total = 0
+        for clave in self.jugador.rasgos:
+            rasgo = RASGOS[clave]
+            valor = getattr(rasgo, campo)
+            if not valor:
+                continue
+            if rasgo.cond_vida_enemigo is not None and (
+                objetivo is None
+                or objetivo.vida <= objetivo.vida_max * rasgo.cond_vida_enemigo / 100
+            ):
+                continue
+            total += valor
+        return total
 
     def _autoequipar(self) -> None:
         """Viste lo mejor que haya, sin decisión: al empezar y al cargar
@@ -810,8 +831,7 @@ class Juego:
             self.tenue("No venden eso aquí.")
             return
         precio = self.av.items[clave]["precio"] or 0
-        if self.jugador.tiene("lengua_mercado"):
-            precio = max(1, precio - 1)
+        precio = max(1, precio - self._modificador("descuento_compra"))
         if self.jugador.monedas < precio:
             self.aviso(f"Te faltan monedas: cuesta {precio} y llevas {self.jugador.monedas}.")
             return
@@ -936,9 +956,7 @@ class Juego:
     def _recibe(self, objetivo: Combatiente | Jugador, dano: int) -> int:
         """Aplica daño a un combatiente o al jugador (defensa según armadura)."""
         if isinstance(objetivo, Jugador):
-            mitigacion = self.bonus_armadura()
-            if self.jugador.tiene("piel_piedra"):
-                mitigacion += 1
+            mitigacion = self.bonus_armadura() + self._modificador("dano_recibido_menos")
             efectivo = max(1, dano - mitigacion)
             self.jugador.vida = max(0, self.jugador.vida - efectivo)
             return efectivo
@@ -947,12 +965,8 @@ class Juego:
     def _golpea(self, atacante: Combatiente, objetivo: Combatiente, extra: int = 3) -> int:
         ataque = self.ataque_total() if atacante is self.jugador else atacante.ataque
         dano = self.rng.randint(max(1, ataque), ataque + extra)
-        if (
-            atacante is self.jugador
-            and self.jugador.tiene("ojo_halcon")
-            and objetivo.vida > objetivo.vida_max // 2
-        ):
-            dano += 1
+        if atacante is self.jugador:
+            dano += self._modificador("dano_extra", objetivo=objetivo)
         return self._recibe(objetivo, dano)
 
     def _duelo(self, enemigo: Enemigo) -> str:

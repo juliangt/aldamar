@@ -102,36 +102,6 @@ def fase_desde(datos: dict) -> Fase:
     )
 
 
-@dataclass(frozen=True)
-class Rasgo:
-    """El don de un héroe: nombre y efecto mecánico, documentado en su ficha."""
-
-    clave: str
-    nombre: str
-    descripcion: str
-
-
-# Los dones que el motor sabe aplicar. Sumar uno = agregar la entrada y
-# darle efecto en `juego.py` (son mecánicas simples y compartidas).
-RASGOS: dict[str, Rasgo] = {
-    "ojo_halcon": Rasgo(
-        clave="ojo_halcon",
-        nombre="Ojo de halcón",
-        descripcion="+1 de daño mientras el enemigo conserve más de la mitad de su vida",
-    ),
-    "piel_piedra": Rasgo(
-        clave="piel_piedra",
-        nombre="Piel de piedra",
-        descripcion="recibes 1 punto menos de daño de cualquier golpe",
-    ),
-    "lengua_mercado": Rasgo(
-        clave="lengua_mercado",
-        nombre="Lengua de mercado",
-        descripcion="pagas 1 moneda menos en cada compra",
-    ),
-}
-
-
 @dataclass
 class Combatiente:
     """Base de todo el que puede pelear.
@@ -275,9 +245,6 @@ class Jugador:
     def envenenar(self, dano: int, turnos: int) -> None:
         self.veneno_dano = max(self.veneno_dano, dano)
         self.veneno_turnos = max(self.veneno_turnos, turnos)
-
-    def tiene(self, rasgo: str) -> bool:
-        return rasgo in self.rasgos
 
     def companeras_vivas(self) -> list[Companero]:
         return [c for c in self.companeros if c.viva]

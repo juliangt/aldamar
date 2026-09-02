@@ -109,7 +109,10 @@ siguiente.
   recibe 1 punto menos de daño; mucha vida, poco ataque) y **Ruy**,
   errante proscrito de Valoria (*Lengua de mercado*: paga 1 moneda
   menos en cada compra; viaja con provisiones y antorcha). Belthar y
-  los textos saben a quién le hablan.
+  los textos saben a quién le hablan. Los dones viven en
+  `rasgos.json`: cada uno declara nombre, descripción y su efecto con
+  un vocabulario de modificadores que el motor aplica sin conocer
+  ningún don en concreto.
 - **Grupo**: puedes reclutar a **Sylvana** (arquera sylva), **Sir
   Aldric** (caballero valoriano) y **Torkan Hachagris** (herrera goran).
   Pelean solos, reciben golpes y pueden caer.
@@ -196,7 +199,9 @@ sobre cada aventura registrada.
 
 ```
 src/aldamar/
-├── personajes.py             # jugador, compañeros, enemigos, rasgos, corrupción, progresión, habilidades y fases
+├── personajes.py             # jugador, compañeros, enemigos, corrupción, progresión, habilidades y fases
+├── rasgos.py                 # el catálogo de dones: lee y valida rasgos.json
+├── rasgos.json               # los dones de héroe: nombre, descripción y efecto en datos
 ├── mundo.py                  # primitivas: Lugar, normaliza, alcanzables
 ├── dificultad.py             # presets de balance (paseo / camino / ceniza)
 ├── aventura.py               # el contrato Aventura + registro de aventuras
@@ -324,11 +329,39 @@ declara un `legado` junto a las secciones del JSON:
 
 **Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,
-un `rasgo` (clave de `RASGOS`), `prologo_extra` y `texto_nombre`
-propios y los apodos con los que los textos le hablan (`trato`,
-`quien`). El menú lo ofrece automáticamente cuando hay más de un héroe.
-Para acompañantes reclutables, otra entrada en `reclutas` más su
-diálogo y su lugar en el mapa.
+un `rasgo` (clave del catálogo de dones `rasgos.json`), `prologo_extra`
+y `texto_nombre` propios y los apodos con los que los textos le hablan
+(`trato`, `quien`). El menú lo ofrece automáticamente cuando hay más de
+un héroe. Para acompañantes reclutables, otra entrada en `reclutas` más
+su diálogo y su lugar en el mapa.
+
+**Un don (rasgo) nuevo.** Agrega una entrada a `rasgos.json` con su
+`nombre`, su `descripcion` (la que muestra `estado`) y su `efecto`, y
+referénciala desde la ficha de un héroe: el motor lo aplica sin tocar
+Python. El vocabulario de efectos son modificadores genéricos que se
+suman entre dones:
+
+```json
+"escudo_runico": {
+  "nombre": "Escudo rúnico",
+  "descripcion": "recibes 2 puntos menos de daño de cualquier golpe",
+  "efecto": {
+    "dano_recibido_menos": 2
+  }
+}
+```
+
+- `dano_extra`: daño extra en cada golpe del héroe (admite
+  `"condicion": { "vida_enemigo_mayor_que": 50 }`, un porcentaje de la
+  vida del enemigo por encima del cual aplica — así declara Ojo de
+  halcón su +1 contra enemigos enteros).
+- `dano_recibido_menos`: puntos que se restan de cada golpe recibido.
+- `descuento_compra`: monedas menos en cada compra (el precio nunca
+  baja de 1).
+
+Si un don futuro necesita una mecánica que el vocabulario no alcanza,
+se extiende el vocabulario de forma genérica —un campo nuevo y su
+interpretación en el motor—, nunca con conocimiento de un don concreto.
 
 **Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
 `dificultad.py` con sus multiplicadores (vida, ataque, monedas,
