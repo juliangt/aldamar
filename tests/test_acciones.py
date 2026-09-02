@@ -4,7 +4,17 @@ from __future__ import annotations
 
 import aldamar.opciones as opciones_mod
 from aldamar import __version__
-from aldamar.juego import ESCRIBIR, OTRAS, Juego
+from aldamar.juego import (
+    COMPRAR,
+    ESCRIBIR,
+    HABLAR,
+    IR,
+    OTRAS,
+    RECLUTAR,
+    TOMAR,
+    USAR,
+    Juego,
+)
 
 from conftest import AVENTURA, EntradaTipeada
 
@@ -47,14 +57,61 @@ def test_el_menu_refleja_lo_que_hay_en_el_lugar(fabrica):
     claves = [c for c, _e, _d in juego._opciones_juego()]
     assert claves[0] == "mirar"
     assert any(c.startswith("ir ") for c in claves)  # los destinos del lugar
-    assert "tomar provisiones" in claves  # hay objetos en el suelo de arranque
-    assert "hablar belthar" in claves
+    assert TOMAR in claves  # hay objetos (y monedas) en el suelo de arranque
+    assert "hablar belthar" in claves  # un solo npc: el verbo queda directo
     assert claves[-1] == OTRAS  # lo que no es gameplay vive en el submenú
     assert "guardar" not in claves and "estado" not in claves
     otras = [c for c, _e, _d in juego._opciones_otras()]
     assert "estado" in otras and "guardar" in otras and "ayuda" in otras
     assert otras[-1] == "salir"
     assert ESCRIBIR in otras  # el modo tipeado sigue ahí, escondido
+
+
+def test_los_verbos_se_pandan_cuando_no_tienen_nada(fabrica, monkeypatch):
+    juego, _ = fabrica(["salir"])
+    l = juego.aqui()
+    monkeypatch.setattr(l, "npcs", {})  # sin nadie que hable ni reclute
+    juego.tomados.update((l.id, k) for k in l.objetos)
+    juego.monedas_tomadas.add(l.id)
+    juego.jugador.inventario.clear()
+    claves = [c for c, _e, _d in juego._opciones_juego()]
+    assert TOMAR not in claves and HABLAR not in claves and RECLUTAR not in claves
+    assert USAR not in claves  # sin consumibles en la mochila
+    assert COMPRAR not in claves  # vegaverde no es tienda
+
+
+def test_un_verbo_con_una_sola_opcion_queda_directo(fabrica):
+    juego, _ = fabrica(["salir"])
+    claves = [c for c, _e, _d in juego._opciones_juego()]
+    assert "ir 1" in claves  # vegaverde tiene un solo destino: sin submenú
+    assert "hablar belthar" in claves  # y una sola persona a la que hablar
+    assert IR not in claves and HABLAR not in claves
+
+
+def test_el_verbo_abre_su_submenu_y_esc_vuelve(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3", "\r"], lineas=["", ""])
+    orden = juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    assert orden == "tomar todo"  # «3» abre el verbo Tomar; Enter, «Tomar todo»
+    assert "Tomar — en Vegaverde" in "\n".join(salida)  # el submenú dice dónde estás
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", teclado(["3", "\x1b", "\r"]))
+    salida.clear()
+    orden = juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    assert orden == "mirar"  # Esc volvió al menú de acciones, y allí se eligió
+    assert "\n".join(salida).count("¿Qué haces?") == 2  # raíz, submenú y raíz otra vez
+
+
+def test_el_submenu_dice_donde_estas_y_cuantas_cosas_hay(fabrica):
+    juego, _ = fabrica(["salir"])
+    juego.lugar = "rioclaro"
+    titulo, ops = juego._submenu(COMPRAR)
+    assert "Ríoclaro" in titulo and "4 cosas en venta" in titulo
+    assert [c for c, _e, _d in ops][:4] == [f"comprar {k}" for k in juego.av.tiendas["rioclaro"]]
+    titulo_ir, _ops_ir = juego._submenu(IR)
+    assert "destinos" in titulo_ir
+    juego.jugador.inventario.append("provisiones")
+    titulo_usar, ops_usar = juego._submenu(USAR)
+    assert "mochila" in titulo_usar and len(ops_usar) == 1  # lo que lleve consumible
 
 
 def test_elegir_un_destino_del_menu_viaja(monkeypatch):
@@ -159,3 +216,15 @@ def test_el_combate_se_navega_con_flechas(monkeypatch):
     assert "Atacar" in texto  # el menú de combate ofreció sus opciones
     assert "Escribir un comando…" in texto
     assert "se abalanza" in texto
+
+
+def test_en_combate_usar_tiene_su_propio_submenu(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3", "\r"], lineas=["", ""])
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego.jugador.inventario += ["provisiones", "provisiones"]
+    juego.enemigos[juego.lugar] = ["lobo"]
+    juego._combate()
+    assert not juego.enemigos[juego.lugar]  # tras usar, Enter ataqua hasta ganar
+    assert juego.jugador.inventario.count("provisiones") == 1  # gastó una sola
+    texto = "\n".join(salida)
+    assert "Usar — tu mochila (2 provisiones)" in texto  # el verbo, con su cuenta

@@ -138,3 +138,48 @@ def test_menu_principal_cargar_pide_archivo():
 def test_menu_principal_salir_y_eof():
     assert menu_principal(entrada=EntradaTipeada(["salir"]), salida=lambda _t: None).accion == "salir"
     assert menu_principal(entrada=EntradaTipeada([]), salida=lambda _t: None).accion == "salir"
+
+
+# ── flechas: Esc vuelve atrás con la pantalla limpia (issue 24) ──────────
+
+def menu_flechas(monkeypatch, teclas):
+    """menu_principal en modo flechas con teclas sintéticas."""
+    import aldamar.opciones as opciones_mod
+
+    pendientes = list(teclas)
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))
+    salida: list[str] = []
+    eleccion = menu_principal(
+        entrada=input, salida=salida.append, flechas=True, dificultad="camino"
+    )
+    return eleccion, salida
+
+
+def test_esc_en_la_eleccion_de_heroe_vuelve_al_menu_principal(monkeypatch):
+    # Enter (Nueva) → Enter (aventura) → Esc (héroe) → Esc (menú: salir)
+    eleccion, salida = menu_flechas(monkeypatch, ["\r", "\r", "\x1b", "\x1b"])
+    assert eleccion.accion == "salir"
+    texto = "\n".join(salida)
+    assert "¿Quién será tu héroe?" in texto
+    assert "¿Qué aventura quieres vivir?" in texto
+    # cada salida del menú dejó la pantalla limpia: nada se apila
+    assert texto.count("\x1b[2J\x1b[H") == 4
+
+
+def test_volver_atras_repinta_la_portada(monkeypatch):
+    _, salida = menu_flechas(monkeypatch, ["\r", "\r", "\x1b", "\x1b"])
+    texto = "\n".join(salida)
+    # la portada vive una vez por pantalla: la inicial y la de la vuelta atrás
+    assert texto.count("A L D A M A R") == 2
+
+
+def test_el_bucle_del_menu_sobrevive_a_muchas_vueltas(monkeypatch):
+    # dos idas y vueltas completas (aventuras → héroes → atrás) antes de salir
+    teclas = ["\r", "\r", "\x1b", "\r", "\r", "\x1b", "\x1b"]
+    eleccion, salida = menu_flechas(monkeypatch, teclas)
+    assert eleccion.accion == "salir"
+    texto = "\n".join(salida)
+    assert texto.count("¿Qué aventura quieres vivir?") == 2
+    assert texto.count("¿Quién será tu héroe?") == 2
+    # la lista nunca se apila: cada redibujado parte de pantalla limpia
+    assert texto.count("\x1b[2J\x1b[H") == 7

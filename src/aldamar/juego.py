@@ -44,6 +44,16 @@ TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 ESCRIBIR = "\x00texto"  # clave del menú que abre el modo tipeado clásico
 OTRAS = "\x00otras"  # clave del menú que abre el submenú de gestiones
 
+# Claves de los verbos con submenú: un verbo, un listado (issue 26). En el
+# menú de acciones cada verbo es una sola entrada; elegirlo apila su
+# listado y Esc vuelve al menú de abajo.
+IR = "\x00ir"
+TOMAR = "\x00tomar"
+HABLAR = "\x00hablar"
+RECLUTAR = "\x00reclutar"
+COMPRAR = "\x00comprar"
+USAR = "\x00usar"
+
 # La tómbola del turno enemigo: el golpe normal tira con este peso, las
 # habilidades con el suyo (declarado en el JSON).
 PESO_GOLPE = 2
@@ -60,6 +70,7 @@ class Juego:
         salida=print,
         color: bool | None = None,
         flechas: bool | None = None,
+        nombre: str | None = None,
     ) -> None:
         self.av = aventura
         self.dificultad = dificultad or obtener_dificultad()
@@ -72,6 +83,9 @@ class Juego:
             color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         self.color = color
         self.jugador = self.av.crear_jugador(self.personaje, self.dificultad)
+        if nombre:
+            self.jugador.nombre = nombre  # «jugar otra vez»: el nombre se queda
+        self.nombre_dado = bool(nombre)
         self._autoequipar()  # el héroe empieza con lo suyo puesto
         self.lugar: str = self.av.lugar_inicial
         self.lugar_previo: str = self.av.lugar_inicial
@@ -81,6 +95,9 @@ class Juego:
         }
         self.tomados: set[tuple[str, str]] = set()
         self.monedas_tomadas: set[str] = set()
+        self.derrotados: list[str] = []  # claves de los caídos, en orden
+        self.visitados: list[str] = [self.av.lugar_inicial]
+        self.epilogo: str | None = None  # el texto del final, para la pantalla de cierre
         self.fin = False
         self.final: str | None = None
         self.en_combate = False
@@ -258,7 +275,10 @@ class Juego:
             self.final = "caida"
 
     # ── ciclo principal ──────────────────────────────────────────────
-    def ciclo(self) -> None:
+    def ciclo(self) -> str | None:
+        """Juega hasta el final. Devuelve la decisión de la pantalla de
+        cierre: "otra" (repetir), "menu" (otra aventura) o None (salir;
+        también si se dejó a medias con «salir»)."""
         if self.reanudada:
             self._cabecera()
             self._mirar()
@@ -274,7 +294,89 @@ class Juego:
             self._cabecera()
             self._ejecutar(linea)
         if self.final:
-            self.epico(f"\n— FIN —  (final: {self.final})")
+            return self._cierre()
+        return None
+
+    # ── la pantalla de cierre ────────────────────────────────────────
+    def _remate(self) -> str:
+        """El título grande de la despedida, según cómo acabó."""
+        final = self.final or ""
+        if final == "muerte":
+            return "Aquí se apaga tu historia"
+        if final == "caida":
+            return "La grieta te alcanzó"
+        if final == "suspendida":
+            return "La historia queda a medias"
+        if "victoria" in final:
+            if "cicatriz" in final:
+                return "Ganaste… y la marca se queda"
+            return "¡La noche retrocede!"
+        return "Así acaba este cantar"
+
+    def _texto_cierre(self) -> str:
+        """Remate, final, epílogo, balance del héroe y huella del viaje."""
+        j = self.jugador
+        ficha = self.av.personajes[self.personaje]
+        lineas = ["═" * 66, self._remate().center(66), "═" * 66]
+        if self.final not in (None, "muerte", "caida", "suspendida"):
+            lineas.append(f"\nTu historia queda contada: «{self.final}».")
+        if self.epilogo:
+            lineas.append(f"\n{self.epilogo}")
+        lineas.append("\n— El balance del héroe —")
+        lineas.append(f"{j.nombre}, {ficha.titulo}")
+        lineas.append(
+            f"Nivel {j.nivel} · {j.experiencia} XP · Vida {j.vida}/{j.vida_max}"
+            f" · Corrupción {j.corrupcion}% · Monedas: {j.monedas}"
+        )
+        if j.inventario:
+            lineas.append("Llevabas: " + ", ".join(self.av.items[k]["nombre"] for k in j.inventario))
+        if j.companeros:
+            lineas.append("Compañeros: " + ", ".join(
+                f"{c.nombre} ({c.vida}/{c.vida_max})" if c.viva else f"{c.nombre} (cayó)"
+                for c in j.companeros
+            ))
+        if self.derrotados:
+            cuenta: dict[str, int] = {}
+            for clave in self.derrotados:
+                cuenta[clave] = cuenta.get(clave, 0) + 1
+            lineas.append("Enemigos derrotados: " + ", ".join(
+                nombre if n == 1 else f"{nombre} ×{n}"
+                for clave, n in cuenta.items()
+                for nombre in [self.av.enemigos[clave]["nombre"]]
+            ))
+        if len(self.visitados) > 1:
+            lineas.append(
+                f"Lugares visitados: {len(self.visitados)} — "
+                + ", ".join(self.av.lugares[lid].nombre for lid in self.visitados)
+            )
+        if self.flags:
+            lineas.append("Decisiones: " + ", ".join(k.replace("_", " ") for k in self.flags))
+        return "\n".join(lineas)
+
+    def _cierre(self) -> str | None:
+        """La despedida a pantalla completa y el menú de «¿y ahora qué?».
+
+        Devuelve la decisión: "otra", "menu" o None/salir.
+        """
+        if self._usa_flechas():
+            self.salida(LIMPIAR)  # el cierre se ve solo, fuera del relato
+        lineas = self._texto_cierre().splitlines()
+        for linea in lineas[:3]:
+            self.epico(linea)  # el remate, en grande
+        self.escribir("\n".join(lineas[3:]))
+        return elegir_opcion(
+            "¿Y ahora qué?",
+            [
+                ("otra", "Jugar otra vez", "Misma aventura, mismo héroe y dificultad"),
+                ("menu", "Elegir otra aventura", "De vuelta al menú principal"),
+                ("salir", "Salir", "Hasta pronto"),
+            ],
+            entrada=self.entrada,
+            salida=self.salida,
+            color=self.color,
+            flechas=self.flechas,
+            aviso_esc="Elige a dónde ir: otra partida, el menú o salir.",
+        )
 
     def _cabecera(self) -> None:
         """Dos líneas ancladas a la primera fila: el juego y tu estado.
@@ -297,13 +399,14 @@ class Juego:
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
         self.epico(ficha.prologo or self.av.prologo)
-        try:
-            pregunta = ficha.texto_nombre or self.av.texto_nombre
-            nombre = self.entrada(pregunta.format(nombre=ficha.nombre)).strip()
-        except EOFError:
-            nombre = ""
-        if nombre:
-            self.jugador.nombre = nombre
+        if not self.nombre_dado:  # «jugar otra vez» conserva el nombre puesto
+            try:
+                pregunta = ficha.texto_nombre or self.av.texto_nombre
+                nombre = self.entrada(pregunta.format(nombre=ficha.nombre)).strip()
+            except EOFError:
+                nombre = ""
+            if nombre:
+                self.jugador.nombre = nombre
         if self._usa_flechas():
             # el nombre también es "avanzar": la historia se ve sola
             self.salida(LIMPIAR)
@@ -321,7 +424,7 @@ class Juego:
 
     def _pista(self) -> str:
         if self._usa_flechas():
-            return "(Elige qué hacer con ↑/↓ y Enter; las gestiones están en «Otras acciones…».)"
+            return "(Elige con ↑/↓ y Enter: cada verbo abre su listado, y Esc vuelve; las gestiones están en «Otras acciones…».)"
         return "(Escribe  ayuda  para ver los comandos.)"
 
     def _leer_orden(
@@ -333,15 +436,20 @@ class Juego:
     ) -> str:
         """La próxima orden del jugador.
 
-        Con teclado real se elige en menús navegables. En el menú del
-        juego Esc no lleva a ningún sitio: queda un aviso y se sigue
-        eligiendo; «Otras acciones…» abre el submenú de gestiones, de
-        donde sí se vuelve con Esc. Sin teclado real, se lee una línea,
-        como toda la vida.
+        Con teclado real se elige en menús navegables anidados: la raíz
+        es el menú del juego (o de combate), y cada verbo —«Tomar…»,
+        «Comprar…», «Otras acciones…»— apila su listado; Esc sube un
+        nivel y en la raíz no lleva a ningún sitio: queda un aviso y se
+        sigue eligiendo. Sin teclado real, se lee una línea, como toda
+        la vida.
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
+        pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
+            (titulo, opciones, aviso_esc)
+        ]
         while True:
+            titulo, opciones, aviso_esc = pila[-1]
             clave = elegir_opcion(
                 titulo,
                 opciones,
@@ -351,61 +459,133 @@ class Juego:
                 flechas=True,
                 aviso_esc=aviso_esc,
             )
-            if clave is None:  # solo sale así del submenú: de vuelta al juego
-                self.salida(LIMPIAR)
-                return ""
-            if clave == OTRAS:
-                titulo = "Otras acciones"
-                opciones = self._opciones_otras()
-                aviso_esc = None  # aquí sí hay vuelta atrás
+            if clave is None:  # Esc: subir un nivel; en la raíz, de vuelta al juego
+                pila.pop()
+                if not pila:
+                    return ""
+                self._cabecera()  # la limpieza de la vuelta se lleva el ancla
                 continue
             if clave == ESCRIBIR:
                 return self.entrada(prompt).strip()
+            sublista = self._submenu(clave)
+            if sublista is not None:  # un verbo: apila su listado
+                pila.append((sublista[0], sublista[1], None))
+                continue
             return clave
 
     def _opciones_juego(self) -> list[tuple[str, str, str]]:
-        """Las acciones del mundo aquí y ahora; las gestiones van aparte."""
+        """El menú de acciones del mundo: una entrada por verbo.
+
+        Cada verbo abre su submenú con el listado (`_submenu`); con una
+        sola cosa que hacer, el verbo queda directo («Ir a: El ejido»)
+        y sin nada que mostrar, no aparece.
+        """
         l = self.aqui()
         ops: list[tuple[str, str, str]] = [
             ("mirar", "Mirar alrededor", "El lugar, lo que hay y a dónde ir"),
         ]
-        ops += [
-            (f"ir {i}", f"Ir a: {nombre}", "")
-            for i, (_d, _p, nombre) in enumerate(self.destinos(l), 1)
-        ]
+        destinos = self.destinos(l)
+        if len(destinos) == 1:
+            ops.append(("ir 1", f"Ir a: {destinos[0][2]}", ""))
+        elif destinos:
+            ops.append((IR, "Ir a…", f"{len(destinos)} destinos"))
         en_suelo = self.restantes(l)
         hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
-        if en_suelo or hay_monedas:
-            ops.append(("tomar todo", "Tomar todo", "Objetos del suelo y monedas"))
-        ops += [
-            (f"tomar {k}", f"Tomar: {self.av.items[k]['nombre']}", "")
-            for k in en_suelo
-        ]
-        ops += [(f"hablar {npc}", f"Hablar: {npc}", "") for npc in l.npcs]
-        ops += [
-            (f"reclutar {npc}", f"Reclutar: {npc}", "Se suma a tu grupo")
-            for npc, clave in l.npcs.items()
-            if clave in self.av.reclutas
-        ]
+        if len(en_suelo) == 1 and not hay_monedas:
+            ops.append((f"tomar {en_suelo[0]}", f"Tomar: {self.av.items[en_suelo[0]]['nombre']}", ""))
+        elif en_suelo or hay_monedas:
+            ops.append((TOMAR, "Tomar…", self._cuenta_tomar(l)))
+        npcs = list(l.npcs)
+        if len(npcs) == 1:
+            ops.append((f"hablar {npcs[0]}", f"Hablar: {npcs[0]}", ""))
+        elif npcs:
+            ops.append((HABLAR, "Hablar…", f"{len(npcs)} personas aquí"))
+        aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+        if len(aliados) == 1:
+            ops.append((f"reclutar {aliados[0]}", f"Reclutar: {aliados[0]}", "Se suma a tu grupo"))
+        elif aliados:
+            ops.append((RECLUTAR, "Reclutar…", f"{len(aliados)} aliados"))
         if l.tienda:
-            ops += [
-                (
-                    f"comprar {k}",
-                    f"Comprar: {self.av.items[k]['nombre']}",
-                    f"{self.av.items[k]['precio']} monedas",
-                )
-                for k in self.av.tiendas[l.id]
-            ]
-            ops += self._opciones_equipo()  # en la tienda, probar lo llevado
-        ops += [
-            (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
-            for k in self.jugador.inventario
-            if self.av.items[k]["tipo"] == "consumible"
-        ]
+            stock = self.av.tiendas[l.id]
+            if len(stock) == 1 and not self._opciones_equipo():
+                item = self.av.items[stock[0]]
+                ops.append((f"comprar {stock[0]}", f"Comprar: {item['nombre']}", f"{item['precio']} monedas"))
+            else:
+                ops.append((COMPRAR, "Comprar…", f"{len(stock)} cosas en venta"))
+        if any(self.av.items[k]["tipo"] == "consumible" for k in self.jugador.inventario):
+            ops.append(self._entrada_usar())
         if l.descanso:
             ops.append(("descansar", "Descansar", "Curarte del todo aquí mismo"))
         ops.append((OTRAS, "Otras acciones…", "Estado, inventario, partida y ayuda"))
         return ops
+
+    def _entrada_usar(self) -> tuple[str, str, str]:
+        """La entrada del verbo «usar»: directa si hay un solo consumible."""
+        consumibles = [
+            k for k in self.jugador.inventario
+            if self.av.items[k]["tipo"] == "consumible"
+        ]
+        if len(consumibles) == 1:
+            k = consumibles[0]
+            return (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
+        return (USAR, "Usar…", f"{len(consumibles)} provisiones")
+
+    def _cuenta_tomar(self, l: Lugar) -> str:
+        """Lo que hay por el suelo, para contar junto al verbo."""
+        objetos = len(self.restantes(l))
+        hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
+        cosas = "" if not objetos else ("1 objeto" if objetos == 1 else f"{objetos} objetos")
+        if cosas and hay_monedas:
+            return f"{cosas} y monedas"
+        return cosas or "monedas"
+
+    def _submenu(self, clave: str) -> tuple[str, list[tuple[str, str, str]]] | None:
+        """El listado de un verbo: (título, opciones) del submenú a apilar.
+
+        El título dice dónde estás y cuántas cosas hay. Devuelve None si
+        la clave no abre submenú: es una orden directa.
+        """
+        l = self.aqui()
+        if clave == OTRAS:
+            return ("Otras acciones", self._opciones_otras())
+        if clave == IR:
+            destinos = self.destinos(l)
+            return (
+                f"Ir a — desde {l.nombre} ({len(destinos)} destinos)",
+                [(f"ir {i}", nombre, "") for i, (_d, _p, nombre) in enumerate(destinos, 1)],
+            )
+        if clave == TOMAR:
+            ops = [("tomar todo", "Tomar todo", "Objetos del suelo y monedas")]
+            ops += [(f"tomar {k}", self.av.items[k]["nombre"], "") for k in self.restantes(l)]
+            return (f"Tomar — en {l.nombre} ({self._cuenta_tomar(l)})", ops)
+        if clave == HABLAR:
+            npcs = list(l.npcs)
+            return (
+                f"Hablar — {l.nombre} ({len(npcs)} personas aquí)",
+                [(f"hablar {npc}", npc, "") for npc in npcs],
+            )
+        if clave == RECLUTAR:
+            aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+            return (
+                f"Reclutar — {l.nombre} ({len(aliados)} aliados)",
+                [(f"reclutar {npc}", npc, "Se suma a tu grupo") for npc in aliados],
+            )
+        if clave == COMPRAR:
+            stock = self.av.tiendas[l.id]
+            ops = [
+                (f"comprar {k}", self.av.items[k]["nombre"], f"{self.av.items[k]['precio']} monedas")
+                for k in stock
+            ]
+            ops += self._opciones_equipo()  # en la tienda, probar lo llevado
+            return (f"Comprar — {l.nombre} ({len(stock)} cosas en venta)", ops)
+        if clave == USAR:
+            ops = [
+                (f"usar {k}", self.av.items[k]["nombre"], f"cura {self.av.items[k]['curacion']}")
+                for k in self.jugador.inventario
+                if self.av.items[k]["tipo"] == "consumible"
+            ]
+            return (f"Usar — tu mochila ({len(ops)} provisiones)", ops)
+        return None
 
     def _opciones_otras(self) -> list[tuple[str, str, str]]:
         """Las gestiones que no son del mundo: ficha, equipo, partida y ayuda."""
@@ -431,11 +611,8 @@ class Juego:
                 self.av.comando_especial,
                 "El golpe especial de la aventura",
             ))
-        ops += [
-            (f"usar {k}", f"Usar: {self.av.items[k]['nombre']}", f"cura {self.av.items[k]['curacion']}")
-            for k in self.jugador.inventario
-            if self.av.items[k]["tipo"] == "consumible"
-        ]
+        if any(self.av.items[k]["tipo"] == "consumible" for k in self.jugador.inventario):
+            ops.append(self._entrada_usar())
         if any(self.av.items[k]["tipo"] == "cuerno" for k in self.jugador.inventario):
             ops.append(("cuerno", "Tocar el cuerno", "Pone en fuga a las criaturas menores"))
         ops += [
@@ -705,6 +882,8 @@ class Juego:
         self._entrar(destino)
 
     def _entrar(self, destino: Lugar) -> None:
+        if destino.id not in self.visitados:
+            self.visitados.append(destino.id)
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
         evento = self.av.eventos.get(destino.evento) if destino.evento else None
@@ -991,7 +1170,10 @@ class Juego:
             if self.fin:
                 break
             if resultado == "victoria":
-                pendientes.remove(clave)
+                # el cuerno vacía la cola entera: ya no está quien huyó
+                if clave in pendientes:
+                    pendientes.remove(clave)
+                    self.derrotados.append(clave)
                 self._conceder_experiencia(clave)
                 if not pendientes:
                     self.exito("El aire vuelve a moverse. El camino queda libre.")
@@ -1045,6 +1227,8 @@ class Juego:
             "enemigos": self.enemigos,
             "tomados": sorted("|".join(t) for t in self.tomados),
             "monedas_tomadas": sorted(self.monedas_tomadas),
+            "derrotados": self.derrotados,
+            "visitados": self.visitados,
             "final": self.final,
         }
         try:
@@ -1089,6 +1273,10 @@ class Juego:
         }
         self.tomados = {tuple(t.split("|", 1)) for t in estado["tomados"]}
         self.monedas_tomadas = set(estado["monedas_tomadas"])
+        # guardados de antes de la pantalla de cierre: la huella empieza aquí
+        self.derrotados = list(estado.get("derrotados", []))
+        self.visitados = list(estado.get("visitados") or [self.lugar])
+        self.epilogo = None
         self.fin = False
         self.final = estado.get("final")
         self.reanudada = True
@@ -1178,6 +1366,42 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
     if not debug and _es_interactivo(entrada, salida):
         salida(LIMPIAR)
 
+    def _partida_del_menu() -> Juego | None:
+        """La partida que nace del menú principal; None si no se juega."""
+        eleccion = menu_principal(
+            entrada=entrada,
+            salida=salida,
+            color=color_menu,
+            flechas=flechas,
+            aventura=args.aventura,
+            dificultad=args.dificultad,
+            personaje=args.personaje,
+        )
+        if eleccion is None or eleccion.accion == "salir":
+            salida("Hasta pronto.")
+            return None
+        if eleccion.accion == "cargar":
+            return Juego.desde_archivo(
+                eleccion.archivo or ARCHIVO_PARTIDA,
+                semilla=args.semilla,
+                entrada=entrada,
+                salida=salida,
+                color=color,
+                flechas=flechas,
+            )
+        return Juego(
+            aventura=eleccion.aventura,
+            dificultad=eleccion.dificultad,
+            personaje=eleccion.personaje,
+            semilla=args.semilla,
+            entrada=entrada,
+            salida=salida,
+            color=color,
+            flechas=flechas,
+        )
+
+    # Bucle de sesión: menú → partida → pantalla de cierre → menú…
+    # el proceso vive hasta que el jugador elige salir de verdad.
     try:
         if args.cargar:
             juego = Juego.desde_archivo(
@@ -1201,39 +1425,27 @@ def main(argv: list[str] | None = None, *, entrada=input, salida=print) -> None:
                 flechas=flechas,
             )
         else:
-            eleccion = menu_principal(
-                entrada=entrada,
-                salida=salida,
-                color=color_menu,
-                flechas=flechas,
-                aventura=args.aventura,
-                dificultad=args.dificultad,
-                personaje=args.personaje,
-            )
-            if eleccion is None or eleccion.accion == "salir":
-                salida("Hasta pronto.")
-                return
-            if eleccion.accion == "cargar":
-                juego = Juego.desde_archivo(
-                    eleccion.archivo or ARCHIVO_PARTIDA,
-                    semilla=args.semilla,
-                    entrada=entrada,
-                    salida=salida,
-                    color=color,
-                    flechas=flechas,
-                )
-            else:
+            juego = _partida_del_menu()
+        while juego is not None:
+            eleccion = juego.ciclo()
+            if eleccion == "otra":
+                # nueva partida al instante: misma aventura, héroe y
+                # dificultad, y el nombre puesto se conserva
                 juego = Juego(
-                    aventura=eleccion.aventura,
-                    dificultad=eleccion.dificultad,
-                    personaje=eleccion.personaje,
+                    aventura=juego.av,
+                    dificultad=juego.dificultad,
+                    personaje=juego.personaje,
+                    nombre=juego.jugador.nombre,
                     semilla=args.semilla,
                     entrada=entrada,
                     salida=salida,
                     color=color,
                     flechas=flechas,
                 )
-        juego.ciclo()
+            elif eleccion == "menu":
+                juego = _partida_del_menu()
+            else:
+                juego = None
     except KeyboardInterrupt:
         salida("\nEl viso cae sobre Aldamar. Partida suspendida.")
     except (OSError, json.JSONDecodeError) as e:
