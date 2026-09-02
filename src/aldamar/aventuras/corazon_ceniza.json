@@ -108,6 +108,13 @@
       "precio": null,
       "desc": "Hoja de sanjuanera machacada; saben a menta y a tierra."
     },
+    "tercio": {
+      "nombre": "el tercio de Dorotea",
+      "tipo": "consumible",
+      "curacion": 14,
+      "precio": null,
+      "desc": "Tercio de aguardiente de la casa, tapado con un paño: «Para Belthar el Errante». Limpia por dentro y de paso por fuera."
+    },
     "antorcha": {
       "nombre": "antorcha",
       "tipo": "clave",
@@ -173,7 +180,16 @@
       "nombre": "espectro de ceniza",
       "vida": 13,
       "ataque": 5,
-      "experiencia": 18
+      "experiencia": 18,
+      "habilidades": [
+        {
+          "tipo": "veneno",
+          "texto": "El espectro hunde su toque frío en tu sangre",
+          "dano": 2,
+          "turnos": 3,
+          "condicion": { "cada_n_turnos": 3 }
+        }
+      ]
     },
     "trasgo": {
       "nombre": "trasgo de las cavernas",
@@ -193,7 +209,17 @@
       "ataque": 8,
       "defensa": 1,
       "sin_huida": true,
-      "experiencia": 28
+      "experiencia": 28,
+      "habilidades": [
+        {
+          "tipo": "golpe_fuerte",
+          "texto_aviso": "El Capitán clava los pies, alza el mandoble por encima de la cabeza y el acero empieza a silbar…",
+          "texto_golpe": "¡El mandoble del Capitán cae como una losa: −{efectivo}!",
+          "dano_extra": 5,
+          "peso": 3,
+          "condicion": { "cada_n_turnos": 3 }
+        }
+      ]
     },
     "custodio": {
       "nombre": "Custodio Pálido",
@@ -201,7 +227,42 @@
       "ataque": 9,
       "defensa": 1,
       "sin_huida": true,
-      "experiencia": 40
+      "experiencia": 45,
+      "habilidades": [
+        {
+          "tipo": "golpe_fuerte",
+          "texto_aviso": "El Custodio clava los talones en la roca, alza los dos brazos y el aire de la cumbre se pone blanco…",
+          "texto_golpe": "El golpe del Custodio te alcanza como una avalancha: −{efectivo}!",
+          "dano_extra": 5,
+          "peso": 3,
+          "condicion": { "cada_n_turnos": 3 }
+        }
+      ],
+      "fases": [
+        {
+          "vida_menor_que": 45,
+          "texto": "El Custodio Pálido se abre de arriba abajo, sin sangre y sin ruido: lo que sale de dentro es ceniza prieta, y no cabe en la armadura que deja. La voz, cuando la encuentra, ya no es de guarda sino de la montaña entera.\n  «MIL LUNAS GUARDANDO EL FUEGO. NADIE LLEGA HASTA MÍ PARA DEVOLVERLO.»",
+          "nombre": "el Custodio, abierto",
+          "ataque": 11,
+          "habilidades": [
+            {
+              "tipo": "curarse",
+              "texto": "La ceniza prieta vuelve a meterse en la armadura y la herida se cierra a medias",
+              "puntos": 5,
+              "peso": 2,
+              "condicion": { "vida_menor_que": 45, "cada_n_turnos": 2 }
+            },
+            {
+              "tipo": "golpe_fuerte",
+              "texto_aviso": "El Custodio abierto clava los talones, cruza los brazos por encima de la cabeza y la ceniza se le arremolina al puño…",
+              "texto_golpe": "El golpe de ceniza prieta te alcanza como una avalancha: −{efectivo}!",
+              "dano_extra": 6,
+              "peso": 3,
+              "condicion": { "cada_n_turnos": 2 }
+            }
+          ]
+        }
+      ]
     }
   },
   "reclutas": {
@@ -243,8 +304,8 @@
     "belthar_refugio": "Belthar atiza la fuente de agua clara y te mira como se mira un huerto\ncon heladas: con preocupación contenida.\n  «Toca el agua si la grieta avanza. Lo que la piedra no puede limpiar,\n   a veces el agua sí.»",
     "sylvana": "Entre los faroles de musgo, una arquera baja de la rama sin hacer ruido.\n  «Sylvana. Escucho tres noches cómo pita ese amuleto que llevas, y a\n   los espectros del bosque no les gusta nada tu olor. Yo tampoco, la\n   verdad, pero a ellos les pagan por hacerte daño.»\n  «Si vas hacia el este, voy contigo. Los del bosque debemos al consejo\n   una deuda vieja, y a Morvath ninguna.»\n  (Escribe  reclutar sylvana  si la quieres en tu grupo.)",
     "aldric": "En la sala del consejo, un caballero de armadura deslustrada te corta el paso\ncon una reverencia exacta.\n  «Sir Aldric de Valoria. El consejo ha leído las señales: los cuervos, el\n   humo, los aullidos. Si el Corazón vuelve a la Aguja, volverá también su\n   amo, y prefiero morir de viaje antes que de espera.»\n  «Lleva antorcha para las minas goran; la piedra no negocia con la oscuridad.\n   Y cruza los Yermos bajo el estandarte, o la ceniza te reconocerá.»\n  (Escribe  reclutar aldric  si lo quieres en tu grupo.)",
-    "torkan": "En la galería azul, un goran fornido aparta escombros con una mano y se\nenjuga la frente con la otra.\n  «Torkan Hachagris, última mano de la fragua de Barrok. Los trasgos\n   ocuparon las minas de mi clan; el hacha quedó sin trabajo.»\n  «Voy contigo hasta la montaña. No por lástima: por golpes.»\n  (Escribe  reclutar torkan  si lo quieres en tu grupo.)",
-    "dorotea": "Dorotea, la posadera, llena el cuenco hasta el borde.\n  «En Ríoclaro se paga justo y se come caliente. Escribe  comprar <cosa>  y\n   a ver qué te sirve, caminante. El descanso, aquí, va por la casa.»"
+    "torkan": "En la galería azul, un goran fornido aparta escombros con una mano y se\nenjuga la frente con la otra.\n  «Torkan Hachagris, última mano de la fragua de Barrok. Los trasgos\n   ocuparon las minas de mi clan; el hacha quedó sin trabajo.»\n  «Voy contigo hasta la montaña, {trato}. No por lástima: por golpes.»\n  (Escribe  reclutar torkan  si lo quieres en tu grupo.)",
+    "dorotea": "Dorotea, la posadera, llena el cuenco hasta el borde.\n  «En Ríoclaro se paga justo y se come caliente. Escribe  comprar <cosa>  y\n   a ver qué te sirve, {trato}. El descanso, aquí, va por la casa.»"
   },
   "lugares": {
     "vegaverde": {
@@ -266,7 +327,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -287,7 +348,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -310,7 +371,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -336,7 +397,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -357,7 +418,7 @@
       },
       "tienda": true,
       "descanso": true,
-      "evento": null,
+      "eventos": ["encargo"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -380,7 +441,7 @@
       },
       "tienda": true,
       "descanso": true,
-      "evento": "consejo",
+      "eventos": ["consejo"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -406,7 +467,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["forja"],
       "requiere": "antorcha",
       "requiere_texto": "La boca de la mina es negra como pozo: necesitas una antorcha."
     },
@@ -430,7 +491,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "corrupcion",
+      "eventos": ["corrupcion"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -449,7 +510,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": "ritual",
+      "eventos": ["entrega", "ritual"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -473,7 +534,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["umbral", "coronado"],
       "requiere": "estandarte",
       "requiere_texto": "El aire de ceniza te empuja hacia atrás: los Yermos solo se cruzan bajo el estandarte del consejo."
     },
@@ -484,9 +545,7 @@
         "sur": "yerma",
         "yerma": "yerma"
       },
-      "objetos": [
-        "corona_plata"
-      ],
+      "objetos": [],
       "monedas": 20,
       "enemigos": [
         "capitan"
@@ -494,7 +553,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["corona", "ceniza_sabe"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -513,17 +572,121 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "final",
+      "eventos": ["final"],
       "requiere": null,
       "requiere_texto": ""
     }
   },
   "eventos": {
+    "encargo": {
+      "tipo": "decision",
+      "texto": "Dorotea llena el cuenco hasta el borde y, al apartarlo, deja encima del mostrador un tercio de aguardiente tapado con un paño.\n  «Para Belthar el Errante, que no baja de su torre ni pagando. Nos conocimos de las guerras viejas, cuando el este todavía respetaba los caminos.»\n  «Llévaselo si pasas por la Torre, {trato}. Al agua clara no le hace falta compañía; a él, sí.»",
+      "pregunta": "¿Qué le respondes?",
+      "opciones": [
+        {
+          "clave": "prometer",
+          "titulo": "Prometer llevárselo a la Torre",
+          "detalle": "las deudas chicas también se pagan",
+          "item": "tercio",
+          "flag": "promesa",
+          "texto": "Dorotea te lo mete en la mochila como quien confía una carta.\n  «No es encargo de nadie: es gusto mío. Y si te lo bebes por el camino, ni te miro cuando vuelvas.»\n(Recibes: el tercio de Dorotea.)"
+        },
+        {
+          "clave": "esquivar",
+          "titulo": "Esquivar el encargo con gentileza",
+          "detalle": "el camino ya pesa lo suyo",
+          "texto": "Dorotea guarda el tercio bajo el mostrador, sin rechistar.\n  «Justo. El este no espera. Pero anota, {trato}: hasta los héroes les queda deuda chica.»"
+        }
+      ]
+    },
     "consejo": {
-      "tipo": "otorgar",
-      "item": "estandarte",
-      "una_vez": "consejo",
-      "texto": "El Consejo del Sol Levantado te recibe de pie. Siete voces viejas\nconfirman lo que ya sabes y te entregan un estandarte bordado en oro:\n  «Los Yermos solo se cruzan bajo la sombra de este paño. Que la ceniza\n   recuerde que todavía hay quien le hace frente.»\n(Recibes: estandarte del consejo.)"
+      "tipo": "decision",
+      "texto": "El Consejo del Sol Levantado te recibe de pie. Siete voces viejas confirman lo que ya sabes y despliegan sobre la mesa el estandarte bordado en oro, junto a un pliego con la Alianza de las cuatro razas.\n  «Los Yermos solo se cruzan bajo la sombra de este paño. Jura la Alianza: que la ceniza recuerde que todavía hay quien le hace frente.»\n  «O tómalo en depósito, si los juramentos te pesan. El paño no pregunta. La ceniza, eso ya no lo sabemos.»",
+      "pregunta": "¿Qué respondes al consejo?",
+      "opciones": [
+        {
+          "clave": "alianza",
+          "titulo": "Jurar la Alianza de las cuatro razas",
+          "detalle": "el paño y la palabra",
+          "item": "estandarte",
+          "flag": "alianza",
+          "texto": "Firmas el pliego y las siete voces responden a coro, como se responde a una puerta que vuelve a abrirse.\n  «Que la ceniza lo recuerde: la Alianza vuelve a caminar.»\n(Recibes: estandarte del consejo.)"
+        },
+        {
+          "clave": "deposito",
+          "titulo": "Tomarlo en depósito, sin juramento",
+          "detalle": "el paño, a cuenta de la victoria",
+          "item": "estandarte",
+          "flag": "deposito",
+          "texto": "El consejo te lo entrega sin ceremonia, doblado como se dobla una herramienta.\n  «Ve con él. Si vuelves, hablamos de deudas. Si no vuelves, no harás falta.»\n(Recibes: estandarte del consejo.)"
+        }
+      ]
+    },
+    "forja": {
+      "tipo": "narrar",
+      "una_vez": "forja",
+      "texto": "Torkan parte su ritmo de martillo para mirar cómo llegas, y vuelve al yunque contento.\n  «Ese paso lo reconozco: viene de fragua y no de guerra. Ayuda con lo mío, {trato}: el acero de Barrok también va al este.»",
+      "texto_grieta": "Torkan para el martillo a media altura. No dice nada del amuleto, pero aprieta los ojos como quien templa mirando una brasa.\n  «Hay humo colgado de ti, {trato}. Lo mío es templar acero, no almas. Ayuda con lo mío, si vas a ayudarme: el acero no pregunta qué hiciste para llegar hasta aquí.»",
+      "grieta_desde": 12
+    },
+    "corona": {
+      "tipo": "decision",
+      "texto": "Al pie de la escalera, sobre un cadáver de piedra sentado en su trono de ceniza, brilla una corona de plata. El Capitán que guarda la Aguja todavía no te ha visto; la pieza, en cambio, parece haberte visto a ti.\n  Susurra como susurra el Corazón: de reinados sin madrugada.",
+      "pregunta": "¿Qué haces con la corona?",
+      "opciones": [
+        {
+          "clave": "tomarla",
+          "titulo": "Coronarte con la corona de plata",
+          "detalle": "lo que brilla, se coge",
+          "item": "corona_plata",
+          "flag": "coronado",
+          "corrupcion": 6,
+          "texto": "La plata está tibia. Sobre tu sien, el susurro se vuelve conversación: los Yermos enteros parecen inclinarse, y algo muy lejos contesta con un tambor.\n\nEl Corazón late contento. Eso nunca es buena señal. (+6 corrupción.)\n(Recibes: corona de plata.)"
+        },
+        {
+          "clave": "dejarla",
+          "titulo": "Dejarla donde duerme",
+          "detalle": "no todo lo que brilla se coge",
+          "texto": "Apartas la vista y la plata se apaga un poco, como un farol al que le ganan la madrugada.\n  El cadáver de piedra parece descansar mejor con su corona puesta."
+        }
+      ]
+    },
+    "ceniza_sabe": {
+      "tipo": "emboscar",
+      "enemigos": [
+        "espectro",
+        "espectro"
+      ],
+      "condicion": {
+        "no_flag": "alianza"
+      },
+      "texto": "El Capitán de Ceniza alza la vista y no te ve a ti: ve un paño del consejo que va por ahí sin palabra detrás. Silba corto, dos veces.\n  Del techo de la Aguja caen, desenroscándose, dos espectros que sabían de esperas.\n  «Sin Alianza no hay sombra que te cubra, {trato}.»"
+    },
+    "umbral": {
+      "tipo": "narrar",
+      "una_vez": "umbral",
+      "texto": "El estandarte del consejo abre camino y la ceniza se aparta con un respeto que no es de paño sino de memoria: aquí lucharon los cuatro pueblos, y el polvo todavía lo sabe.\n  Caminas un buen rato entre grietas rojas que laten al compás de algo muy lejos.",
+      "texto_grieta": "El estandarte del consejo abre camino, pero la ceniza no se aparta del todo: se te pega a las botas, sube por la capa, se queda en el pelo.\n  «Ya viniste», dicen las grietas rojas sin voz. «Ya eres de aquí.» Tardas un buen trecho en volver a oír tu propio paso.",
+      "grieta_desde": 40
+    },
+    "coronado": {
+      "tipo": "emboscar",
+      "enemigos": [
+        "espectro",
+        "espectro"
+      ],
+      "condicion": {
+        "flag": "coronado"
+      },
+      "texto": "La plata de tu sien canta con la ceniza, y la ceniza contesta: dos espectros se alzan del polvo de los Yermos, despacio, como vienen a rendir vasallaje a lo que les suena a rey.\n  Y lo que suena a rey, en Aldamar, se derriba."
+    },
+    "entrega": {
+      "tipo": "narrar",
+      "una_vez": "entrega",
+      "condicion": {
+        "flag": "promesa"
+      },
+      "texto": "Desatas el tercio de Dorotea sin que nadie te lo pida. Belthar lo destapa, llena dos vasos de hojalata y el olor abre la torre entera.\n  «Dorotea», dice, y no dice más. Bebe despacio. «Dile que aún sabe a las guerras viejas. Y que me queda debiendo la mitad: para la vuelta.»\n(Devuelves el tercio, medio lleno, mejor que nuevo.)"
     },
     "ritual": {
       "tipo": "curar_grupo",
@@ -547,6 +710,15 @@
           "detalle": "acabar el viaje como prometiste"
         },
         {
+          "clave": "brindis",
+          "titulo": "Vaciar el tercio de Dorotea antes de soltar el Corazón",
+          "detalle": "las deudas chicas, al pie de la Forja",
+          "requiere_flag": "promesa",
+          "epilogo": "Desatas el tercio de Dorotea y lo vacías a sorbos, despacio, como se\npagan las deudas que no hacen ruido: la primera por la posadera, que\npagó el fuego; la segunda por Belthar, que enseñó el camino; la última\npor ti, que volviste.\n\nLa Forja espera, que para eso tiene mil lunas. Y cuando el Corazón cae\nal fuego y el grito se oye hasta el oeste, el cantar lo contará así:\nel que ahogó la Sombra y brindó antes, porque el orden de las cosas\nimportantes también importa.\n\nEn Ríoclaro, Dorotea negará haber llorado y pondrá cuenco nuevo a quien\nse lo cuente.",
+          "estilo": "epico",
+          "final": "la victoria compartida"
+        },
+        {
           "clave": "reclamar",
           "titulo": "Reclamar el Corazón",
           "detalle": "por fin, la última palabra",
@@ -562,6 +734,13 @@
       "final_tentado": "victoria con cicatriz",
       "texto_companeros": "Junto a ti, al alba: {nombres}."
     }
+  },
+  "legado": {
+    "exporta": {
+      "juramento": "alianza",
+      "grieta": "coronado"
+    },
+    "heroe": true
   },
   "comando_especial": {
     "comando": "corazon",

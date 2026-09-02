@@ -23,7 +23,7 @@ class Lugar:
     npcs: dict[str, str] = field(default_factory=dict)  # nombre visible -> clave diálogo
     tienda: bool = False
     descanso: bool = False
-    evento: str | None = None  # clave de Aventura.eventos; "final" se dispara al limpiar el lugar
+    eventos: list[str] = field(default_factory=list)  # claves de Aventura.eventos, en orden; el evento "final" se dispara al limpiar el lugar
     requiere: str | None = None  # clave de item necesaria para entrar
     requiere_texto: str = ""
 

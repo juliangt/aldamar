@@ -76,17 +76,17 @@ def test_narrar_se_cuenta_una_sola_vez_con_una_vez():
 def test_la_decision_aplica_efectos_y_deja_bandera():
     juego = Juego(BRASA, semilla=7, entrada=EntradaTipeada(["aceptar"]), salida=lambda _t: None, color=False)
     antes = list(juego.jugador.inventario)
-    juego.av.eventos["juramento"](juego, juego.aqui())
+    juego.av.eventos["colmena"](juego, juego.aqui())
     assert "panal" in juego.jugador.inventario and "panal" not in antes
-    assert juego.flags == {"juramento": True, "bruna": True}
+    assert juego.flags == {"colmena": True, "bruna": True}
 
-    juego.av.eventos["juramento"](juego, juego.aqui())  # una sola vez
+    juego.av.eventos["colmena"](juego, juego.aqui())  # una sola vez
     assert juego.jugador.inventario.count("panal") == 1
 
 
 def test_la_decision_cancelada_no_decide():
     juego = Juego(BRASA, semilla=7, entrada=EntradaTipeada([]), salida=lambda _t: None, color=False)
-    juego.av.eventos["juramento"](juego, juego.aqui())  # EOF: cancela
+    juego.av.eventos["colmena"](juego, juego.aqui())  # EOF: cancela
     assert juego.flags == {}
     assert "panal" not in juego.jugador.inventario
 
@@ -104,13 +104,13 @@ def test_cancelar_con_esc_limpia_la_pantalla_y_la_escena_se_vuelve_a_contar(monk
     )
     escena = "Bruna te alcanza un panal"
     monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: "\x1b")
-    juego.av.eventos["juramento"](juego, juego.aqui())
+    juego.av.eventos["colmena"](juego, juego.aqui())
     assert juego.flags == {}  # Esc no decide
     assert "\x1b[2J\x1b[H" in salida  # …pero la pantalla queda limpia
 
     monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: "\r")
-    juego.av.eventos["juramento"](juego, juego.aqui())  # re-entrar: se cuenta de nuevo
-    assert juego.flags == {"juramento": True, "bruna": True}
+    juego.av.eventos["colmena"](juego, juego.aqui())  # re-entrar: se cuenta de nuevo
+    assert juego.flags == {"colmena": True, "bruna": True}
     assert "panal" in juego.jugador.inventario
     assert "\n".join(salida).count(escena) == 2
 
@@ -253,20 +253,20 @@ def test_la_saga_hila_las_tres_aventuras():
 
 def test_el_consejo_deja_bandera_y_estandarte():
     juego = Juego(AGUJA, semilla=7, entrada=EntradaTipeada(["alianza"]), salida=lambda _t: None, color=False)
-    juego.av.eventos["juramento"](juego, juego.aqui())
-    assert juego.flags == {"juramento": True, "consejo": True}
+    juego.av.eventos["estandarte"](juego, juego.aqui())
+    assert juego.flags == {"estandarte": True, "consejo": True}
     assert "estandarte" in juego.jugador.inventario
 
 
 def test_la_emboscada_del_capitan_castiga_no_jurar():
     juego = Juego(AGUJA, semilla=7, entrada=EntradaTipeada(["guardia"]), salida=lambda _t: None, color=False)
-    juego.av.eventos["juramento"](juego, juego.aqui())
-    assert juego.flags == {"juramento": True, "guardia": True}
+    juego.av.eventos["estandarte"](juego, juego.aqui())
+    assert juego.flags == {"estandarte": True, "guardia": True}
     juego.av.eventos["regreso"](juego, juego.av.lugares["aguja_pies"])
     assert juego.enemigos["aguja_pies"] == ["mirlo", "capitan"]
     # con la Alianza jurada, el Capitán no aparece
     juego2 = Juego(AGUJA, semilla=7, entrada=EntradaTipeada(["alianza"]), salida=lambda _t: None, color=False)
-    juego2.av.eventos["juramento"](juego2, juego2.aqui())
+    juego2.av.eventos["estandarte"](juego2, juego2.aqui())
     juego2.av.eventos["regreso"](juego2, juego2.av.lugares["aguja_pies"])
     assert juego2.enemigos["aguja_pies"] == ["mirlo"]
 

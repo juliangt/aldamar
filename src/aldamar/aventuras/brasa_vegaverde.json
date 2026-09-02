@@ -107,7 +107,7 @@
       },
       "tienda": false,
       "descanso": true,
-      "evento": null,
+      "eventos": [],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -130,7 +130,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "rona",
+      "eventos": ["casa_llena", "rona"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -149,7 +149,7 @@
       "npcs": {},
       "tienda": false,
       "descanso": false,
-      "evento": "final",
+      "eventos": ["final"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -172,7 +172,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": null,
+      "eventos": ["agua_que_cuenta"],
       "requiere": null,
       "requiere_texto": ""
     },
@@ -191,7 +191,7 @@
       },
       "tienda": false,
       "descanso": false,
-      "evento": "juramento",
+      "eventos": ["colmena"],
       "requiere": null,
       "requiere_texto": ""
     }
@@ -202,7 +202,23 @@
       "puntos": 6,
       "aviso": "El bochorno de la roña gris te repasa como una mano que busca dónde…"
     },
-    "juramento": {
+    "casa_llena": {
+      "tipo": "narrar",
+      "una_vez": "casa_llena",
+      "condicion": {
+        "flag": "juramento"
+      },
+      "texto": "Entre la hilera marchita, la frase de Oldo te vuelve al oído — y también lo que no dijo: el consejo todavía tararea la Alianza que se juró en Valoria, cuando el Corazón caminó hacia el este.\n  Si de esa cadena viene la ayuda, {trato}, la roña gris eligió mal de huerto."
+    },
+    "agua_que_cuenta": {
+      "tipo": "narrar",
+      "una_vez": "agua_que_cuenta",
+      "condicion": {
+        "flag": "grieta"
+      },
+      "texto": "Perpetua frota, mira el agua y muerde un juicio antes de soltarlo.\n  «La losa me cuenta cosas: el que caminó hasta el monte Umbak llegó con humo en los bolsillos, que es lo que dicen los juncos. Lava, {trato}, que el agua no pregunta — pero el agua se acuerda.»"
+    },
+    "colmena": {
       "tipo": "decision",
       "texto": "Bruna te alcanza un panal envuelto en hoja de olmo y se ciñe el velo\nde cera a la frente, como quien se ata el delantal para faena seria.\n  «La colmena manda conmigo un velo encerado y una deuda con tu casa.\n   Tapa la brasa con cera, huertero: ahoga el fuego primero, entierra\n   lo que quede después.»",
       "pregunta": "¿Qué respondes?",
@@ -250,6 +266,17 @@
       "final_tentado": "la brasa ahogada, la grieta encendida",
       "texto_companeros": "Junto a ti, con las manos aún temblando de la faena: {nombres}."
     }
+  },
+  "legado": {
+    "importa": [
+      "juramento",
+      "grieta"
+    ],
+    "exporta": {
+      "juramento": "bruna"
+    },
+    "texto_fama": "Tu fama te precede: en Vegaverde la fama se sirve en porciones, y Oldo lleva una luna contando la parte que te toca.",
+    "heroe": true
   },
   "comando_especial": null
 }

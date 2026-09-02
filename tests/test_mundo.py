@@ -57,7 +57,7 @@ def test_los_requisitos_de_entrada_son_conseguibles(av):
             regalado = any(
                 lugar.requiere in texto
                 for texto in av.dialogos.values()  # no es prueba fuerte, solo pista
-            ) or any(l.evento for l in av.lugares.values())
+            ) or any(l.eventos for l in av.lugares.values())
             assert en_tienda or en_suelo or regalado, (
                 f"{lugar.id} exige {lugar.requiere} pero nadie lo provee"
             )
