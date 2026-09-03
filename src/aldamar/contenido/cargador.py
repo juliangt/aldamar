@@ -105,6 +105,21 @@ def _dicc_de_textos(datos: dict, campo: str, donde: str) -> dict[str, str]:
     return valor
 
 
+def _dialogos(datos: dict, origen: str) -> dict[str, str | list[str]]:
+    crudos = _diccionario(datos, "dialogos", origen)
+    for clave, v in crudos.items():
+        po = f"dialogos[{clave!r}]"
+        if isinstance(v, str):
+            if not v:
+                raise _mal(origen, f"{po} no puede ser un texto vacío")
+        elif isinstance(v, list):
+            if not v or any(not isinstance(item, str) or not item for item in v):
+                raise _mal(origen, f"{po} debe ser un texto o una lista no vacía de textos")
+        else:
+            raise _mal(origen, f"{po} debe ser un texto o una lista de textos (llegó {type(v).__name__})")
+    return crudos
+
+
 # ── secciones del archivo ────────────────────────────────────────────────
 
 def _items(datos: dict, origen: str) -> dict[str, dict]:
@@ -124,6 +139,8 @@ def _items(datos: dict, origen: str) -> dict[str, dict]:
             raise _mal(po, "falta el campo obligatorio 'precio'")
         if precio is not None and (isinstance(precio, bool) or not isinstance(precio, int)):
             raise _mal(po, "el campo 'precio' debe ser entero o null")
+        if "texto_uso" in item:
+            _texto(item, "texto_uso", po)
     return crudos
 
 
@@ -583,7 +600,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         for stock in tiendas_raw.values()
     ):
         raise _mal(origen, "el campo 'tiendas' debe ser un objeto de listas de textos")
-    dialogos = _dicc_de_textos(datos, "dialogos", origen)
+    dialogos = _dialogos(datos, origen)
 
     personajes_datos = _diccionario(datos, "personajes", origen)
     if not personajes_datos:

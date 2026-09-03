@@ -298,7 +298,10 @@ orden. Al soltarlo en el directorio se descubre, valida y registra
 solo: aparece en el menú. El cargador verifica referencias (salidas,
 objetos, enemigos, diálogos, tiendas, eventos, las condiciones de las
 emboscadas y los items que otorgan las decisiones) y ante un JSON roto
-nombra archivo y campo.
+nombra archivo y campo. Los `dialogos` pueden ser un texto o una lista
+de textos (hablar repetidas veces avanza por las capas de la charla), y
+los `items` aceptan un campo opcional `texto_uso` para dar sabor
+narrativo al usarlos fuera de combate.
 
 Los **eventos** de lugar se declaran con el vocabulario de
 `eventos.py`, sin código; cada lugar referencia los suyos por clave en

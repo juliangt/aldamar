@@ -85,6 +85,7 @@ class Juego:
         self.dificultad = dificultad or obtener_dificultad()
         self.personaje = personaje or aventura.jugador_inicial
         self.rng = random.Random(semilla)
+        self.semilla = semilla
         self.entrada = entrada
         self.salida = salida
         self.flechas = flechas  # None = autodetectar; False = siempre tipear
@@ -811,12 +812,44 @@ class Juego:
         accion = acciones.get(cmd)
         if accion is not None:
             accion(arg)  # type: ignore[operator]
+        elif cmd in ("cuervo", "cuervos"):
+            self._cuervo()
         elif self.av.comando_especial and cmd == normaliza(self.av.comando_especial):
             self.aviso(self.av.texto_especial_fuera)
         elif cmd in ("atacar", "huir", "cuerno"):
             self.escribir("No hay combate aquí. Viaja con  ir <destino>.")
         else:
             self.tenue("No entiendo eso. Escribe  ayuda  para ver los comandos.")
+
+    def _cuervo(self) -> None:
+        cuenta = self.flags.get("_cuervo_llamadas", 0)
+        if not isinstance(cuenta, int):
+            cuenta = 0
+        self.flags["_cuervo_llamadas"] = cuenta + 1
+
+        if self.semilla == 42:
+            self.epico(
+                "\nUn cuervo negro con una pluma plateada en el ala desciende sobre una piedra, "
+                "suelta una nuez redonda y te mira con la calma de quien conoce la respuesta "
+                "a todas las preguntas del mundo. Luego grazna dos veces y emprende el vuelo."
+            )
+            return
+
+        if cuenta == 0:
+            self.epico(
+                "\nUn cuervo ceniciento se posa en lo alto, ladea la cabeza y te mide de arriba abajo "
+                "con ojos de obsidiana. Sacude las plumas, grazna seco y vuelve a orientar el pico hacia el este."
+            )
+        elif cuenta == 1:
+            self.epico(
+                "\nEl cuervo bate las alas con pesadez. «Caw», suelta con fastidio, "
+                "como quien no entiende para qué lo llamas si ya sabes hacia dónde corre el humo."
+            )
+        else:
+            self.epico(
+                "\nEl cuervo ni se inmuta. Permanece inmóvil contra el viento, vigilando las tierras lejanas: "
+                "los cuervos de Aldamar tienen mil lunas de paciencia, pero no atienden caprichos."
+            )
 
     def _salir(self, _arg: str = "") -> None:
         self.escribir("Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto.")
@@ -973,6 +1006,8 @@ class Juego:
             self.exito(f"Te tomas {i['nombre']}: vida {antes} → {self.jugador.vida}.")
         elif i["tipo"] == "cuerno":
             self.tenue("El cuerno solo sirve en combate, cuando el peligro esté delante.")
+        elif i.get("texto_uso"):
+            self.epico("\n" + self._texto_heroe(i["texto_uso"]))
         else:
             self.tenue("Eso no se usa así: ya te sirve solo por llevarlo.")
 
@@ -984,7 +1019,18 @@ class Juego:
             for npc, clave in lugar.npcs.items():
                 if t in normaliza(npc) or t in normaliza(clave):
                     self._limpiar()  # la conversación se ve sola (issue 36)
-                    self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
+                    dialogo = self.av.dialogos[clave]
+                    if isinstance(dialogo, list):
+                        flag_cuenta = f"_charla_{clave}"
+                        cuenta = self.flags.get(flag_cuenta, 0)
+                        if not isinstance(cuenta, int):
+                            cuenta = 0
+                        self.flags[flag_cuenta] = cuenta + 1
+                        idx = min(cuenta, len(dialogo) - 1)
+                        texto = dialogo[idx]
+                    else:
+                        texto = dialogo
+                    self.epico("\n" + self._texto_heroe(texto))
                     return
         self.tenue("Aquí no hay nadie con ese nombre.")
 
@@ -1311,6 +1357,9 @@ class Juego:
                         self.enemigos[self.lugar].clear()
                         return "cuerno"
                     self.tenue("No llevas ningún cuerno.")
+                    continue
+                elif cmd in ("cuervo", "cuervos"):
+                    self.aviso("Un cuervo planea sobre el combate, grazna con desdén y sigue de largo: los duelos ajenos no son asunto suyo.")
                     continue
                 elif cmd == "huir":
                     if enemigo.sin_huida:

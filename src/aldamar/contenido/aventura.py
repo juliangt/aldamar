@@ -95,7 +95,7 @@ class Aventura:
     enemigos: dict[str, dict]
     reclutas: dict[str, Companero]
     tiendas: dict[str, list[str]]
-    dialogos: dict[str, str]
+    dialogos: dict[str, str | list[str]]
     personajes: dict[str, PersonajeInicial]
     jugador_inicial: str
     epilogo_muerte: str  # lo que el motor muestra si caes en combate

@@ -147,7 +147,8 @@
       "tipo": "armadura",
       "bonus": 1,
       "precio": 18,
-      "desc": "Lana de tolvanera: abriga, desvía golpes y no se mancha."
+      "desc": "Lana de tolvanera: abriga, desvía golpes y no se mancha.",
+      "texto_uso": "Te ajustas la capa al cuello. Huele a lana empapada de lluvia y a huerto falro; no te salvará de un tajo de acero, pero abriga con la terquedad de la gente sencilla."
     },
     "corona_plata": {
       "nombre": "corona de plata",
@@ -166,7 +167,8 @@
       "nombre": "estandarte del consejo",
       "tipo": "clave",
       "precio": null,
-      "desc": "El Sol Levantado bordado en hilo de oro. Los Yermos solo se cruzan bajo su sombra."
+      "desc": "El Sol Levantado bordado en hilo de oro. Los Yermos solo se cruzan bajo su sombra.",
+      "texto_uso": "Despliegas con solemnidad el estandarte bordado en oro. No hay ningún ejército detrás de ti, ni heraldos que toquen trompetas: solo consigues sacudirle un poco de polvo del camino ante la mirada perpleja del entorno."
     }
   },
   "enemigos": {
@@ -300,7 +302,11 @@
     ]
   },
   "dialogos": {
-    "belthar_vegaverde": "Belthar apoya el bastón en el umbral y no pide permiso para entrar.\n  «No vine por té. El viejo Oldo guardaba en su baúl algo que no era\n   suyo, ni de nadie de por aquí: el Corazón de Ceniza. Mil lunas\n   durmió bajo las tomillas y esta noche despertó.»\n  «Morvath murió, pero su obra no sabe morir. Solo la Forja Eterna,\n   en la cumbre del Monte Umbak, puede devolverlo al fuego que lo vio\n   nacer. Es un viaje largo y yo ya soy demasiado viejo para él.»\n  «Lévatelo al cuello y camina hacia el este. Y escúchame, {trato}:\n   no lo uses. Cada vez que susurra, deja una grieta. La montaña lo\n   destruirá; tú solo tienes que llegar.»",
+    "belthar_vegaverde": [
+      "Belthar apoya el bastón en el umbral y no pide permiso para entrar.\n  «No vine por té. El viejo Oldo guardaba en su baúl algo que no era\n   suyo, ni de nadie de por aquí: el Corazón de Ceniza. Mil lunas\n   durmió bajo las tomillas y esta noche despertó.»\n  «Morvath murió, pero su obra no sabe morir. Solo la Forja Eterna,\n   en la cumbre del Monte Umbak, puede devolverlo al fuego que lo vio\n   nacer. Es un viaje largo y yo ya soy demasiado viejo para él.»\n  «Lévatelo al cuello y camina hacia el este. Y escúchame, {trato}:\n   no lo uses. Cada vez que susurra, deja una grieta. La montaña lo\n   destruirá; tú solo tienes que llegar.»",
+      "Belthar apoya el bastón y baja la voz como quien cuenta una herejía inocente:\n  «Dicen los viejos que este mundo no nació de reyes ni de forjas, sino de un\n   escribano distraído. Le pidieron que copiara en limpio el resumen de un\n   viejo tratado, y el pobre diablo, borracho de tinta y luna, se equivocó de\n   renglón y terminó escribiendo un continente entero con sus ríos, sus\n   monstruos y sus piedras de ceniza.»\n  «Cuando el consejo fue a reclamarle las cuentas, el mundo ya caminaba solo.\n   Tenle paciencia a este viaje, {trato}: no somos más que el borrón afortunado\n   de un libro que nadie llegó a leer.»",
+      "Belthar te mira con una ceja alzada y da un golpe seco con el regatón del bastón:\n  «El camino al este sigue esperando, {trato}. El mundo nació de un descuido,\n   pero el Corazón no se va a apagar solo mientras gastas saliva aquí.»"
+    ],
     "belthar_refugio": "Belthar atiza la fuente de agua clara y te mira como se mira un huerto\ncon heladas: con preocupación contenida.\n  «Toca el agua si la grieta avanza. Lo que la piedra no puede limpiar,\n   a veces el agua sí.»",
     "sylvana": "Entre los faroles de musgo, una arquera baja de la rama sin hacer ruido.\n  «Sylvana. Escucho tres noches cómo pita ese amuleto que llevas, y a\n   los espectros del bosque no les gusta nada tu olor. Yo tampoco, la\n   verdad, pero a ellos les pagan por hacerte daño.»\n  «Si vas hacia el este, voy contigo. Los del bosque debemos al consejo\n   una deuda vieja, y a Morvath ninguna.»\n  (Escribe  reclutar sylvana  si la quieres en tu grupo.)",
     "aldric": "En la sala del consejo, un caballero de armadura deslustrada te corta el paso\ncon una reverencia exacta.\n  «Sir Aldric de Valoria. El consejo ha leído las señales: los cuervos, el\n   humo, los aullidos. Si el Corazón vuelve a la Aguja, volverá también su\n   amo, y prefiero morir de viaje antes que de espera.»\n  «Lleva antorcha para las minas goran; la piedra no negocia con la oscuridad.\n   Y cruza los Yermos bajo el estandarte, o la ceniza te reconocerá.»\n  (Escribe  reclutar aldric  si lo quieres en tu grupo.)",

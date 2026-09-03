@@ -34,7 +34,8 @@
       "nombre": "carta de Belthar el Errante",
       "tipo": "clave",
       "precio": null,
-      "desc": "Letra torcida sellada con cera verde: «La obra no supo morir. El humo\nvolvió del mar cargado de ascuas. Apaga la tuya con agua limpia y sin\nmiedo; con miedo no, que el miedo la alimenta»."
+      "desc": "Letra torcida sellada con cera verde: «La obra no supo morir. El humo\nvolvió del mar cargado de ascuas. Apaga la tuya con agua limpia y sin\nmiedo; con miedo no, que el miedo la alimenta».",
+      "texto_uso": "Desdoblas la carta de Belthar: tinta apretada, frases breves y la advertencia clara de que las ascuas de Morvath no se apagan con rezos."
     },
     "hoz": {
       "nombre": "hoz de podar",
