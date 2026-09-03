@@ -144,20 +144,46 @@ def test_tras_el_nombre_se_limpia_la_pantalla(monkeypatch):
     assert texto.index(AVENTURA.prologo[:15]) < texto.index("\x1b[2J\x1b[H") < texto.index(presentacion)
 
 
-def test_la_cabecera_abre_cada_pantalla(monkeypatch):
+def test_la_cabecera_de_estado_vive_en_la_primera_fila(monkeypatch):
+    """Nombre, vida y monedas: siempre en la primera fila de la pantalla,
+    nunca debajo del texto de la historia (issue 36)."""
     juego, salida = juego_flechas(monkeypatch, ["\x1b", "3"], opciones=MENU_MINIMO)
-    juego._prologo()
     juego.ciclo()
-    texto = "\n".join(salida)
+    j = juego.jugador
     lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
-    assert f"Aldamar {__version__}" in texto  # primera línea: juego y versión
-    i = salida.index("\x1b[2J\x1b[H")  # la limpieza abre pantalla...
-    anclada = salida[i + 1]
-    assert anclada.startswith("\x1b[H")  # ...y la cabecera queda en la primera fila
-    assert f"Aldamar {__version__}\n" in anclada
-    assert f"Vida {juego.jugador.vida}/{juego.jugador.vida_max}" in anclada
-    assert f"{juego.jugador.monedas} monedas" in anclada
-    assert lugar in anclada  # quién, cómo, cuánto y dónde
+    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
+    cabeceras = [l for l in salida if "\x1b[1;1H" in l]
+    assert len(cabeceras) >= 2  # la activación y cada vista limpia la reancla
+    assert all(estado in l for l in cabeceras)  # y siempre dice quién, cómo y dónde
+    assert all("\x1b[2K" in l for l in cabeceras)  # reescrita limpia, sin restos
+    assert estado not in salida  # ya no vive en el flujo del relato
+
+
+def test_al_elegir_el_menu_no_deja_rastro(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
+    juego.ciclo()  # «3» elige Salir: el menú se borra y la despedida queda debajo
+    texto = "\n".join(salida)
+    assert "›" not in texto  # ni migas ni decisiones escritas: el resultado narra
+    assert texto.count("¿Qué haces?") == 1  # el título se escribió una sola vez
+    assert salida[-1] == "\x1b[r"  # al salir, la región de scroll queda liberada
+    assert salida[-2] == "Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto."
+
+
+def test_viajar_abre_la_escena_en_pantalla_limpia(monkeypatch):
+    """Modo flechas: viajar es un cambio de escena y la escena se ve sola."""
+    juego, salida = juego_flechas(monkeypatch, ["2"], lineas=["", ""])
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego._prologo()
+    orden = juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    juego._ejecutar(orden)
+    assert juego.lugar != juego.av.lugar_inicial
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del prólogo y la del viaje
+
+
+def test_en_modo_tipeado_viajar_deja_una_raya_de_escena(fabrica):
+    juego, salida = fabrica(["", "ir 1", "salir"])
+    juego.ciclo()
+    assert "\n" + "─" * 40 in salida  # el relato tipeado sigue completo, con la raya
 
 
 def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
@@ -166,13 +192,96 @@ def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
     assert not any("Aldamar " in l and __version__ in l for l in salida)
 
 
+def test_la_cabecera_no_se_reescribe_si_nada_cambia(monkeypatch):
+    """Dos turnos sin novedades ni vistas: la cabecera se escribió al
+    arrancar y en la limpieza del prólogo, y no una vez por menú."""
+    juego, salida = juego_flechas(monkeypatch, ["2", "3"], opciones=MENU_MINIMO, lineas=[""])
+    juego.ciclo()  # «estado» (una gestión, no una vista); después, «salir»
+    assert sum(l.count("¿Qué haces?") for l in salida) == 2  # hubo dos menús
+    assert len([l for l in salida if "\x1b[1;1H" in l]) == 2  # activación + prólogo
+
+
+def test_las_vistas_reanclan_la_cabecera(monkeypatch):
+    """Mirar es una vista: pantalla limpia y la cabecera, reanclada arriba."""
+    juego, salida = juego_flechas(monkeypatch, ["\r", "3"], opciones=MENU_MINIMO, lineas=[""])
+    juego.ciclo()  # prólogo, «mirar» (limpia y muestra la vista) y «salir»
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la vista
+    assert len([l for l in salida if "\x1b[1;1H" in l]) == 3  # activación + 2 limpiezas
+
+
+def test_la_cabecera_se_refresca_cuando_cambia_el_estado(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()
+    antes = len([l for l in salida if "\x1b[1;1H" in l])
+    juego._ejecutar("tomar todo")  # cambian las monedas y el inventario
+    juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    despues = len([l for l in salida if "\x1b[1;1H" in l])
+    assert despues == antes + 1  # la cabecera se reescribió con el estado nuevo
+
+
+def test_en_combate_la_cabecera_sigue_en_la_primera_fila(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego.enemigos[juego.lugar] = ["lobo"]
+    juego._combate()
+    texto = "\n".join(salida)
+    # la vida cambia a cada turno y la cabecera se reescribe arriba,
+    # en la primera fila: nunca debajo del texto de la historia
+    assert texto.count("\x1b[1;1H") >= 2
+    assert "· Vida" in next(l for l in salida if "\x1b[1;1H" in l)
+
+
+def test_la_region_de_scroll_se_libera_al_terminar(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert "\x1b[2r" in texto  # durante la partida, el scroll vive bajo la fila 1
+    assert "\x1b[r" in texto  # al salir, la terminal queda como estaba
+
+
+def test_la_cabecera_y_el_bloque_sobreviven_al_color(fabrica):
+    """Con color activo, los renderizados arman sus códigos ANSI sin
+    colar adentro valores que no son códigos (pasó: un bool)."""
+    juego, salida = fabrica(["", "salir"])
+    juego.color = True
+    juego.flechas = True  # el renderizado anclado solo existe en modo flechas
+    juego._cabecera()
+    juego.enemigos[juego.lugar] = ["lobo"]
+    titulo = juego._titulo_combate(juego.crear_enemigo("lobo"))
+    texto = "\n".join(salida) + "\n" + titulo
+    assert "\x1b[1;36m" in texto  # el título de la cabecera, en color
+    assert "█" in titulo  # las barras del bloque
+    for basura in ("True", "False", "None"):  # ningún valor colado en los códigos
+        assert basura not in texto
+
+
+def test_hablar_abre_la_conversacion_limpia(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()
+    juego._ejecutar("hablar belthar")
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la conversación
+    dialogo = juego.av.dialogos[juego.aqui().npcs["belthar"]]
+    assert dialogo[:20] in "\n".join(salida)
+    juego._ejecutar("hablar fantasma")  # un error no borra lo que se estaba viendo
+    assert salida.count("\x1b[2J\x1b[H") == 2
+
+
+def test_empezar_la_aventura_no_duplica_la_vista_del_lugar(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()  # presentación y vista del lugar, sobre una sola limpieza
+    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
+    texto = "\n".join(salida)
+    assert salida.count("\x1b[2J\x1b[H") == 1
+    assert texto.count(lugar) >= 2  # el lugar se presenta una vez (y sus salidas lo citan)
+
+
 def test_las_otras_acciones_son_un_submenu_de_ida_y_vuelta(monkeypatch):
     opciones = [("mirar", "Mirar alrededor", ""), (OTRAS, "Otras acciones…", "")]
     juego, salida = juego_flechas(monkeypatch, ["2", "\x1b", "2", "7"], opciones=opciones)
     juego.ciclo()
     texto = "\n".join(salida)
     assert juego.fin  # la segunda visita terminó en "salir"
-    assert texto.count("\nOtras acciones\n") == 2  # entró, volvió con Esc y reentró
+    assert salida.count("\x1b[2KOtras acciones") == 2  # el título del submenú, en cada visita
     assert texto.count("¿Qué haces?") == 2  # el menú del juego, al inicio y al volver
 
 
@@ -216,6 +325,52 @@ def test_el_combate_se_navega_con_flechas(monkeypatch):
     assert "Atacar" in texto  # el menú de combate ofreció sus opciones
     assert "Escribir un comando…" in texto
     assert "se abalanza" in texto
+
+
+def test_el_duelo_largo_ocupa_un_bloque_que_no_crece(monkeypatch):
+    """Con un enemigo de mucha vida, los turnos no apilan renglones: el
+    bloque del duelo (barras y último golpe) se muestra en el sitio."""
+    from test_opciones import Terminal
+
+    monkeypatch.setitem(AVENTURA.enemigos["lobo"], "vida", 60)
+    monkeypatch.setitem(AVENTURA.enemigos["lobo"], "experiencia", 0)
+    term = Terminal()
+    capturas: list[str] = []
+    teclas = iter(["\r"] * 100)
+
+    def tecla():
+        capturas.append(term.texto())
+        return next(teclas)
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", tecla)
+    juego = Juego(
+        AVENTURA,
+        semilla=7,
+        entrada=EntradaTipeada(["", ""]),
+        salida=term.escribe,
+        color=False,
+        flechas=True,
+    )
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego.enemigos[juego.lugar] = ["lobo"]
+    juego._combate()
+    assert not juego.enemigos[juego.lugar]  # el duelo terminó
+    assert len(capturas) > 5  # hubo varios turnos
+    assert "█" in capturas[0]  # las barras de vida, desde el primer turno
+    assert "Golpeas" not in capturas[0]  # el primer bloque aún no tiene turnos
+    for captura in capturas[1:-1]:
+        assert captura.count("Golpeas a ") == 1  # solo el último golpe, no la historia
+    # y la pantalla no crece: mismos renglones usados y el bloque, siempre
+    # en su fila (sin filas fantasma acumulándose entre el texto y las opciones)
+    usadas = lambda t: len([r for r in t.split("\n") if r.strip()])  # noqa: E731
+    assert len({usadas(c) for c in capturas[1:-1]}) == 1
+    fila_titulo = {
+        next(i for i, r in enumerate(c.split("\n")) if "¿Qué haces?" in r)
+        for c in capturas
+    }
+    assert fila_titulo == {capturas[0].split("\n").index(
+        next(r for r in capturas[0].split("\n") if "¿Qué haces?" in r)
+    )}
 
 
 def test_en_combate_usar_tiene_su_propio_submenu(monkeypatch):
