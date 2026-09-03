@@ -321,9 +321,17 @@ def test_el_duelo_largo_ocupa_un_bloque_que_no_crece(monkeypatch):
     assert "Golpeas" not in capturas[0]  # el primer bloque aún no tiene turnos
     for captura in capturas[1:-1]:
         assert captura.count("Golpeas a ") == 1  # solo el último golpe, no la historia
-    # y la pantalla no crece: misma cantidad de renglones turno a turno
+    # y la pantalla no crece: mismos renglones usados y el bloque, siempre
+    # en su fila (sin filas fantasma acumulándose entre el texto y las opciones)
     usadas = lambda t: len([r for r in t.split("\n") if r.strip()])  # noqa: E731
     assert len({usadas(c) for c in capturas[1:-1]}) == 1
+    fila_titulo = {
+        next(i for i, r in enumerate(c.split("\n")) if "¿Qué haces?" in r)
+        for c in capturas
+    }
+    assert fila_titulo == {capturas[0].split("\n").index(
+        next(r for r in capturas[0].split("\n") if "¿Qué haces?" in r)
+    )}
 
 
 def test_en_combate_usar_tiene_su_propio_submenu(monkeypatch):

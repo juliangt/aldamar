@@ -146,14 +146,14 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 def _desdibuja(dibujadas: int, titulo_renglones: int, salida) -> None:
     """Borra el bloque del menú entero, título incluido, sin tocar el relato.
 
-    El cursor queda en la fila donde estaba la primera opción: lo que se
-    escriba a continuación fluye justo debajo de donde estaba el menú.
-    El título puede ocupar varios renglones (el bloque del duelo).
+    El cursor queda en la fila del separador —la que estaba en blanco
+    encima del título—: el próximo menú, con su título, ocupa exactamente
+    las mismas filas y no queda ni un renglón fantasma (issue 36).
     Solo vale si el bloque cabe en la pantalla; si el título pudo
     haberse salido por arriba, no hay forma segura de subir a borrar.
     """
     salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título (el salto del print lo compensa)
-    salida("\x1b[J")  # borrar desde ahí hasta el fin de la pantalla
+    salida("\x1b[J\x1b[2A")  # borrar desde el título hasta el fin; el salto del print deja el cursor en el separador
 
 
 def _reescribe(
@@ -230,6 +230,7 @@ def _elegir_con_flechas(
     aviso_esc: str | None = None,
     relato: bool = False,
     resuelve=None,
+    separador: bool = True,
 ) -> str | None:
     """El bucle del menú navegable.
 
@@ -239,6 +240,9 @@ def _elegir_con_flechas(
     o None si la clave ya es una decisión final; `resuelve(None)` trae
     el menú de arriba al volver con Esc. Si no hay `resuelve`, toda
     elección termina el menú.
+    Con `separador=False`, el título se dibuja en la fila del cursor,
+    sin línea en blanco propia: para los menús que se redibujan turno
+    a turno en el mismo sitio (el bloque del duelo).
     """
     if not relato:
         resuelve = None
@@ -246,7 +250,8 @@ def _elegir_con_flechas(
     aviso: str | None = None
     titulo_renglones = titulo.count("\n") + 1  # el bloque del duelo ocupa varios
     for i, linea in enumerate(titulo.split("\n")):
-        salida(("" if i else "\n") + f"\x1b[2K{_c(linea, color, TITULO)}")
+        prefijo = "\n" if (i == 0 and separador) else ""
+        salida(prefijo + f"\x1b[2K{_c(linea, color, TITULO)}")
     dibujadas = 0  # líneas de las opciones; el cursor queda justo debajo
 
     def cerrar() -> None:
@@ -362,6 +367,7 @@ def elegir_opcion(
     aviso_esc: str | None = None,
     relato: bool = False,
     resuelve=None,
+    separador: bool = True,
 ) -> str | None:
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
@@ -384,5 +390,5 @@ def elegir_opcion(
     if not opciones:
         return None
     if flechas or (flechas is None and _es_interactivo(entrada, salida)):
-        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc, relato, resuelve)
+        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc, relato, resuelve, separador)
     return _elegir_tipeando(titulo, opciones, entrada, salida, color)

@@ -586,6 +586,7 @@ class Juego:
             aviso_esc=aviso_esc,
             relato=True,
             resuelve=resuelve,
+            separador=not self.en_combate,  # en duelo, el bloque vuelve a su fila
         )
         if clave is None:  # Esc en la raíz: de vuelta al juego sin orden
             return ""

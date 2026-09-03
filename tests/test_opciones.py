@@ -31,10 +31,10 @@ class Terminal:
         self.fila = 0
 
     def escribe(self, texto: str) -> None:
-        if texto == "\x1b[J":  # borrar desde el cursor hasta el final de la pantalla
+        if texto == "\x1b[J\x1b[2A":  # borrar desde el cursor hasta el fin; cursor en el separador
             for i in range(self.fila, len(self.filas)):
                 self.filas[i] = ""
-            self.fila += 1  # el salto del print devuelve el cursor a su fila
+            self.fila = max(0, self.fila - 1)  # el salto del print baja al separador
             return
         subida = re.fullmatch(r"\x1b\[(\d+)A", texto)
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
