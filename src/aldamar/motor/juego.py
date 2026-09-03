@@ -377,9 +377,8 @@ class Juego:
             for clave in self.derrotados:
                 cuenta[clave] = cuenta.get(clave, 0) + 1
             lineas.append("Enemigos derrotados: " + ", ".join(
-                nombre if n == 1 else f"{nombre} ×{n}"
+                self.av.enemigos[clave]["nombre"] if n == 1 else f"{self.av.enemigos[clave]['nombre']} ×{n}"
                 for clave, n in cuenta.items()
-                for nombre in [self.av.enemigos[clave]["nombre"]]
             ))
         if len(self.visitados) > 1:
             lineas.append(

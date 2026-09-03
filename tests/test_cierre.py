@@ -88,6 +88,25 @@ def test_el_cierre_no_duplica_el_epilogo_de_la_muerte(fabrica):
 
 # ── el balance del héroe ─────────────────────────────────────────────────
 
+def test_formato_enemigos_derrotados(fabrica):
+    """Comprueba que el resumen de enemigos derrotados se formatea correctamente sin usar la comprensión ineficiente."""
+    juego, _ = fabrica([])
+    juego.fin = True
+    juego.final = "victoria pura"
+    # Un enemigo simple, múltiples de otro y múltiples de un tercero
+    juego.derrotados = ["lobo", "lobo", "lobo", "espectro", "zombi", "zombi"]
+
+    # Aseguramos que tenemos acceso a la definición de estos enemigos en el AV
+    # (zombi no existe en corazon_ceniza, así que probaremos con goblin o espectro)
+    # Mejor usar los que sí existen:
+    juego.derrotados = ["lobo", "lobo", "lobo", "espectro"]
+
+    texto = juego._texto_cierre()
+    # Debe aparecer "lobo de sombra ×3" y "espectro de ceniza" sin multiplicador (porque es 1)
+    assert "lobo de sombra ×3" in texto
+    assert "espectro de ceniza" in texto
+    assert "espectro de ceniza ×" not in texto
+
 def test_el_balance_del_heroe_en_el_cierre(fabrica):
     juego, _ = fabrica([])
     juego.fin = True
