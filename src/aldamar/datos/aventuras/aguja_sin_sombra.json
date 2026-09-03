@@ -734,7 +734,7 @@
       ],
       "texto_combate": "Haces sonar la campanilla: el tono claro resuena en la piedra y descoloca al enemigo un instante, aunque el duelo sigue en pie.",
       "semillas": {
-        "42": "El bronce emite un acorde doble, armónico y antiguo: cuarenta y dos campanadas parecen replicar a lo lejos desde una torre que ya no existe en ningún mapa."
+        "100": "El bronce emite un acorde doble, armónico y antiguo: cien campanadas parecen replicar a lo lejos desde una atalaya que ya no existe en ningún mapa."
       },
       "alias": [
         "campana",

@@ -833,13 +833,7 @@ class Juego:
         if not isinstance(cuenta, int):
             cuenta = 0
         self.flags[f"_secreto_{secreto.comando}"] = cuenta + 1
-
-        if self.semilla is not None and self.semilla in secreto.semillas:
-            self.epico("\n" + self._texto_heroe(secreto.semillas[self.semilla]))
-            return
-
-        idx = min(cuenta, len(secreto.textos) - 1)
-        texto = secreto.textos[idx]
+        texto = secreto.texto_para(cuenta, self.semilla)
         self.epico("\n" + self._texto_heroe(texto))
 
     def _salir(self, _arg: str = "") -> None:
@@ -1010,18 +1004,15 @@ class Juego:
             for npc, clave in lugar.npcs.items():
                 if t in normaliza(npc) or t in normaliza(clave):
                     self._limpiar()  # la conversación se ve sola (issue 36)
-                    dialogo = self.av.dialogos[clave]
-                    if isinstance(dialogo, list):
-                        flag_cuenta = f"_charla_{clave}"
-                        cuenta = self.flags.get(flag_cuenta, 0)
-                        if not isinstance(cuenta, int):
-                            cuenta = 0
+                    flag_cuenta = f"_charla_{clave}"
+                    cuenta = self.flags.get(flag_cuenta, 0)
+                    if not isinstance(cuenta, int):
+                        cuenta = 0
+                    texto = self.av.obtener_dialogo(clave, cuenta)
+                    if isinstance(self.av.dialogos.get(clave), list):
                         self.flags[flag_cuenta] = cuenta + 1
-                        idx = min(cuenta, len(dialogo) - 1)
-                        texto = dialogo[idx]
-                    else:
-                        texto = dialogo
-                    self.epico("\n" + self._texto_heroe(texto))
+                    if texto:
+                        self.epico("\n" + self._texto_heroe(texto))
                     return
         self.tenue("Aquí no hay nadie con ese nombre.")
 

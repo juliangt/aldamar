@@ -91,6 +91,13 @@ class Secreto:
     semillas: dict[int, str] = field(default_factory=dict)
     alias: list[str] = field(default_factory=list)
 
+    def texto_para(self, veces: int = 0, semilla: int | None = None) -> str:
+        """Devuelve el texto correspondiente para la llamada dada o semilla mágica."""
+        if semilla is not None and semilla in self.semillas:
+            return self.semillas[semilla]
+        idx = max(0, min(veces, len(self.textos) - 1))
+        return self.textos[idx]
+
 
 @dataclass
 class Aventura:
@@ -125,6 +132,16 @@ class Aventura:
     # posición sugerida en el menú (menor primero); None = al final, por
     # orden alfabético. Las series lo usan para contarse en orden.
     orden: int | None = None
+
+    def obtener_dialogo(self, clave: str, veces: int = 0) -> str | None:
+        """Devuelve el texto de diálogo para la clave y número de veces hablado."""
+        dialogo = self.dialogos.get(clave)
+        if dialogo is None:
+            return None
+        if isinstance(dialogo, list):
+            idx = max(0, min(veces, len(dialogo) - 1))
+            return dialogo[idx]
+        return dialogo
 
     def crear_enemigo(self, clave: str, dif: Dificultad) -> Enemigo:
         d = self.enemigos[clave]

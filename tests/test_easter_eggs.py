@@ -202,13 +202,15 @@ def test_secreto_exclusivo_brasa_vegaverde():
     assert "si ves a Morvath... dile que los Panverde pagamos las deudas" in texto
 
 
-def test_secreto_brasa_semilla_42_y_combate():
-    """En La Brasa de Vegaverde, semilla 42 y combate con abejas."""
+def test_secreto_brasa_semilla_20_y_combate():
+    """En La Brasa de Vegaverde, semilla 20 (veinte primaveras) y combate con abejas."""
     av = obtener_aventura("brasa_vegaverde")
     salida: list[str] = []
-    juego = Juego(av, entrada=EntradaTipeada(["", "abejas", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego = Juego(av, entrada=EntradaTipeada(["", "abejas", "salir"]), salida=salida.append, color=False, semilla=20)
     juego.ciclo()
-    assert "abeja reina con reflejos de ámbar antiguo" in "\n".join(salida)
+    res = "\n".join(salida)
+    assert "abeja reina con reflejos de ámbar antiguo" in res
+    assert "veinte primaveras" in res
 
     # En combate
     salida_c: list[str] = []
@@ -234,11 +236,11 @@ def test_secreto_exclusivo_sal_y_ceniza():
     assert "La sopa se enfría si la piensas mucho" in texto
 
 
-def test_secreto_sal_semilla_42_y_items():
-    """En La Sal y la Ceniza, semilla 42 y texto_uso en farol de sal."""
+def test_secreto_sal_semilla_40_y_items():
+    """En La Sal y la Ceniza, semilla 40 (cuarenta inviernos) y texto_uso en farol de sal."""
     av = obtener_aventura("sal_y_ceniza")
     salida: list[str] = []
-    juego = Juego(av, entrada=EntradaTipeada(["", "gaviota", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego = Juego(av, entrada=EntradaTipeada(["", "gaviota", "salir"]), salida=salida.append, color=False, semilla=40)
     juego.ciclo()
     assert "concha marina pulida por cuarenta inviernos" in "\n".join(salida)
 
@@ -266,13 +268,13 @@ def test_secreto_exclusivo_aguja_sin_sombra():
     assert "apaga ese canto de una vez" in texto
 
 
-def test_secreto_aguja_semilla_42_y_item_campanilla():
-    """En La Aguja sin Sombra, semilla 42 y texto_uso al usar el item campanilla."""
+def test_secreto_aguja_semilla_100_y_item_campanilla():
+    """En La Aguja sin Sombra, semilla 100 (siglo de silencio) y texto_uso al usar el item campanilla."""
     av = obtener_aventura("aguja_sin_sombra")
     salida: list[str] = []
-    juego = Juego(av, entrada=EntradaTipeada(["", "campanilla", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego = Juego(av, entrada=EntradaTipeada(["", "campanilla", "salir"]), salida=salida.append, color=False, semilla=100)
     juego.ciclo()
-    assert "cuarenta y dos campanadas parecen replicar a lo lejos" in "\n".join(salida)
+    assert "cien campanadas parecen replicar a lo lejos" in "\n".join(salida)
 
     # texto_uso del item campanilla
     salida_i: list[str] = []
@@ -308,3 +310,130 @@ def test_exclusividad_de_secretos():
     assert "cuervo" not in av_aguja.secretos
     assert "abejas" not in av_aguja.secretos
     assert "gaviota" not in av_aguja.secretos
+
+
+def test_secreto_dataclass_texto_para():
+    """Prueba unitaria de Secreto.texto_para con capas, límites y semillas."""
+    from aldamar.contenido.aventura import Secreto
+
+    sec = Secreto(
+        comando="prueba",
+        textos=["capa 0", "capa 1", "capa 2"],
+        texto_combate="en combate",
+        semillas={7: "semilla siete", 42: "semilla cuarenta y dos"},
+        alias=["p", "test"],
+    )
+
+    # Progresión normal por capas
+    assert sec.texto_para(0) == "capa 0"
+    assert sec.texto_para(1) == "capa 1"
+    assert sec.texto_para(2) == "capa 2"
+    # Se queda en la última capa si se supera el índice
+    assert sec.texto_para(3) == "capa 2"
+    assert sec.texto_para(100) == "capa 2"
+
+    # Con semilla registrada devuelve el texto especial sin importar la capa
+    assert sec.texto_para(0, semilla=7) == "semilla siete"
+    assert sec.texto_para(2, semilla=42) == "semilla cuarenta y dos"
+    assert sec.texto_para(5, semilla=7) == "semilla siete"
+
+    # Con semilla no registrada vuelve al flujo por capas
+    assert sec.texto_para(1, semilla=99) == "capa 1"
+
+
+def test_aventura_obtener_dialogo():
+    """Prueba unitaria de Aventura.obtener_dialogo con texto simple y listas."""
+    av = copy.deepcopy(AVENTURA)
+    av.dialogos["npc_simple"] = "Hola viajero."
+    av.dialogos["npc_capas"] = ["Primera vez.", "Segunda vez.", "Última vez."]
+
+    # NPC inexistente
+    assert av.obtener_dialogo("npc_inexistente") is None
+
+    # Diálogo string simple: siempre devuelve el mismo texto
+    assert av.obtener_dialogo("npc_simple", 0) == "Hola viajero."
+    assert av.obtener_dialogo("npc_simple", 1) == "Hola viajero."
+    assert av.obtener_dialogo("npc_simple", 50) == "Hola viajero."
+
+    # Diálogo en lista: avanza y frena en el último
+    assert av.obtener_dialogo("npc_capas", 0) == "Primera vez."
+    assert av.obtener_dialogo("npc_capas", 1) == "Segunda vez."
+    assert av.obtener_dialogo("npc_capas", 2) == "Última vez."
+    assert av.obtener_dialogo("npc_capas", 3) == "Última vez."
+    assert av.obtener_dialogo("npc_capas", 99) == "Última vez."
+
+
+def test_juego_buscar_secreto_metodo(fabrica):
+    """Prueba directa de Juego._buscar_secreto con comando exacto, alias y mayúsculas."""
+    juego, _ = fabrica(["ayuda", "salir"])
+    # Coincidencia exacta
+    sec = juego._buscar_secreto("cuervo")
+    assert sec is not None
+    assert sec.comando == "cuervo"
+
+    # Coincidencia por alias
+    sec_alias = juego._buscar_secreto("cuervos")
+    assert sec_alias is not None
+    assert sec_alias.comando == "cuervo"
+
+    # Normalización de mayúsculas y espacios
+    assert juego._buscar_secreto("  CUERVO  ") is not None
+    assert juego._buscar_secreto("  Cuervos ") is not None
+
+    # Comando no secreto
+    assert juego._buscar_secreto("mirar") is None
+    assert juego._buscar_secreto("desconocido") is None
+
+
+def test_juego_ejecutar_secreto_modifica_flags(fabrica):
+    """Prueba directa de Juego._ejecutar_secreto: actualiza flags y usa _imprimir."""
+    juego, salida = fabrica(["ayuda", "salir"])
+    sec = juego.av.secretos["cuervo"]
+
+    assert juego.flags.get("_secreto_cuervo", 0) == 0
+    juego._ejecutar_secreto(sec)
+    assert juego.flags["_secreto_cuervo"] == 1
+    assert "Un cuervo ceniciento" in salida[-1]
+
+    juego._ejecutar_secreto(sec)
+    assert juego.flags["_secreto_cuervo"] == 2
+    assert "«Caw», suelta con fastidio" in salida[-1]
+
+
+def test_juego_usar_item_distintas_casuisticas(fabrica):
+    """Prueba directa de Juego._usar con y sin texto_uso, consumibles y no poseídos."""
+    juego, salida = fabrica(["ayuda", "salir"])
+
+    # 1. No tiene el objeto
+    juego._usar("capa_gris")
+    assert "No llevas eso." in salida[-1]
+
+    # 2. Objeto con texto_uso
+    juego.jugador.inventario.append("capa_gris")
+    juego._usar("capa_gris")
+    assert "Te ajustas la capa al cuello" in salida[-1]
+
+    # 3. Objeto sin texto_uso (ej: espada corta)
+    juego.jugador.inventario.append("espada_corta")
+    juego._usar("espada_corta")
+    assert "Eso no se usa así: ya te sirve solo por llevarlo." in salida[-1]
+
+    # 4. Objeto consumible cura al jugador
+    juego.jugador.vida = 10
+    juego.jugador.inventario.append("provisiones")
+    juego._usar("provisiones")
+    assert juego.jugador.vida > 10
+    assert "provisiones" not in juego.jugador.inventario
+
+
+def test_juego_combate_secreto_sin_texto_combate(fabrica):
+    """Un secreto sin texto_combate no se intercepta en el turno de combate."""
+    from aldamar.contenido.aventura import Secreto
+
+    juego, salida = fabrica(["ayuda", "salir"])
+    juego.av.secretos["mudo"] = Secreto(comando="mudo", textos=["shh"])
+
+    sec = juego._buscar_secreto("mudo")
+    assert sec is not None
+    assert sec.texto_combate is None
+
