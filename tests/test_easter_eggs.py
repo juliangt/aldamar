@@ -184,3 +184,127 @@ def test_cargador_valida_secretos():
     mal["secretos"] = {"secreto": {"textos": ["hola"], "semillas": {"no_numero": "texto"}}}
     with pytest.raises(AventuraInvalida, match="debe representar un número entero"):
         cargar_aventura_dict(mal)
+
+
+def test_secreto_exclusivo_brasa_vegaverde():
+    """La Brasa de Vegaverde tiene el secreto de las abejas y diálogos en capas de Oldo."""
+    av = obtener_aventura("brasa_vegaverde")
+    salida: list[str] = []
+    lineas = ["", "abejas", "abeja", "zumbido", "abejas", "hablar oldo", "hablar oldo", "hablar oldo", "salir"]
+    juego = Juego(av, entrada=EntradaTipeada(lineas), salida=salida.append, color=False, semilla=7)
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert "Un rumor dorado se levanta" in texto
+    assert "Dos abejas cargadas de polen" in texto
+    assert "El zumbido se apaga entre los tallos" in texto
+    assert "Un mes hacía de aquella luz" in texto
+    assert "Tu primo Tilo era más de correr" in texto
+    assert "si ves a Morvath... dile que los Panverde pagamos las deudas" in texto
+
+
+def test_secreto_brasa_semilla_42_y_combate():
+    """En La Brasa de Vegaverde, semilla 42 y combate con abejas."""
+    av = obtener_aventura("brasa_vegaverde")
+    salida: list[str] = []
+    juego = Juego(av, entrada=EntradaTipeada(["", "abejas", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego.ciclo()
+    assert "abeja reina con reflejos de ámbar antiguo" in "\n".join(salida)
+
+    # En combate
+    salida_c: list[str] = []
+    juego_c = Juego(av, entrada=EntradaTipeada(["abeja"] + ["atacar"] * 5), salida=salida_c.append, color=False, semilla=7)
+    mirlo = av.crear_enemigo("mirlo", obtener_dificultad("camino"))
+    assert juego_c._duelo(mirlo) == "victoria"
+    assert "las abejas de Bruna no pican a sombras" in "\n".join(salida_c)
+
+
+def test_secreto_exclusivo_sal_y_ceniza():
+    """La Sal y la Ceniza tiene el secreto de la gaviota y diálogos en capas de Dorotea."""
+    av = obtener_aventura("sal_y_ceniza")
+    salida: list[str] = []
+    lineas = ["", "gaviota", "gaviotas", "caracola", "gaviota", "hablar dorotea", "hablar dorotea", "hablar dorotea", "salir"]
+    juego = Juego(av, entrada=EntradaTipeada(lineas), salida=salida.append, color=False, semilla=7)
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert "Una gaviota de ojos claros" in texto
+    assert "La gaviota desciende sobre una estaca" in texto
+    assert "perdiéndose en la bruma de las salinas" in texto
+    assert "Las caravanas no cruzan el vado" in texto
+    assert "Belthar pasó por aquí camino de los Yermos" in texto
+    assert "La sopa se enfría si la piensas mucho" in texto
+
+
+def test_secreto_sal_semilla_42_y_items():
+    """En La Sal y la Ceniza, semilla 42 y texto_uso en farol de sal."""
+    av = obtener_aventura("sal_y_ceniza")
+    salida: list[str] = []
+    juego = Juego(av, entrada=EntradaTipeada(["", "gaviota", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego.ciclo()
+    assert "concha marina pulida por cuarenta inviernos" in "\n".join(salida)
+
+    # texto_uso
+    salida_i: list[str] = []
+    juego_i = Juego(av, entrada=EntradaTipeada(["", "usar farol_sal", "salir"]), salida=salida_i.append, color=False)
+    juego_i.jugador.inventario.append("farol_sal")
+    juego_i.ciclo()
+    assert "Alzas el farol de sal" in "\n".join(salida_i)
+
+
+def test_secreto_exclusivo_aguja_sin_sombra():
+    """La Aguja sin Sombra tiene el secreto de la campanilla y diálogos en capas de Oldo."""
+    av = obtener_aventura("aguja_sin_sombra")
+    salida: list[str] = []
+    lineas = ["", "campanilla", "campana", "bronce", "campanilla", "hablar oldo", "hablar oldo", "hablar oldo", "salir"]
+    juego = Juego(av, entrada=EntradaTipeada(lineas), salida=salida.append, color=False, semilla=7)
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert "Haces sonar suavemente el borde de bronce" in texto
+    assert "El bronce vibra entre tus dedos" in texto
+    assert "El silencio que deja la campanilla" in texto
+    assert "Dos ascuas ahogadas y aquí seguimos" in texto
+    assert "sylvos de orejas tiesas" in texto
+    assert "apaga ese canto de una vez" in texto
+
+
+def test_secreto_aguja_semilla_42_y_item_campanilla():
+    """En La Aguja sin Sombra, semilla 42 y texto_uso al usar el item campanilla."""
+    av = obtener_aventura("aguja_sin_sombra")
+    salida: list[str] = []
+    juego = Juego(av, entrada=EntradaTipeada(["", "campanilla", "salir"]), salida=salida.append, color=False, semilla=42)
+    juego.ciclo()
+    assert "cuarenta y dos campanadas parecen replicar a lo lejos" in "\n".join(salida)
+
+    # texto_uso del item campanilla
+    salida_i: list[str] = []
+    juego_i = Juego(av, entrada=EntradaTipeada(["", "usar campanilla", "salir"]), salida=salida_i.append, color=False)
+    juego_i.jugador.inventario.append("campanilla")
+    juego_i.ciclo()
+    assert "Haces vibrar suavemente la campanilla" in "\n".join(salida_i)
+
+
+def test_exclusividad_de_secretos():
+    """Cada aventura tiene sus propios secretos temáticos exclusivos."""
+    av_corazon = obtener_aventura("corazon_ceniza")
+    av_brasa = obtener_aventura("brasa_vegaverde")
+    av_sal = obtener_aventura("sal_y_ceniza")
+    av_aguja = obtener_aventura("aguja_sin_sombra")
+
+    assert "cuervo" in av_corazon.secretos
+    assert "abejas" not in av_corazon.secretos
+    assert "gaviota" not in av_corazon.secretos
+    assert "campanilla" not in av_corazon.secretos
+
+    assert "abejas" in av_brasa.secretos
+    assert "cuervo" not in av_brasa.secretos
+    assert "gaviota" not in av_brasa.secretos
+    assert "campanilla" not in av_brasa.secretos
+
+    assert "gaviota" in av_sal.secretos
+    assert "cuervo" not in av_sal.secretos
+    assert "abejas" not in av_sal.secretos
+    assert "campanilla" not in av_sal.secretos
+
+    assert "campanilla" in av_aguja.secretos
+    assert "cuervo" not in av_aguja.secretos
+    assert "abejas" not in av_aguja.secretos
+    assert "gaviota" not in av_aguja.secretos

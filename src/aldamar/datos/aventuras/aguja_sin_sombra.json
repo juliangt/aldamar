@@ -78,7 +78,8 @@
       "nombre": "la campanilla de Belthar",
       "tipo": "clave",
       "precio": null,
-      "desc": "Bronce chico de la Torre de Belthar: un solo toque y los ecos de la\nAguja se callan para quien la lleva. Sin ella, la escalera no se sube."
+      "desc": "Bronce chico de la Torre de Belthar: un solo toque y los ecos de la\nAguja se callan para quien la lleva. Sin ella, la escalera no se sube.",
+      "texto_uso": "Haces vibrar suavemente la campanilla: un tañido puro de bronce expande su claridad y apaga por un segundo todos los susurros de la Aguja."
     },
     "lanza": {
       "nombre": "lanza de servicio",
@@ -295,7 +296,11 @@
     ]
   },
   "dialogos": {
-    "oldo_aguja": "Oldo Panverde reparte hogazas a los convocados como quien reparte\nordenes de trabajo, y a ti te guarda la de siempre.\n  «Dos ascuas ahogadas y aquí seguimos: la Aguja canta y el humo\n   vuelve a tejerse. Mi nieto Tilo va al molino con su lanza nueva;\n   mi sobrino nieto Enebro manda en el huerto.»\n  «El estandarte te lo dará el consejo, en Valoria: ya sabes que los\n   Yermos no se cruzan sin él. Toma pan. Y vuelve con las manos\n   limpias, como tu primo.»",
+    "oldo_aguja": [
+      "Oldo Panverde reparte hogazas a los convocados como quien reparte\nordenes de trabajo, y a ti te guarda la de siempre.\n  «Dos ascuas ahogadas y aquí seguimos: la Aguja canta y el humo\n   vuelve a tejerse. Mi nieto Tilo va al molino con su lanza nueva;\n   mi sobrino nieto Enebro manda en el huerto.»\n  «El estandarte te lo dará el consejo, en Valoria: ya sabes que los\n   Yermos no se cruzan sin él. Toma pan. Y vuelve con las manos\n   limpias, como tu primo.»",
+      "Oldo sacude la harina del mandil y mira a los convocados que cruzan el patio.\n  «Míralos: sylvos de orejas tiesas, enanos de maza ancha y falros que no\n   saben dónde meter los codos. Antes nos tirábamos los terrones a la\n   cabeza; ahora marchamos juntos. Morvath ha conseguido lo que ningún\n   rey logró en cuatro siglos.»",
+      "Oldo te da una palmada seca en el hombro.\n  «No me mires con cara de despedida. Llevo noventa inviernos viendo\n   pasar ejércitos y las hogazas siguen saliendo a su hora. Ve a la\n   Aguja y apaga ese canto de una vez, que no deja dormir la siesta.»"
+    ],
     "enebro": "Enebro Panverde riega las hileras nuevas con la hoz al cinto y el\nvelo de cera en la frente, que él ya no se lo quita.\n  «El Parche de las Dos da cebada este año: la brasa ahogada dejó\n   tierra buena, no preguntes cómo. Bruna dice que es la cera; Oldo\n   dice que es el agua; los cuervos no dicen nada.»\n  «La Aguja me toca por lo que sé de apagar ascuas. Voy contigo:\n   dos ya, y la tercera es la de las tres.»\n  (Escribe  reclutar enebro  si lo quieres en tu grupo.)",
     "tilo": "En el camino del molino, un falro de lanza al hombro ensaya con un\nespantapájaros vestido de capitán. No es mala idea del todo.\n  «Tilo Panverde. Cargué el Corazón hasta la Forja Eterna cuando el\n   mundo pesaba más; ahora cargo esta lanza, que pesa menos y no\n   susurra.»\n  «Dicen que el humo viste un capitán viejo. Yo lo derribé una vez\n   de lejos. Esta vez será de cerca.»\n  (Escribe  reclutar tilo  si lo quieres en tu grupo.)",
     "dorotea": "La posadera de Ríoclaro, más blanca que la sal que le compraba,\nllena el cuenco hasta el borde y encima pone la historia.\n  «La marea gris subió por aquí hace un año; la ahogaron en la costa,\n   dicen, con un farol encendido a conciencia. Maruxa dejó las\n   terrazas y sirve mesas en mi casa desde entonces.»\n  «Si vas a la Aguja, ve con el estandarte: la ceniza tiene memoria\n   de paño. El descanso va por la casa.»",
@@ -717,6 +722,24 @@
       "dano_por_corrupcion": 3,
       "corrupcion_coste": 12,
       "mensaje": "Reclamas el eco de la Aguja y golpea por −{efectivo}…"
+    }
+  },
+  "secretos": {
+    "campanilla": {
+      "comando": "campanilla",
+      "textos": [
+        "Haces sonar suavemente el borde de bronce: un tañido puro y hondo se expande en el aire, acallando por un instante el murmullo de la ceniza.",
+        "El bronce vibra entre tus dedos. Su eco no rebota: viaja hacia las piedras viejas de la torre, como si recordara las manos que lo fundieron.",
+        "El silencio que deja la campanilla es más espeso que la niebla. Hay cosas que no necesitan repetirse."
+      ],
+      "texto_combate": "Haces sonar la campanilla: el tono claro resuena en la piedra y descoloca al enemigo un instante, aunque el duelo sigue en pie.",
+      "semillas": {
+        "42": "El bronce emite un acorde doble, armónico y antiguo: cuarenta y dos campanadas parecen replicar a lo lejos desde una torre que ya no existe en ningún mapa."
+      },
+      "alias": [
+        "campana",
+        "bronce"
+      ]
     }
   }
 }
