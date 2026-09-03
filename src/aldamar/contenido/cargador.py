@@ -18,7 +18,7 @@ import json
 from importlib import resources
 from typing import Any
 
-from .aventura import Legado, Aventura, PersonajeInicial, registrar
+from .aventura import Legado, Aventura, PersonajeInicial, Secreto, registrar
 from .eventos import TIPOS_EVENTOS, ataque_especial_desde, evento_desde
 from .mundo import Lugar
 from .personajes import TIPOS_HABILIDAD, Companero
@@ -536,6 +536,61 @@ def _comando_especial(datos: dict, origen: str):
     return comando, texto_fuera, ataque
 
 
+def _secretos(datos: dict, origen: str) -> dict[str, Secreto]:
+    crudos = datos.get("secretos")
+    if crudos is None:
+        return {}
+    if not isinstance(crudos, dict):
+        raise _mal(origen, "el campo 'secretos' debe ser un objeto o null")
+    resultado: dict[str, Secreto] = {}
+    for clave, sec in crudos.items():
+        po = f"secretos[{clave!r}]"
+        if not isinstance(sec, dict):
+            raise _mal(origen, f"{po} debe ser un objeto")
+        comando = sec.get("comando", clave)
+        if not isinstance(comando, str) or not comando:
+            raise _mal(origen, f"{po}.comando debe ser texto no vacío")
+        textos_raw = sec.get("textos")
+        if isinstance(textos_raw, str):
+            textos = [textos_raw] if textos_raw else []
+        elif isinstance(textos_raw, list):
+            textos = textos_raw
+        else:
+            raise _mal(origen, f"{po}.textos debe ser texto o una lista no vacía de textos")
+        if not textos or any(not isinstance(t, str) or not t for t in textos):
+            raise _mal(origen, f"{po}.textos debe ser texto o una lista no vacía de textos")
+
+        texto_combate = sec.get("texto_combate")
+        if texto_combate is not None and (not isinstance(texto_combate, str) or not texto_combate):
+            raise _mal(origen, f"{po}.texto_combate debe ser texto o null")
+
+        semillas_raw = sec.get("semillas", {})
+        if not isinstance(semillas_raw, dict):
+            raise _mal(origen, f"{po}.semillas debe ser un objeto")
+        semillas: dict[int, str] = {}
+        for s_k, s_v in semillas_raw.items():
+            try:
+                s_int = int(s_k)
+            except (ValueError, TypeError):
+                raise _mal(origen, f"{po}.semillas: la clave {s_k!r} debe representar un número entero")
+            if not isinstance(s_v, str) or not s_v:
+                raise _mal(origen, f"{po}.semillas[{s_k!r}] debe ser texto no vacío")
+            semillas[s_int] = s_v
+
+        alias_raw = sec.get("alias", [])
+        if not isinstance(alias_raw, list) or any(not isinstance(a, str) or not a for a in alias_raw):
+            raise _mal(origen, f"{po}.alias debe ser una lista de textos")
+
+        resultado[clave] = Secreto(
+            comando=comando,
+            textos=textos,
+            texto_combate=texto_combate,
+            semillas=semillas,
+            alias=alias_raw,
+        )
+    return resultado
+
+
 def _chequea_referencias(
     av: Aventura, tiendas: dict[str, list[str]], origen: str
 ) -> None:
@@ -639,6 +694,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         raise _mal(origen, "el campo 'orden' debe ser entero o null")
 
     comando, texto_fuera, ataque = _comando_especial(datos, origen)
+    secretos = _secretos(datos, origen)
 
     av = Aventura(
         id=id_,
@@ -660,6 +716,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         comando_especial=comando,
         texto_especial_fuera=texto_fuera,
         ataque_especial=ataque,
+        secretos=secretos,
         eventos=eventos,
         legado=legado_av,
         orden=orden,

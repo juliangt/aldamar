@@ -331,6 +331,10 @@ dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
 El **golpe especial** de combate (si la aventura quiere uno) se declara
 en `comando_especial`: comando, `texto_fuera` y un `efecto` con
 `dano_base`, `dano_por_corrupcion`, `corrupcion_coste` y `mensaje`.
+Los **secretos** (comandos ocultos y easter eggs) se declaran en la
+sección opcional `secretos`: cada entrada define `comando`, `textos`
+(lista o texto único), `texto_combate` (opcional), `semillas` (respuestas
+especiales según `--semilla`) y `alias` alternativos.
 Si algún día hace falta un efecto nuevo, se suma al vocabulario en
 `eventos.py`: el JSON sigue siendo puro dato.
 

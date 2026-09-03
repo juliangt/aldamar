@@ -16,7 +16,7 @@ import random
 import sys
 
 from .. import __version__, datos  # noqa: F401  (datos: registra el contenido)
-from ..contenido.aventura import AVENTURAS, Aventura, obtener_aventura
+from ..contenido.aventura import AVENTURAS, Aventura, Secreto, obtener_aventura
 from ..contenido.mundo import Lugar, normaliza
 from ..contenido.personajes import (
     CORRUPCION_MAXIMA,
@@ -812,8 +812,8 @@ class Juego:
         accion = acciones.get(cmd)
         if accion is not None:
             accion(arg)  # type: ignore[operator]
-        elif cmd in ("cuervo", "cuervos"):
-            self._cuervo()
+        elif (secreto := self._buscar_secreto(cmd)) is not None:
+            self._ejecutar_secreto(secreto)
         elif self.av.comando_especial and cmd == normaliza(self.av.comando_especial):
             self.aviso(self.av.texto_especial_fuera)
         elif cmd in ("atacar", "huir", "cuerno"):
@@ -821,35 +821,26 @@ class Juego:
         else:
             self.tenue("No entiendo eso. Escribe  ayuda  para ver los comandos.")
 
-    def _cuervo(self) -> None:
-        cuenta = self.flags.get("_cuervo_llamadas", 0)
+    def _buscar_secreto(self, cmd: str) -> Secreto | None:
+        cmd_norm = normaliza(cmd)
+        for secreto in self.av.secretos.values():
+            if cmd_norm == normaliza(secreto.comando) or any(cmd_norm == normaliza(a) for a in secreto.alias):
+                return secreto
+        return None
+
+    def _ejecutar_secreto(self, secreto: Secreto) -> None:
+        cuenta = self.flags.get(f"_secreto_{secreto.comando}", 0)
         if not isinstance(cuenta, int):
             cuenta = 0
-        self.flags["_cuervo_llamadas"] = cuenta + 1
+        self.flags[f"_secreto_{secreto.comando}"] = cuenta + 1
 
-        if self.semilla == 42:
-            self.epico(
-                "\nUn cuervo negro con una pluma plateada en el ala desciende sobre una piedra, "
-                "suelta una nuez redonda y te mira con la calma de quien conoce la respuesta "
-                "a todas las preguntas del mundo. Luego grazna dos veces y emprende el vuelo."
-            )
+        if self.semilla is not None and self.semilla in secreto.semillas:
+            self.epico("\n" + self._texto_heroe(secreto.semillas[self.semilla]))
             return
 
-        if cuenta == 0:
-            self.epico(
-                "\nUn cuervo ceniciento se posa en lo alto, ladea la cabeza y te mide de arriba abajo "
-                "con ojos de obsidiana. Sacude las plumas, grazna seco y vuelve a orientar el pico hacia el este."
-            )
-        elif cuenta == 1:
-            self.epico(
-                "\nEl cuervo bate las alas con pesadez. «Caw», suelta con fastidio, "
-                "como quien no entiende para qué lo llamas si ya sabes hacia dónde corre el humo."
-            )
-        else:
-            self.epico(
-                "\nEl cuervo ni se inmuta. Permanece inmóvil contra el viento, vigilando las tierras lejanas: "
-                "los cuervos de Aldamar tienen mil lunas de paciencia, pero no atienden caprichos."
-            )
+        idx = min(cuenta, len(secreto.textos) - 1)
+        texto = secreto.textos[idx]
+        self.epico("\n" + self._texto_heroe(texto))
 
     def _salir(self, _arg: str = "") -> None:
         self.escribir("Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto.")
@@ -1358,8 +1349,11 @@ class Juego:
                         return "cuerno"
                     self.tenue("No llevas ningún cuerno.")
                     continue
-                elif cmd in ("cuervo", "cuervos"):
-                    self.aviso("Un cuervo planea sobre el combate, grazna con desdén y sigue de largo: los duelos ajenos no son asunto suyo.")
+                elif (secreto := self._buscar_secreto(cmd)) is not None:
+                    if secreto.texto_combate:
+                        self.aviso(self._texto_heroe(secreto.texto_combate))
+                    else:
+                        self.tenue("No es momento para eso.")
                     continue
                 elif cmd == "huir":
                     if enemigo.sin_huida:

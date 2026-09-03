@@ -163,3 +163,24 @@ def test_cargador_valida_dialogos_y_texto_uso():
     }
     with pytest.raises(AventuraInvalida, match="items\\['capa'\\].*el campo 'texto_uso' debe ser texto"):
         cargar_aventura_dict(mal_item)
+
+
+def test_cargador_valida_secretos():
+    """El cargador valida la estructura de la sección opcional secretos."""
+    # secretos no es dict
+    mal = copy.deepcopy(AVENTURA_MINIMA)
+    mal["secretos"] = "invalido"
+    with pytest.raises(AventuraInvalida, match="el campo 'secretos' debe ser un objeto"):
+        cargar_aventura_dict(mal)
+
+    # textos inválido (no str ni list)
+    mal = copy.deepcopy(AVENTURA_MINIMA)
+    mal["secretos"] = {"secreto": {"textos": 123}}
+    with pytest.raises(AventuraInvalida, match="secretos\\['secreto'\\].textos debe ser texto o una lista no vacía"):
+        cargar_aventura_dict(mal)
+
+    # semillas con clave no entera
+    mal = copy.deepcopy(AVENTURA_MINIMA)
+    mal["secretos"] = {"secreto": {"textos": ["hola"], "semillas": {"no_numero": "texto"}}}
+    with pytest.raises(AventuraInvalida, match="debe representar un número entero"):
+        cargar_aventura_dict(mal)

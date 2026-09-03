@@ -83,6 +83,16 @@ class Legado:
 
 
 @dataclass
+class Secreto:
+    """Un comando secreto con textos por capas, texto en combate y guiños por semilla."""
+    comando: str
+    textos: list[str]
+    texto_combate: str | None = None
+    semillas: dict[int, str] = field(default_factory=dict)
+    alias: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Aventura:
     id: str
     titulo: str
@@ -105,6 +115,8 @@ class Aventura:
     comando_especial: str | None = None  # p.ej. "corazon"; None = sin especial
     texto_especial_fuera: str = ""
     ataque_especial: AtaqueEspecial | None = None
+    # secretos y easter eggs declarados por la aventura
+    secretos: dict[str, Secreto] = field(default_factory=dict)
     # eventos por clave de Lugar.eventos; el evento "final" se dispara
     # cuando el lugar queda limpio de enemigos, el resto al entrar.
     eventos: dict[str, Evento] = field(default_factory=dict)

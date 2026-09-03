@@ -496,5 +496,22 @@
       "corrupcion_coste": 12,
       "mensaje": "Llamas a la marea gris y rompe contra la criatura: −{efectivo}…"
     }
+  },
+  "secretos": {
+    "cuervo": {
+      "comando": "cuervo",
+      "textos": [
+        "Un cuervo ceniciento se posa en lo alto, ladea la cabeza y te mide de arriba abajo con ojos de obsidiana. Sacude las plumas, grazna seco y vuelve a orientar el pico hacia el este.",
+        "El cuervo bate las alas con pesadez. «Caw», suelta con fastidio, como quien no entiende para qué lo llamas si ya sabes hacia dónde corre el humo.",
+        "El cuervo ni se inmuta. Permanece inmóvil contra el viento, vigilando las tierras lejanas: los cuervos de Aldamar tienen mil lunas de paciencia, pero no atienden caprichos."
+      ],
+      "texto_combate": "Un cuervo planea sobre el combate, grazna con desdén y sigue de largo: los duelos ajenos no son asunto suyo.",
+      "semillas": {
+        "42": "Un cuervo negro con una pluma plateada en el ala desciende sobre una piedra, suelta una nuez redonda y te mira con la calma de quien conoce la respuesta a todas las preguntas del mundo. Luego grazna dos veces y emprende el vuelo."
+      },
+      "alias": [
+        "cuervos"
+      ]
+    }
   }
 }
