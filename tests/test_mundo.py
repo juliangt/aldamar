@@ -102,3 +102,43 @@ def test_cada_aventura_declara_eventos_propios(av):
 def test_normaliza_quita_tildes_y_mayusculas():
     assert normaliza("Ciénagas  ") == "cienagas"
     assert normaliza("CORAZÓN") == "corazon"
+
+
+@param_all_aventuras()
+def test_dialogos_de_todas_las_aventuras_son_validos(av):
+    """Todos los diálogos de cada aventura son cadenas o listas no vacías de cadenas."""
+    for clave, dialogo in av.dialogos.items():
+        if isinstance(dialogo, str):
+            assert dialogo.strip(), f"{av.id}: diálogo {clave} es cadena vacía"
+        elif isinstance(dialogo, list):
+            assert dialogo, f"{av.id}: diálogo {clave} es lista vacía"
+            for i, d in enumerate(dialogo):
+                assert isinstance(d, str) and d.strip(), f"{av.id}: diálogo {clave}[{i}] no es texto válido"
+        else:
+            pytest.fail(f"{av.id}: diálogo {clave} no es str ni list")
+
+
+@param_all_aventuras()
+def test_secretos_de_todas_las_aventuras_son_validos(av):
+    """Todos los secretos declarados son válidos, no vacíos y con campos bien tipados."""
+    for clave, sec in av.secretos.items():
+        assert sec.comando and sec.comando.strip(), f"{av.id}: secreto {clave} sin comando"
+        assert sec.textos, f"{av.id}: secreto {clave} sin textos"
+        for i, t in enumerate(sec.textos):
+            assert isinstance(t, str) and t.strip(), f"{av.id}: secreto {clave}.textos[{i}] no es texto"
+        if sec.texto_combate is not None:
+            assert isinstance(sec.texto_combate, str) and sec.texto_combate.strip()
+        for alias in sec.alias:
+            assert isinstance(alias, str) and alias.strip()
+        for sem, txt in sec.semillas.items():
+            assert isinstance(sem, int)
+            assert isinstance(txt, str) and txt.strip()
+
+
+@param_all_aventuras()
+def test_items_con_texto_uso_son_cadenas_no_vacias(av):
+    """Cualquier item que declare texto_uso tiene una cadena no vacía."""
+    for iid, item in av.items.items():
+        texto_uso = item.get("texto_uso")
+        if texto_uso is not None:
+            assert isinstance(texto_uso, str) and texto_uso.strip(), f"{av.id}: item {iid} texto_uso inválido"

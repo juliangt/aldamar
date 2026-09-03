@@ -73,7 +73,8 @@
       "nombre": "el farol de sal",
       "tipo": "clave",
       "precio": null,
-      "desc": "El farol del farero, tallado en sal que no se derrite: solo alumbra\ncon fuego que quiera arder. La Salina Vieja no se cruza sin él."
+      "desc": "El farol del farero, tallado en sal que no se derrite: solo alumbra\ncon fuego que quiera arder. La Salina Vieja no se cruza sin él.",
+      "texto_uso": "Alzas el farol de sal: el cristal frío huele a marea vieja y solo un fuego verdadero despertaría su mecha."
     },
     "cayado": {
       "nombre": "cayado de pastora",
@@ -101,7 +102,8 @@
       "tipo": "armadura",
       "bonus": 1,
       "precio": 12,
-      "desc": "Curtido con salmuera: el viento de la marisma rebota en él."
+      "desc": "Curtido con salmuera: el viento de la marisma rebota en él.",
+      "texto_uso": "Te ajustas el abrigo de salinero: la tela áspera y salada te aísla de la humedad y el relente del mar."
     },
     "perla_gris": {
       "nombre": "la perla gris",
@@ -190,7 +192,11 @@
     ]
   },
   "dialogos": {
-    "dorotea": "Dorotea, la posadera, llena el cuenco hasta el borde y encima pone\nun trozo de pan de sal, que esto es Ríoclaro y aquí nadie muere de\nhambre con la cena puesta.\n  «Las caravanas no cruzan el vado desde la marea aquella, y la sal\n   grisa no se vende ni regalada. Si bajas a la costa, mira por el\n   farero: Iseo lleva una luna delirando con mareas de humo.»\n  «El descanso va por la casa; el aguardiente, por el portazo.»",
+    "dorotea": [
+      "Dorotea, la posadera, llena el cuenco hasta el borde y encima pone\nun trozo de pan de sal, que esto es Ríoclaro y aquí nadie muere de\nhambre con la cena puesta.\n  «Las caravanas no cruzan el vado desde la marea aquella, y la sal\n   grisa no se vende ni regalada. Si bajas a la costa, mira por el\n   farero: Iseo lleva una luna delirando con mareas de humo.»\n  «El descanso va por la casa; el aguardiente, por el portazo.»",
+      "Dorotea pasa un paño húmedo por la madera gastada del mostrador.\n  «Belthar pasó por aquí camino de los Yermos. Bebió poco y habló\n   menos. Solo dejó dicho que el mar devuelve lo que no sabe digerir,\n   y que quien baje a las salinas lleve fuego que no tema al agua.»",
+      "Dorotea echa otro leño al fogón sin mirarte.\n  «La sopa se enfría si la piensas mucho, costero. Come y camina, que\n   las mareas no esperan a que la gente tome valor.»"
+    ],
     "noticia_vado": "Un mercader de tomillas sube el vado sin mercancías y sin sombrero.\n  «¿Vas a la costa? Cuentan en Vegaverde que ahogaron la brasa del\n   tejo: una pastora y un huertero, agua limpia y sin miedo. La\n   primera ascua, en el suelo.»\n  «Dicen que Belthar busca quien haga lo mismo con la del mar. Dicen\n   que la grieta avanza donde caen. Yo digo que la marea no oye\n   consejos.»",
     "iseo": "Iseo el Farero tiene la piel del color de la sal grisa y los ojos\nbrillando de fiebre.\n  «Cuarenta años encendiendo el faro y ahora no me obedece la mano.\n   La marea trajo de todo: peces con escamas grises, espuma que\n   ruge palabras, una ascua que duerme en la Salina Vieja.»\n  «El farol de sal solo alumbra con fuego que quiera arder. El mío\n   se ha rendido. Si el tuyo quiere, la Salina Vieja no se cruza sin\n   él.»",
     "maruxa": "Entre los cajones de la casa de sal, una salinera aparta la escoba\ny escupe al suelo, como quien pide permiso para decir una verdad.\n  «Maruxa Raçasal. Tres generaciones sacando sal de estas terrazas y\n   ahora saca sal grisa que se vende sola, de noche, sin nadie. El\n   Ahogado custodia la casa y la Viuda teje en la Vieja.»\n  «Voy contigo hasta que esto vuelva a ser sal de verdad. No por\n   valentía: por higiene.»\n  (Escribe  reclutar maruxa  si la quieres en tu grupo.)"
@@ -495,6 +501,25 @@
       "dano_por_corrupcion": 3,
       "corrupcion_coste": 12,
       "mensaje": "Llamas a la marea gris y rompe contra la criatura: −{efectivo}…"
+    }
+  },
+  "secretos": {
+    "gaviota": {
+      "comando": "gaviota",
+      "textos": [
+        "Una gaviota de ojos claros planea baja sobre las cañas, emite un graznido largo que huele a salitre y vira hacia el mar abierto.",
+        "La gaviota desciende sobre una estaca carcomida, sacude la sal de sus plumas y te clava la mirada: sabe que la costa no perdona a los que temen mojarse.",
+        "La gaviota emprende el vuelo con un batir seco, perdiéndose en la bruma de las salinas. No hay más respuestas en el aire."
+      ],
+      "texto_combate": "Una gaviota sobrevuela la pelea con un grito estridente: la espuma del mar no toma partido por nadie.",
+      "semillas": {
+        "40": "Una gaviota blanca como la sal pura vuela en redondo tres veces sobre tu cabeza y deja caer una concha marina pulida por cuarenta inviernos antes de remontar hacia el faro."
+      },
+      "alias": [
+        "gaviotas",
+        "caracola",
+        "concha"
+      ]
     }
   }
 }

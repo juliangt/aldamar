@@ -555,3 +555,141 @@ def test_un_legado_que_exporta_banderas_de_decision_se_carga():
     av = cargar_aventura_dict(datos, "prueba.json")
     assert av.legado.exporta == {"juramento": "juramento"}
     assert av.legado.cruza
+
+
+def test_dialogos_valida_str_y_lista_de_str():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["dialogos"] = {
+        "simple": "Texto simple.",
+        "capas": ["Capa 1", "Capa 2"],
+    }
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert av.dialogos["simple"] == "Texto simple."
+    assert av.dialogos["capas"] == ["Capa 1", "Capa 2"]
+
+    # Inválido: no str ni list
+    mal = copy.deepcopy(AVENTURA_MINIMA)
+    mal["dialogos"] = {"err": 123}
+    with pytest.raises(AventuraInvalida, match="dialogos\\['err'\\].*debe ser un texto o una lista"):
+        cargar_aventura_dict(mal, "prueba.json")
+
+    # Inválido: lista vacía
+    mal_vacia = copy.deepcopy(AVENTURA_MINIMA)
+    mal_vacia["dialogos"] = {"err": []}
+    with pytest.raises(AventuraInvalida, match="dialogos\\['err'\\].*debe ser un texto o una lista no vacía"):
+        cargar_aventura_dict(mal_vacia, "prueba.json")
+
+    # Inválido: elemento no string
+    mal_elem = copy.deepcopy(AVENTURA_MINIMA)
+    mal_elem["dialogos"] = {"err": ["ok", 456]}
+    with pytest.raises(AventuraInvalida, match="dialogos\\['err'\\].*debe ser un texto o una lista no vacía de textos"):
+        cargar_aventura_dict(mal_elem, "prueba.json")
+
+
+def test_items_valida_texto_uso_opcional():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["items"] = {
+        "reliquia": {
+            "nombre": "reliquia",
+            "tipo": "clave",
+            "precio": None,
+            "texto_uso": "Sientes un cosquilleo antiguo al rozar la superficie.",
+        }
+    }
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert av.items["reliquia"]["texto_uso"] == "Sientes un cosquilleo antiguo al rozar la superficie."
+
+    mal = copy.deepcopy(AVENTURA_MINIMA)
+    mal["items"] = {
+        "reliquia": {
+            "nombre": "reliquia",
+            "tipo": "clave",
+            "precio": None,
+            "texto_uso": 12345,
+        }
+    }
+    with pytest.raises(AventuraInvalida, match="items\\['reliquia'\\].*el campo 'texto_uso' debe ser texto"):
+        cargar_aventura_dict(mal, "prueba.json")
+
+
+def test_secretos_valida_y_carga_instancias_secreto():
+    datos = copy.deepcopy(AVENTURA_MINIMA)
+    datos["secretos"] = {
+        "cuervo": {
+            "comando": "cuervo",
+            "textos": ["Caw 1", "Caw 2"],
+            "texto_combate": "El cuervo mira la pelea.",
+            "semillas": {"42": "Pluma mágica"},
+            "alias": ["cuervos", "pajaro"],
+        }
+    }
+    av = cargar_aventura_dict(datos, "prueba.json")
+    assert "cuervo" in av.secretos
+    sec = av.secretos["cuervo"]
+    assert sec.comando == "cuervo"
+    assert sec.textos == ["Caw 1", "Caw 2"]
+    assert sec.texto_combate == "El cuervo mira la pelea."
+    assert sec.semillas == {42: "Pluma mágica"}
+    assert sec.alias == ["cuervos", "pajaro"]
+
+
+def test_secretos_rechaza_todas_las_estructuras_invalidas():
+    # 1. secretos no es dict
+    mal1 = copy.deepcopy(AVENTURA_MINIMA)
+    mal1["secretos"] = ["no_dict"]
+    with pytest.raises(AventuraInvalida, match="el campo 'secretos' debe ser un objeto"):
+        cargar_aventura_dict(mal1, "prueba.json")
+
+    # 2. secreto individual no es dict
+    mal2 = copy.deepcopy(AVENTURA_MINIMA)
+    mal2["secretos"] = {"sec": "no_dict"}
+    with pytest.raises(AventuraInvalida, match="secretos\\['sec'\\] debe ser un objeto"):
+        cargar_aventura_dict(mal2, "prueba.json")
+
+    # 3. textos no es str ni list
+    mal3 = copy.deepcopy(AVENTURA_MINIMA)
+    mal3["secretos"] = {"sec": {"textos": 99}}
+    with pytest.raises(AventuraInvalida, match="textos debe ser texto o una lista no vacía"):
+        cargar_aventura_dict(mal3, "prueba.json")
+
+    # 4. textos es lista vacía
+    mal4 = copy.deepcopy(AVENTURA_MINIMA)
+    mal4["secretos"] = {"sec": {"textos": []}}
+    with pytest.raises(AventuraInvalida, match="textos debe ser texto o una lista no vacía"):
+        cargar_aventura_dict(mal4, "prueba.json")
+
+    # 5. texto_combate no es str
+    mal5 = copy.deepcopy(AVENTURA_MINIMA)
+    mal5["secretos"] = {"sec": {"textos": "ok", "texto_combate": 123}}
+    with pytest.raises(AventuraInvalida, match="texto_combate debe ser texto"):
+        cargar_aventura_dict(mal5, "prueba.json")
+
+    # 6. alias no es lista
+    mal6 = copy.deepcopy(AVENTURA_MINIMA)
+    mal6["secretos"] = {"sec": {"textos": "ok", "alias": "no_lista"}}
+    with pytest.raises(AventuraInvalida, match="alias debe ser una lista de textos"):
+        cargar_aventura_dict(mal6, "prueba.json")
+
+    # 7. alias con elementos no str
+    mal7 = copy.deepcopy(AVENTURA_MINIMA)
+    mal7["secretos"] = {"sec": {"textos": "ok", "alias": ["ok", 123]}}
+    with pytest.raises(AventuraInvalida, match="alias debe ser una lista de textos"):
+        cargar_aventura_dict(mal7, "prueba.json")
+
+    # 8. semillas no es dict
+    mal8 = copy.deepcopy(AVENTURA_MINIMA)
+    mal8["secretos"] = {"sec": {"textos": "ok", "semillas": [42]}}
+    with pytest.raises(AventuraInvalida, match="semillas debe ser un objeto"):
+        cargar_aventura_dict(mal8, "prueba.json")
+
+    # 9. semillas con clave no entera
+    mal9 = copy.deepcopy(AVENTURA_MINIMA)
+    mal9["secretos"] = {"sec": {"textos": "ok", "semillas": {"abc": "texto"}}}
+    with pytest.raises(AventuraInvalida, match="debe representar un número entero"):
+        cargar_aventura_dict(mal9, "prueba.json")
+
+    # 10. semillas con valor no str
+    mal10 = copy.deepcopy(AVENTURA_MINIMA)
+    mal10["secretos"] = {"sec": {"textos": "ok", "semillas": {"42": 999}}}
+    with pytest.raises(AventuraInvalida, match="debe ser texto"):
+        cargar_aventura_dict(mal10, "prueba.json")

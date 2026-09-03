@@ -34,7 +34,8 @@
       "nombre": "carta de Belthar el Errante",
       "tipo": "clave",
       "precio": null,
-      "desc": "Letra torcida sellada con cera verde: «La obra no supo morir. El humo\nvolvió del mar cargado de ascuas. Apaga la tuya con agua limpia y sin\nmiedo; con miedo no, que el miedo la alimenta»."
+      "desc": "Letra torcida sellada con cera verde: «La obra no supo morir. El humo\nvolvió del mar cargado de ascuas. Apaga la tuya con agua limpia y sin\nmiedo; con miedo no, que el miedo la alimenta».",
+      "texto_uso": "Desdoblas la carta de Belthar: tinta apretada, frases breves y la advertencia clara de que las ascuas de Morvath no se apagan con rezos."
     },
     "hoz": {
       "nombre": "hoz de podar",
@@ -55,7 +56,8 @@
       "tipo": "consumible",
       "curacion": 12,
       "precio": null,
-      "desc": "Miel de la dehesa: cura lo menudo y lo hondo, dice Bruna."
+      "desc": "Miel de la dehesa: cura lo menudo y lo hondo, dice Bruna.",
+      "texto_uso": "Pruebas una pizca de miel del panal: densa, tibia y viva, con el regusto dorado de flores que aún recuerdan cómo crecer sin humo."
     }
   },
   "enemigos": {
@@ -84,7 +86,11 @@
   },
   "tiendas": {},
   "dialogos": {
-    "oldo_vegaverde": "Oldo Panverde mira el ejido desde el umbral, con la carta abierta en\nla mano y el ceño como nunca lo viste.\n  «Un mes hacía de aquella luz en el este, Enebro. Creímos que había\n   acabado todo. Y esta mañana la roña gris ha comido la hilera de\n   puerros y el tejo arde sin consumirse.»\n  «Belthar el Errante escribe desde las Ciénagas: la obra de Morvath\n   no supo morir. El humo volvió del mar cargado de ascuas, y una ha\n   caído aquí. Toma la carta. Y prepárate en el lavadero y en la\n   colmena antes de subir al tejo.»",
+    "oldo_vegaverde": [
+      "Oldo Panverde mira el ejido desde el umbral, con la carta abierta en\nla mano y el ceño como nunca lo viste.\n  «Un mes hacía de aquella luz en el este, Enebro. Creímos que había\n   acabado todo. Y esta mañana la roña gris ha comido la hilera de\n   puerros y el tejo arde sin consumirse.»\n  «Belthar el Errante escribe desde las Ciénagas: la obra de Morvath\n   no supo morir. El humo volvió del mar cargado de ascuas, y una ha\n   caído aquí. Toma la carta. Y prepárate en el lavadero y en la\n   colmena antes de subir al tejo.»",
+      "Oldo se sienta en el poyo de piedra y afila una estaca con parsimonia.\n  «Tu primo Tilo era más de correr; tú eres más de arraigar. Pero los\n   dos tenéis la misma manía de mirar al monte cuando sopla viento malo.\n   No te fíes de las ascuas que no echan humo: esas son las que queman\n   por dentro.»",
+      "Oldo alza la vista hacia los huertos y menea la cabeza con una sonrisa corta.\n  «Si ves a Bruna, dile que guarde cera para las grietas del granero.\n   Y si ves a Morvath... dile que los Panverde pagamos las deudas, pero\n   nunca antes de tiempo.»"
+    ],
     "perpetua_lavadero": "Perpetua frotaba ya cuando llegaron los romanos y no piensa parar\npor una guerra de humos.\n  «La noche que el monte del este escupió fuego lo vi desde el agua:\n   el cielo entero, rojo como un cangrejo hervido.»\n  «El agua del lavadero ha apagado fogatas peores, huertero. Y si te\n   ves apurado, el sur está la colmena de Bruna: las abejas saben de\n   cera y de heridas.»",
     "bruna": "Bruna sale de entre los cajones con el velo de cera en las manos y\nlas abejas rondándole los puños sin pedirle cuentas.\n  «Las mías no entran al tejo desde hace tres días: dicen humo viejo,\n   de los que no se apagan. Y lo viejo es lo que hay que ahogar pronto.»\n  «Yo no le tengo miedo a la ceniza. La tuve, y ya.»\n  (Escribe  reclutar bruna  si la quieres en tu grupo.)"
   },
@@ -278,5 +284,23 @@
     "texto_fama": "Tu fama te precede: en Vegaverde la fama se sirve en porciones, y Oldo lleva una luna contando la parte que te toca.",
     "heroe": true
   },
-  "comando_especial": null
+  "comando_especial": null,
+  "secretos": {
+    "abejas": {
+      "comando": "abejas",
+      "textos": [
+        "Un rumor dorado se levanta entre las flores silvestres: una abeja de Bruna te ronda la sien, zumba con gravedad campesina y vuelve a sus flores. Las abejas no tienen miedo a la ceniza, y tú tampoco deberías.",
+        "Dos abejas cargadas de polen te marcan el paso: vuelan en círculos como quien enseña el camino al colmenar viejo.",
+        "El zumbido se apaga entre los tallos. La dehesa sigue a su faena; la miel no se hace esperando."
+      ],
+      "texto_combate": "Un zumbido furioso pasa sobre el enemigo: las abejas de Bruna no pican a sombras, pero avisan de qué lado sopla el aire.",
+      "semillas": {
+        "20": "Una abeja reina con reflejos de ámbar antiguo se posa un segundo en tu muñeca: deja caer una gotita de cera virgen que huele a veinte primaveras antes de perderse en el ejido."
+      },
+      "alias": [
+        "abeja",
+        "zumbido"
+      ]
+    }
+  }
 }

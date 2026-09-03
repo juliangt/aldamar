@@ -298,7 +298,10 @@ orden. Al soltarlo en el directorio se descubre, valida y registra
 solo: aparece en el menú. El cargador verifica referencias (salidas,
 objetos, enemigos, diálogos, tiendas, eventos, las condiciones de las
 emboscadas y los items que otorgan las decisiones) y ante un JSON roto
-nombra archivo y campo.
+nombra archivo y campo. Los `dialogos` pueden ser un texto o una lista
+de textos (hablar repetidas veces avanza por las capas de la charla), y
+los `items` aceptan un campo opcional `texto_uso` para dar sabor
+narrativo al usarlos fuera de combate.
 
 Los **eventos** de lugar se declaran con el vocabulario de
 `eventos.py`, sin código; cada lugar referencia los suyos por clave en
@@ -328,6 +331,10 @@ dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
 El **golpe especial** de combate (si la aventura quiere uno) se declara
 en `comando_especial`: comando, `texto_fuera` y un `efecto` con
 `dano_base`, `dano_por_corrupcion`, `corrupcion_coste` y `mensaje`.
+Los **secretos** (comandos ocultos y easter eggs) se declaran en la
+sección opcional `secretos`: cada entrada define `comando`, `textos`
+(lista o texto único), `texto_combate` (opcional), `semillas` (respuestas
+especiales según `--semilla`) y `alias` alternativos.
 Si algún día hace falta un efecto nuevo, se suma al vocabulario en
 `eventos.py`: el JSON sigue siendo puro dato.
 

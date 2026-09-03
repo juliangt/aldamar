@@ -261,7 +261,8 @@ def test_hablar_abre_la_conversacion_limpia(monkeypatch):
     juego._ejecutar("hablar belthar")
     assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la conversación
     dialogo = juego.av.dialogos[juego.aqui().npcs["belthar"]]
-    assert dialogo[:20] in "\n".join(salida)
+    esperado = dialogo if isinstance(dialogo, str) else dialogo[0]
+    assert esperado[:20] in "\n".join(salida)
     juego._ejecutar("hablar fantasma")  # un error no borra lo que se estaba viendo
     assert salida.count("\x1b[2J\x1b[H") == 2
 

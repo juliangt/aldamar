@@ -83,6 +83,23 @@ class Legado:
 
 
 @dataclass
+class Secreto:
+    """Un comando secreto con textos por capas, texto en combate y guiños por semilla."""
+    comando: str
+    textos: list[str]
+    texto_combate: str | None = None
+    semillas: dict[int, str] = field(default_factory=dict)
+    alias: list[str] = field(default_factory=list)
+
+    def texto_para(self, veces: int = 0, semilla: int | None = None) -> str:
+        """Devuelve el texto correspondiente para la llamada dada o semilla mágica."""
+        if semilla is not None and semilla in self.semillas:
+            return self.semillas[semilla]
+        idx = max(0, min(veces, len(self.textos) - 1))
+        return self.textos[idx]
+
+
+@dataclass
 class Aventura:
     id: str
     titulo: str
@@ -95,7 +112,7 @@ class Aventura:
     enemigos: dict[str, dict]
     reclutas: dict[str, Companero]
     tiendas: dict[str, list[str]]
-    dialogos: dict[str, str]
+    dialogos: dict[str, str | list[str]]
     personajes: dict[str, PersonajeInicial]
     jugador_inicial: str
     epilogo_muerte: str  # lo que el motor muestra si caes en combate
@@ -105,6 +122,8 @@ class Aventura:
     comando_especial: str | None = None  # p.ej. "corazon"; None = sin especial
     texto_especial_fuera: str = ""
     ataque_especial: AtaqueEspecial | None = None
+    # secretos y easter eggs declarados por la aventura
+    secretos: dict[str, Secreto] = field(default_factory=dict)
     # eventos por clave de Lugar.eventos; el evento "final" se dispara
     # cuando el lugar queda limpio de enemigos, el resto al entrar.
     eventos: dict[str, Evento] = field(default_factory=dict)
@@ -113,6 +132,16 @@ class Aventura:
     # posición sugerida en el menú (menor primero); None = al final, por
     # orden alfabético. Las series lo usan para contarse en orden.
     orden: int | None = None
+
+    def obtener_dialogo(self, clave: str, veces: int = 0) -> str | None:
+        """Devuelve el texto de diálogo para la clave y número de veces hablado."""
+        dialogo = self.dialogos.get(clave)
+        if dialogo is None:
+            return None
+        if isinstance(dialogo, list):
+            idx = max(0, min(veces, len(dialogo) - 1))
+            return dialogo[idx]
+        return dialogo
 
     def crear_enemigo(self, clave: str, dif: Dificultad) -> Enemigo:
         d = self.enemigos[clave]
