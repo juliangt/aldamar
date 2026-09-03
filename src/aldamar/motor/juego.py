@@ -816,8 +816,10 @@ class Juego:
 
     def _buscar_item(self, texto: str, opciones: list[str]) -> str | None:
         t = normaliza(texto)
+        if not t:
+            return None
         for k in opciones:
-            if t and (t in normaliza(self.av.items[k]["nombre"]) or t in normaliza(k)):
+            if t in normaliza(self.av.items[k]["nombre"]) or t in normaliza(k):
                 return k
         return None
 
@@ -869,26 +871,28 @@ class Juego:
     def _hablar(self, arg: str) -> None:
         l = self.aqui()
         t = normaliza(arg)
-        for npc, clave in l.npcs.items():
-            if t and (t in normaliza(npc) or t in normaliza(clave)):
-                self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
-                return
+        if t:
+            for npc, clave in l.npcs.items():
+                if t in normaliza(npc) or t in normaliza(clave):
+                    self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
+                    return
         self.tenue("Aquí no hay nadie con ese nombre.")
 
     def _reclutar(self, arg: str) -> None:
         l = self.aqui()
         t = normaliza(arg)
-        for npc, clave in l.npcs.items():
-            if clave in self.av.reclutas and t and (t in normaliza(npc) or t in normaliza(clave)):
-                comp = self.av.reclutas[clave]
-                if any(c.clave == comp.clave for c in self.jugador.companeros):
-                    self.escribir(
-                        f"{comp.nombre} ya viaja contigo (o ya cayó; en la Torre de Belthar pueden sanarlo)."
-                    )
+        if t:
+            for npc, clave in l.npcs.items():
+                if clave in self.av.reclutas and (t in normaliza(npc) or t in normaliza(clave)):
+                    comp = self.av.reclutas[clave]
+                    if any(c.clave == comp.clave for c in self.jugador.companeros):
+                        self.escribir(
+                            f"{comp.nombre} ya viaja contigo (o ya cayó; en la Torre de Belthar pueden sanarlo)."
+                        )
+                        return
+                    self.jugador.companeros.append(Companero(**comp.__dict__))
+                    self.exito(f"{comp.nombre} se une a tu viaje.")
                     return
-                self.jugador.companeros.append(Companero(**comp.__dict__))
-                self.exito(f"{comp.nombre} se une a tu viaje.")
-                return
         self.tenue("Aquí no hay nadie que pueda sumarse.")
 
     def _descansar(self, _arg: str = "") -> None:
@@ -916,9 +920,9 @@ class Juego:
             n = int(t)
             if 1 <= n <= len(destinos):
                 elegido = destinos[n - 1][0]
-        else:
+        elif t:
             for palabra, destino_id in l.salidas.items():
-                if t and (t == normaliza(palabra) or t in normaliza(self.av.lugares[destino_id].nombre)):
+                if t == normaliza(palabra) or t in normaliza(self.av.lugares[destino_id].nombre):
                     elegido = destino_id
                     break
         if not elegido:

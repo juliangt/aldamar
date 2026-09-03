@@ -6,6 +6,7 @@ El mapa concreto de cada aventura vive en su JSON de contenido
 
 from __future__ import annotations
 
+import functools
 import unicodedata
 
 from dataclasses import dataclass, field
@@ -39,6 +40,7 @@ def nuevo_lugar(
     return Lugar(id=id_, nombre=nombre, descripcion=descripcion, salidas=salidas or {}, **kw)
 
 
+@functools.lru_cache(maxsize=4096)
 def normaliza(texto: str) -> str:
     """Minúsculas sin tildes, para comparar lo que escribe el jugador."""
     sin = unicodedata.normalize("NFD", texto.lower())
