@@ -637,33 +637,33 @@ class Juego:
         sola cosa que hacer, el verbo queda directo («Ir a: El ejido»)
         y sin nada que mostrar, no aparece.
         """
-        l = self.aqui()
+        lugar = self.aqui()
         ops: list[tuple[str, str, str]] = [
             ("mirar", "Mirar alrededor", "El lugar, lo que hay y a dónde ir"),
         ]
-        destinos = self.destinos(l)
+        destinos = self.destinos(lugar)
         if len(destinos) == 1:
             ops.append(("ir 1", f"Ir a: {destinos[0][2]}", ""))
         elif destinos:
             ops.append((IR, "Ir a…", f"{len(destinos)} destinos"))
-        en_suelo = self.restantes(l)
-        hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
+        en_suelo = self.restantes(lugar)
+        hay_monedas = bool(lugar.monedas) and lugar.id not in self.monedas_tomadas
         if len(en_suelo) == 1 and not hay_monedas:
             ops.append((f"tomar {en_suelo[0]}", f"Tomar: {self.av.items[en_suelo[0]]['nombre']}", ""))
         elif en_suelo or hay_monedas:
-            ops.append((TOMAR, "Tomar…", self._cuenta_tomar(l)))
-        npcs = list(l.npcs)
+            ops.append((TOMAR, "Tomar…", self._cuenta_tomar(lugar)))
+        npcs = list(lugar.npcs)
         if len(npcs) == 1:
             ops.append((f"hablar {npcs[0]}", f"Hablar: {npcs[0]}", ""))
         elif npcs:
             ops.append((HABLAR, "Hablar…", f"{len(npcs)} personas aquí"))
-        aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+        aliados = [npc for npc, clave in lugar.npcs.items() if clave in self.av.reclutas]
         if len(aliados) == 1:
             ops.append((f"reclutar {aliados[0]}", f"Reclutar: {aliados[0]}", "Se suma a tu grupo"))
         elif aliados:
             ops.append((RECLUTAR, "Reclutar…", f"{len(aliados)} aliados"))
-        if l.tienda:
-            stock = self.av.tiendas[l.id]
+        if lugar.tienda:
+            stock = self.av.tiendas[lugar.id]
             if len(stock) == 1 and not self._opciones_equipo():
                 item = self.av.items[stock[0]]
                 ops.append((f"comprar {stock[0]}", f"Comprar: {item['nombre']}", f"{item['precio']} monedas"))
@@ -671,7 +671,7 @@ class Juego:
                 ops.append((COMPRAR, "Comprar…", f"{len(stock)} cosas en venta"))
         if any(self.av.items[k]["tipo"] == "consumible" for k in self.jugador.inventario):
             ops.append(self._entrada_usar())
-        if l.descanso:
+        if lugar.descanso:
             ops.append(("descansar", "Descansar", "Curarte del todo aquí mismo"))
         ops.append((OTRAS, "Otras acciones…", "Estado, inventario, partida y ayuda"))
         return ops
@@ -702,39 +702,39 @@ class Juego:
         El título dice dónde estás y cuántas cosas hay. Devuelve None si
         la clave no abre submenú: es una orden directa.
         """
-        l = self.aqui()
+        lugar = self.aqui()
         if clave == OTRAS:
             return ("Otras acciones", self._opciones_otras())
         if clave == IR:
-            destinos = self.destinos(l)
+            destinos = self.destinos(lugar)
             return (
-                f"Ir a — desde {l.nombre} ({len(destinos)} destinos)",
+                f"Ir a — desde {lugar.nombre} ({len(destinos)} destinos)",
                 [(f"ir {i}", nombre, "") for i, (_d, _p, nombre) in enumerate(destinos, 1)],
             )
         if clave == TOMAR:
             ops = [("tomar todo", "Tomar todo", "Objetos del suelo y monedas")]
-            ops += [(f"tomar {k}", self.av.items[k]["nombre"], "") for k in self.restantes(l)]
-            return (f"Tomar — en {l.nombre} ({self._cuenta_tomar(l)})", ops)
+            ops += [(f"tomar {k}", self.av.items[k]["nombre"], "") for k in self.restantes(lugar)]
+            return (f"Tomar — en {lugar.nombre} ({self._cuenta_tomar(lugar)})", ops)
         if clave == HABLAR:
-            npcs = list(l.npcs)
+            npcs = list(lugar.npcs)
             return (
-                f"Hablar — {l.nombre} ({len(npcs)} personas aquí)",
+                f"Hablar — {lugar.nombre} ({len(npcs)} personas aquí)",
                 [(f"hablar {npc}", npc, "") for npc in npcs],
             )
         if clave == RECLUTAR:
-            aliados = [npc for npc, clave in l.npcs.items() if clave in self.av.reclutas]
+            aliados = [npc for npc, clave in lugar.npcs.items() if clave in self.av.reclutas]
             return (
-                f"Reclutar — {l.nombre} ({len(aliados)} aliados)",
+                f"Reclutar — {lugar.nombre} ({len(aliados)} aliados)",
                 [(f"reclutar {npc}", npc, "Se suma a tu grupo") for npc in aliados],
             )
         if clave == COMPRAR:
-            stock = self.av.tiendas[l.id]
+            stock = self.av.tiendas[lugar.id]
             ops = [
                 (f"comprar {k}", self.av.items[k]["nombre"], f"{self.av.items[k]['precio']} monedas")
                 for k in stock
             ]
             ops += self._opciones_equipo()  # en la tienda, probar lo llevado
-            return (f"Comprar — {l.nombre} ({len(stock)} cosas en venta)", ops)
+            return (f"Comprar — {lugar.nombre} ({len(stock)} cosas en venta)", ops)
         if clave == USAR:
             ops = [
                 (f"usar {k}", self.av.items[k]["nombre"], f"cura {self.av.items[k]['curacion']}")
@@ -827,23 +827,23 @@ class Juego:
     def _mirar(self, _arg: str = "", limpiar: bool = True) -> None:
         if limpiar:
             self._limpiar()  # la vista del lugar se ve sola (issue 36)
-        l = self.aqui()
-        self.epico(f"\n{l.nombre.capitalize()}")
-        self.escribir(l.descripcion)
-        restantes = self.restantes(l)
+        lugar = self.aqui()
+        self.epico(f"\n{lugar.nombre.capitalize()}")
+        self.escribir(lugar.descripcion)
+        restantes = self.restantes(lugar)
         if restantes:
             nombres = ", ".join(self.av.items[k]["nombre"] for k in restantes)
             self.exito(f"En el suelo ves: {nombres}.")
-        if l.monedas and l.id not in self.monedas_tomadas:
-            self.exito(f"Brillan {l.monedas} monedas de plata olvidadas.")
-        for npc, clave in l.npcs.items():
+        if lugar.monedas and lugar.id not in self.monedas_tomadas:
+            self.exito(f"Brillan {lugar.monedas} monedas de plata olvidadas.")
+        for npc, clave in lugar.npcs.items():
             if clave in self.av.dialogos:
                 self.aviso(f"Está aquí: {npc}. (hablar {npc})")
-        pendientes = self.enemigos[l.id]
+        pendientes = self.enemigos[lugar.id]
         if pendientes:
             nombres = ", ".join(self.av.enemigos[k]["nombre"] for k in pendientes)
             self.peligro(f"¡Se avecina: {nombres}!")
-        lista = ", ".join(f"{i+1}) {n} ({p})" for i, (_d, p, n) in enumerate(self.destinos(l)))
+        lista = ", ".join(f"{i+1}) {n} ({p})" for i, (_d, p, n) in enumerate(self.destinos(lugar)))
         self.escribir(f"Puedes ir a: {lista}")
 
     def _estado(self, _arg: str = "") -> None:
@@ -896,17 +896,17 @@ class Juego:
 
     # ── objetos ──────────────────────────────────────────────────────
     def _tomar(self, arg: str) -> None:
-        l = self.aqui()
-        restantes = self.restantes(l)
-        hay_monedas = bool(l.monedas) and l.id not in self.monedas_tomadas
+        lugar = self.aqui()
+        restantes = self.restantes(lugar)
+        hay_monedas = bool(lugar.monedas) and lugar.id not in self.monedas_tomadas
         if arg in ("todo", "todas", "todo."):
             for k in restantes:
-                self.tomados.add((l.id, k))
+                self.tomados.add((lugar.id, k))
                 self.adquirir(k)
                 self.exito(f"Tomas: {self.av.items[k]['nombre']}.")
             if hay_monedas:
-                self.monedas_tomadas.add(l.id)
-                ganancia = round(l.monedas * self.dificultad.monedas)
+                self.monedas_tomadas.add(lugar.id)
+                ganancia = round(lugar.monedas * self.dificultad.monedas)
                 self.jugador.monedas += ganancia
                 self.stats.recoge(ganancia)
                 self.exito(f"Recoges {ganancia} monedas de plata.")
@@ -915,7 +915,7 @@ class Juego:
             return
         clave = self._buscar_item(arg, restantes)
         if clave:
-            self.tomados.add((l.id, clave))
+            self.tomados.add((lugar.id, clave))
             self.adquirir(clave)
             self.exito(f"Tomas: {self.av.items[clave]['nombre']}.")
         else:
@@ -929,11 +929,11 @@ class Juego:
         return None
 
     def _comprar(self, arg: str) -> None:
-        l = self.aqui()
-        if not l.tienda:
+        lugar = self.aqui()
+        if not lugar.tienda:
             self.tenue("Aquí no hay tienda.")
             return
-        stock = self.av.tiendas[l.id]
+        stock = self.av.tiendas[lugar.id]
         if not arg:
             self.escribir(
                 "En venta: "
@@ -974,9 +974,9 @@ class Juego:
 
     # ── gente ────────────────────────────────────────────────────────
     def _hablar(self, arg: str) -> None:
-        l = self.aqui()
+        lugar = self.aqui()
         t = normaliza(arg)
-        for npc, clave in l.npcs.items():
+        for npc, clave in lugar.npcs.items():
             if t and (t in normaliza(npc) or t in normaliza(clave)):
                 self._limpiar()  # la conversación se ve sola (issue 36)
                 self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
@@ -984,9 +984,9 @@ class Juego:
         self.tenue("Aquí no hay nadie con ese nombre.")
 
     def _reclutar(self, arg: str) -> None:
-        l = self.aqui()
+        lugar = self.aqui()
         t = normaliza(arg)
-        for npc, clave in l.npcs.items():
+        for npc, clave in lugar.npcs.items():
             if clave in self.av.reclutas and t and (t in normaliza(npc) or t in normaliza(clave)):
                 comp = self.av.reclutas[clave]
                 if any(c.clave == comp.clave for c in self.jugador.companeros):
@@ -1000,8 +1000,8 @@ class Juego:
         self.tenue("Aquí no hay nadie que pueda sumarse.")
 
     def _descansar(self, _arg: str = "") -> None:
-        l = self.aqui()
-        if not l.descanso:
+        lugar = self.aqui()
+        if not lugar.descanso:
             self.tenue("No hay cama ni fogata aquí. El barro tampoco es acogedor.")
             return
         antes = self.jugador.vida
@@ -1016,8 +1016,8 @@ class Juego:
 
     # ── viaje y eventos ──────────────────────────────────────────────
     def _ir(self, arg: str) -> None:
-        l = self.aqui()
-        destinos = self.destinos(l)
+        lugar = self.aqui()
+        destinos = self.destinos(lugar)
         elegido: str | None = None
         t = normaliza(arg)
         if t.isdigit():
@@ -1025,7 +1025,7 @@ class Juego:
             if 1 <= n <= len(destinos):
                 elegido = destinos[n - 1][0]
         else:
-            for palabra, destino_id in l.salidas.items():
+            for palabra, destino_id in lugar.salidas.items():
                 if t and (t == normaliza(palabra) or t in normaliza(self.av.lugares[destino_id].nombre)):
                     elegido = destino_id
                     break
