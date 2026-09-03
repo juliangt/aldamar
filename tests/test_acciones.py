@@ -192,16 +192,48 @@ def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
 
 
 def test_el_estado_se_escribe_solo_cuando_cambia(monkeypatch):
-    """Dos turnos sin novedades: la línea de estado se escribe una vez."""
-    juego, salida = juego_flechas(monkeypatch, ["\r", "3"], opciones=MENU_MINIMO, lineas=["", ""])
+    """Dos turnos sin novedades ni vistas: la línea de estado se escribe
+    una sola vez (el segundo turno no la repite)."""
+    juego, salida = juego_flechas(monkeypatch, ["2", "3"], opciones=MENU_MINIMO, lineas=["", ""])
     juego._prologo()
-    juego.ciclo()  # «mirar» no cambia nada; después, «salir»
+    juego.ciclo()  # «estado» (una gestión, no una vista); después, «salir»
     j = juego.jugador
     lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
     estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
     assert estado in salida
     assert salida.count(estado) == 1  # el segundo turno no la repite
     assert sum(l.count("¿Qué haces?") for l in salida) == 2  # y hubo dos menús
+
+
+def test_las_vistas_abren_limpios_y_renuevan_el_estado(monkeypatch):
+    """Mirar es una vista: pantalla limpia y el estado, de vuelta."""
+    juego, salida = juego_flechas(monkeypatch, ["\r", "3"], opciones=MENU_MINIMO, lineas=[""])
+    juego.ciclo()  # prólogo, «mirar» (limpia y muestra la vista) y «salir»
+    j = juego.jugador
+    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
+    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
+    assert salida.count(estado) == 2  # al empezar y de nuevo, sobre la vista limpia
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la vista
+
+
+def test_hablar_abre_la_conversacion_limpia(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()
+    juego._ejecutar("hablar belthar")
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la conversación
+    dialogo = juego.av.dialogos[juego.aqui().npcs["belthar"]]
+    assert dialogo[:20] in "\n".join(salida)
+    juego._ejecutar("hablar fantasma")  # un error no borra lo que se estaba viendo
+    assert salida.count("\x1b[2J\x1b[H") == 2
+
+
+def test_empezar_la_aventura_no_duplica_la_vista_del_lugar(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()  # presentación y vista del lugar, sobre una sola limpieza
+    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
+    texto = "\n".join(salida)
+    assert salida.count("\x1b[2J\x1b[H") == 1
+    assert texto.count(lugar) >= 2  # el lugar se presenta una vez (y sus salidas lo citan)
 
 
 def test_las_otras_acciones_son_un_submenu_de_ida_y_vuelta(monkeypatch):

@@ -419,11 +419,23 @@ class Juego:
         )
 
     def _estado_linea(self) -> str:
-        """Quién, cómo y dónde: la línea tenue que abre cada menú (issue 36)."""
+        """Quién, cómo y dónde: la línea tenue que acompaña cada vista (issue 36)."""
         j = self.jugador
         return (
             f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
         )
+
+    def _limpiar(self) -> None:
+        """Una vista nueva: la pantalla limpia en modo navegable (issue 36).
+
+        Las vistas —mirar, una conversación, un lugar nuevo— se ven
+        solas; lo que no es una vista (tomar, usar, comprar…) se anota
+        debajo de lo anterior hasta que llegue la próxima. En modo
+        tipeado el relato es completo y no se limpia nunca.
+        """
+        if self._usa_flechas():
+            self.salida(LIMPIAR)
+        self._estado_mostrado = None  # la vista nueva incluye su estado
 
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
@@ -447,11 +459,11 @@ class Juego:
                 nombre = ""
             if nombre:
                 self.jugador.nombre = nombre
-        if self._usa_flechas():
-            # el nombre también es "avanzar": la historia se ve sola
-            self.salida(LIMPIAR)
+        # el nombre también es "avanzar": la presentación y la vista del
+        # lugar se ven solas, sobre la pantalla recién limpiada
+        self._limpiar()
         self.escribir("\n" + ficha.presentacion)
-        self._mirar()
+        self._mirar(limpiar=False)
         self.tenue(self._pista())
 
     # ── la orden del jugador: menú con flechas o texto ───────────────
@@ -720,7 +732,9 @@ class Juego:
         pantalla_completa(ayuda(self.av), entrada=self.entrada, salida=self.salida, color=self.color)
 
     # ── mirar / estado / inventario ──────────────────────────────────
-    def _mirar(self, _arg: str = "") -> None:
+    def _mirar(self, _arg: str = "", limpiar: bool = True) -> None:
+        if limpiar:
+            self._limpiar()  # la vista del lugar se ve sola (issue 36)
         l = self.aqui()
         self.epico(f"\n{l.nombre.capitalize()}")
         self.escribir(l.descripcion)
@@ -872,6 +886,7 @@ class Juego:
         t = normaliza(arg)
         for npc, clave in l.npcs.items():
             if t and (t in normaliza(npc) or t in normaliza(clave)):
+                self._limpiar()  # la conversación se ve sola (issue 36)
                 self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
                 return
         self.tenue("Aquí no hay nadie con ese nombre.")
@@ -939,9 +954,7 @@ class Juego:
         if destino.id not in self.visitados:
             self.visitados.append(destino.id)
         if self._usa_flechas():
-            # la escena nueva se ve sola: lo anterior ya se leyó (issue 36);
-            # dentro de la escena, la historia sí se acumula
-            self.salida(LIMPIAR)
+            self._limpiar()  # la escena nueva se ve sola (issue 36)
         else:
             self.tenue("\n" + "─" * 40)  # en el relato tipeado, la raya marca la escena
         self.epico(f"\n{destino.nombre.capitalize()}")
