@@ -288,6 +288,44 @@ def test_el_combate_se_navega_con_flechas(monkeypatch):
     assert "se abalanza" in texto
 
 
+def test_el_duelo_largo_ocupa_un_bloque_que_no_crece(monkeypatch):
+    """Con un enemigo de mucha vida, los turnos no apilan renglones: el
+    bloque del duelo (barras y último golpe) se muestra en el sitio."""
+    from test_opciones import Terminal
+
+    monkeypatch.setitem(AVENTURA.enemigos["lobo"], "vida", 60)
+    monkeypatch.setitem(AVENTURA.enemigos["lobo"], "experiencia", 0)
+    term = Terminal()
+    capturas: list[str] = []
+    teclas = iter(["\r"] * 100)
+
+    def tecla():
+        capturas.append(term.texto())
+        return next(teclas)
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", tecla)
+    juego = Juego(
+        AVENTURA,
+        semilla=7,
+        entrada=EntradaTipeada(["", ""]),
+        salida=term.escribe,
+        color=False,
+        flechas=True,
+    )
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego.enemigos[juego.lugar] = ["lobo"]
+    juego._combate()
+    assert not juego.enemigos[juego.lugar]  # el duelo terminó
+    assert len(capturas) > 5  # hubo varios turnos
+    assert "█" in capturas[0]  # las barras de vida, desde el primer turno
+    assert "Golpeas" not in capturas[0]  # el primer bloque aún no tiene turnos
+    for captura in capturas[1:-1]:
+        assert captura.count("Golpeas a ") == 1  # solo el último golpe, no la historia
+    # y la pantalla no crece: misma cantidad de renglones turno a turno
+    usadas = lambda t: len([r for r in t.split("\n") if r.strip()])  # noqa: E731
+    assert len({usadas(c) for c in capturas[1:-1]}) == 1
+
+
 def test_en_combate_usar_tiene_su_propio_submenu(monkeypatch):
     juego, salida = juego_flechas(monkeypatch, ["3", "\r"], lineas=["", ""])
     juego.jugador.vida = juego.jugador.vida_max = 200

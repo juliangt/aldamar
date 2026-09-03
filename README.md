@@ -36,7 +36,11 @@ lo que acaba de pasar—; el resto (tomar, usar, comprar…) se anota
 debajo de lo anterior hasta que llegue la vista siguiente. Los menús
 viven en ese mismo flujo: navegar entre ellos no suma ni una línea
 (el submenú reemplaza al menú en su sitio) y al elegir se borran sin
-dejar rastro, porque el resultado ya narra lo que hiciste. La línea
+dejar rastro, porque el resultado ya narra lo que hiciste. En combate,
+encima del menú va un bloque con la vida de todos —en barras— y el
+último turno, que se actualiza en su sitio: los duelos largos no
+apilan líneas, y del combate queda en el relato el arranque y el
+desenlace. La línea
 de estado acompaña a cada vista; entre vistas solo se escribe si algo
 cambió —vida, monedas o lugar—. La ayuda, el prólogo y la pantalla de
 cierre tienen la pantalla entera para sí. En modo tipeado no hay

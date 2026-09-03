@@ -143,36 +143,46 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 
 # ── render ───────────────────────────────────────────────────────────────
 
-def _desdibuja(dibujadas: int, salida) -> None:
+def _desdibuja(dibujadas: int, titulo_renglones: int, salida) -> None:
     """Borra el bloque del menú entero, título incluido, sin tocar el relato.
 
     El cursor queda en la fila donde estaba la primera opción: lo que se
     escriba a continuación fluye justo debajo de donde estaba el menú.
+    El título puede ocupar varios renglones (el bloque del duelo).
     Solo vale si el bloque cabe en la pantalla; si el título pudo
     haberse salido por arriba, no hay forma segura de subir a borrar.
     """
-    salida(f"\x1b[{dibujadas + 1}A")  # a la primera línea del bloque (el salto del print lo compensa)
-    salida("\x1b[1A\x1b[J")  # al título; borrar desde ahí hasta el fin de la pantalla
+    salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título (el salto del print lo compensa)
+    salida("\x1b[J")  # borrar desde ahí hasta el fin de la pantalla
 
 
 def _reescribe(
-    dibujadas: int, titulo: str, lineas: list[str], salida, color: bool
-) -> None:
+    dibujadas: int,
+    titulo_renglones: int,
+    titulo: str,
+    lineas: list[str],
+    salida,
+    color: bool,
+) -> int:
     """Cambia el menú por otro en el mismo sitio: cero crecimiento.
 
-    Sube hasta la fila del título, escribe el nuevo en su lugar y
-    reescribe el bloque debajo. Si el menú nuevo es más corto, los
-    renglones que le sobran al viejo se borran.
+    Sube hasta la primera fila del título, escribe el menú nuevo (título
+    incluido) y reescribe el bloque debajo. Si el menú nuevo es más
+    corto, los renglones que le sobran al viejo se borran. Devuelve los
+    renglones que ocupa el título nuevo.
     """
-    salida(f"\x1b[{dibujadas + 2}A")  # a la fila del título (el salto del print lo compensa)
-    salida(f"\x1b[2K{_c(titulo, color, TITULO)}")
+    titulo_renglones_nuevos = titulo.count("\n") + 1
+    salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título
+    for linea in titulo.split("\n"):
+        salida(f"\x1b[2K{_c(linea, color, TITULO)}")
     for linea in lineas:
         salida(f"\x1b[2K{linea}")
-    viejos = dibujadas - len(lineas)
+    viejos = dibujadas + titulo_renglones - len(lineas) - titulo_renglones_nuevos
     if viejos > 0:  # el menú nuevo es más corto: limpiar lo que le sobraba al viejo
         for _ in range(viejos):
             salida("\x1b[2K")
         salida(f"\x1b[{viejos + 1}A")  # y volver a quedar justo debajo del bloque nuevo
+    return titulo_renglones_nuevos
 
 
 def _renglones_desc(desc: str, ancho: int) -> list[str]:
@@ -234,27 +244,29 @@ def _elegir_con_flechas(
         resuelve = None
     sel = 0
     aviso: str | None = None
-    salida(_c(f"\n{titulo}", color, TITULO))
-    dibujadas = 0  # líneas del bloque; el cursor queda justo debajo
+    titulo_renglones = titulo.count("\n") + 1  # el bloque del duelo ocupa varios
+    for i, linea in enumerate(titulo.split("\n")):
+        salida(("" if i else "\n") + f"\x1b[2K{_c(linea, color, TITULO)}")
+    dibujadas = 0  # líneas de las opciones; el cursor queda justo debajo
 
     def cerrar() -> None:
         """Salir del menú. En modo relato se borra el propio bloque —título
         incluido— y el relato sigue debajo; si el bloque no cabe en
         pantalla (el título pudo salirse por arriba) o el modo no es
         relato, pantalla nueva como de toda la vida."""
-        cabe = dibujadas + 1 <= shutil.get_terminal_size().lines
+        cabe = dibujadas + titulo_renglones + 1 <= shutil.get_terminal_size().lines
         if relato and cabe:
-            _desdibuja(dibujadas, salida)
+            _desdibuja(dibujadas, titulo_renglones, salida)
         else:
             salida(LIMPIAR)
 
     def cambia(nuevo_titulo: str, nuevas: list[tuple[str, str, str]], nuevo_aviso: str | None) -> None:
         """Otro menú, en el mismo lugar: navegar no suma ni una fila."""
-        nonlocal titulo, opciones, aviso_esc, aviso, sel, dibujadas
+        nonlocal titulo, opciones, aviso_esc, aviso, sel, dibujadas, titulo_renglones
         titulo, opciones, aviso_esc = nuevo_titulo, nuevas, nuevo_aviso
         aviso, sel = None, 0
         lineas = _lineas_menu(opciones, sel, color)
-        _reescribe(dibujadas, titulo, lineas, salida, color)
+        titulo_renglones = _reescribe(dibujadas, titulo_renglones, titulo, lineas, salida, color)
         dibujadas = len(lineas)
 
     try:

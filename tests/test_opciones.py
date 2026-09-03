@@ -31,11 +31,7 @@ class Terminal:
         self.fila = 0
 
     def escribe(self, texto: str) -> None:
-        if texto.startswith("\n"):  # la línea en blanco que abre el menú: baja una fila
-            self.fila += 1
-            texto = texto[1:]
-        if texto == "\x1b[1A\x1b[J":  # borrar desde la fila de arriba hasta el final
-            self.fila = max(0, self.fila - 1)
+        if texto == "\x1b[J":  # borrar desde el cursor hasta el final de la pantalla
             for i in range(self.fila, len(self.filas)):
                 self.filas[i] = ""
             self.fila += 1  # el salto del print devuelve el cursor a su fila
@@ -44,8 +40,13 @@ class Terminal:
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
             self.fila = max(0, self.fila - (int(subida.group(1)) - 1))
             return
-        self._poner(self.fila, re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", texto))
-        self.fila += 1
+        for i, parte in enumerate(texto.split("\n")):
+            if i:
+                self.fila += 1  # cada salto de línea baja una fila
+            limpia = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", parte)
+            if limpia or (parte and parte != limpia):  # texto, o la fila que \x1b[2K borra
+                self._poner(self.fila, limpia)
+        self.fila += 1  # el salto final del print
 
     def _poner(self, i: int, texto: str) -> None:
         while len(self.filas) <= i:

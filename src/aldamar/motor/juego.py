@@ -117,6 +117,10 @@ class Juego:
         self.en_combate = False
         self.reanudada = False
         self._estado_mostrado: str | None = None  # la última línea de estado escrita
+        # el bloque del duelo (issue 36): los renglones del turno en curso
+        # se guardan para mostrarse en el bloque, no apilarse en el relato
+        self._bloque_activo = False
+        self._turno_lineas: list[str] = []
         # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
         self.stats = Estadisticas()
 
@@ -127,6 +131,9 @@ class Juego:
         return "\033[" + ";".join(codigos) + "m" + texto + "\033[0m"
 
     def escribir(self, texto: str = "", *codigos: str) -> None:
+        if self._bloque_activo:  # en pleno duelo: el turno va al bloque, no al relato
+            self._turno_lineas.append(self._c(texto, *codigos))
+            return
         self.salida(self._c(texto, *codigos))
 
     def epico(self, texto: str) -> None:
@@ -437,6 +444,53 @@ class Juego:
             self.salida(LIMPIAR)
         self._estado_mostrado = None  # la vista nueva incluye su estado
 
+    def _barra(self, vida: int, vida_max: int, ancho: int = 16) -> str:
+        llenos = round(ancho * max(0, min(vida, vida_max)) / max(1, vida_max))
+        return "█" * llenos + "░" * (ancho - llenos)
+
+    def _titulo_combate(self, enemigo: Enemigo) -> str:
+        """El bloque del duelo, como título del menú (issue 36).
+
+        La vida de todos en barras y los renglones del último turno,
+        en el mismo sitio: los duelos largos no apilan líneas. En modo
+        tipeado, el título de siempre — el turno se cuenta entero.
+        """
+        if not self._usa_flechas():
+            return f"¡{enemigo.nombre}! ¿Qué haces?"
+        lineas = [f"¡{enemigo.nombre}! ¿Qué haces?"]
+        margen = max(
+            [len(enemigo.nombre), len(self.jugador.nombre)]
+            + [len(c.nombre) for c in self.jugador.companeros]
+        )
+        filas = [(enemigo.nombre, enemigo.vida, enemigo.vida_max, ROJO)]
+        filas.append((self.jugador.nombre, self.jugador.vida, self.jugador.vida_max, VERDE))
+        filas += [
+            (c.nombre, c.vida, c.vida_max, None if c.viva else DIM)
+            for c in self.jugador.companeros
+        ]
+        for nombre, vida, vida_max, color in filas:
+            barra = f"{self._barra(vida, vida_max)} {vida}/{vida_max}"
+            linea = f"  {nombre:<{margen}}  {barra}"
+            lineas.append(self._c(linea, color) if color else linea)
+        if self.jugador.envenenado:
+            lineas.append(
+                self._c(
+                    f"  Envenenado: −{self.jugador.veneno_dano} por turno ({self.jugador.veneno_turnos} turnos).",
+                    self.color,
+                    AMARILLO,
+                )
+            )
+        if self._turno_lineas:  # el último turno, debajo del estado; nada se repite
+            lineas += self._turno_lineas[-4:]
+            self._turno_lineas.clear()
+        return "\n".join(lineas)
+
+    def _vuelca_bloque(self) -> None:
+        """Los renglones que quedaban en el bloque del duelo, al relato."""
+        for linea in self._turno_lineas:
+            self.salida(linea)
+        self._turno_lineas.clear()
+
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
         self.epico(ficha.prologo or self.av.prologo)
@@ -502,10 +556,11 @@ class Juego:
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
-        estado = self._estado_linea()
-        if estado != self._estado_mostrado:  # lo que no cambió, no se repite
-            self.tenue(estado)
-            self._estado_mostrado = estado
+        if not self.en_combate:  # en duelo, el bloque ya muestra la vida de todos
+            estado = self._estado_linea()
+            if estado != self._estado_mostrado:  # lo que no cambió, no se repite
+                self.tenue(estado)
+                self._estado_mostrado = estado
         pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
             (titulo, opciones, aviso_esc)
         ]
@@ -1019,9 +1074,16 @@ class Juego:
                 if not enemigo.vivo:
                     self.exito(f"{enemigo.nombre} cae y se deshace en humo pardo.")
                     return "victoria"
-                self._turno_enemigo(enemigo, usos)
+                # el turno del enemigo también va al bloque del duelo
+                self._bloque_activo = self._usa_flechas()
+                try:
+                    self._turno_enemigo(enemigo, usos)
+                finally:
+                    self._bloque_activo = False
         finally:
             self._limpiar_estados(enemigo)
+            if self.fin:  # muerte o partida suspendida: lo del bloque, al relato
+                self._vuelca_bloque()
         return "muerte"
 
     def _limpiar_estados(self, enemigo: Enemigo) -> None:
@@ -1151,7 +1213,7 @@ class Juego:
         while True:
             try:
                 linea = self._leer_orden(
-                    f"¡{enemigo.nombre} ({enemigo.vida}/{enemigo.vida_max})! ¿Qué haces?",
+                    self._titulo_combate(enemigo),
                     self._c("combate> ", DIM),
                     self._opciones_combate(enemigo),
                     aviso_esc="En combate no hay vuelta atrás: lucha, usa algo o huye.",
@@ -1166,71 +1228,75 @@ class Juego:
             arg = partes[1] if len(partes) > 1 else ""
             if not cmd:
                 continue  # Esc en el menú: se espera otra orden
-
-            if cmd == "atacar":
-                efectivo = self._golpea(self.jugador, enemigo)
-                self.stats.golpe_infligido(efectivo)
-                self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
-            elif cmd == "usar":
-                clave = self._buscar_item(arg, self.jugador.inventario)
-                if clave and self.av.items[clave]["tipo"] == "consumible":
-                    self.jugador.inventario.remove(clave)
-                    antes = self.jugador.vida
-                    curacion = round(self.av.items[clave]["curacion"] * self.dificultad.curacion)
-                    self.jugador.curar(curacion)
-                    self.exito(f"{self.av.items[clave]['nombre']}: vida {antes} → {self.jugador.vida}.")
-                else:
-                    self.tenue("Eso no se puede usar en combate.")
-                    continue
-            elif especial and cmd == especial and self.av.ataque_especial:
-                # el daño del especial ocurre dentro del evento: se mide
-                # por la vida que pierde el enemigo en la llamada
-                antes = enemigo.vida
-                self.av.ataque_especial(self, enemigo)
-                self.stats.golpe_infligido(antes - enemigo.vida)
-                if self.fin:
-                    return "seguir"
-            elif cmd == "cuerno":
-                clave = next(
-                    (k for k in self.jugador.inventario if self.av.items[k]["tipo"] == "cuerno"),
-                    None,
-                )
-                if clave:
-                    if enemigo.sin_huida:
-                        self.aviso("El toque resuena… y el guardián ni parpadea.")
+            # el turno se anota en el bloque del duelo, no en el relato
+            self._bloque_activo = self._usa_flechas()
+            try:
+                if cmd == "atacar":
+                    efectivo = self._golpea(self.jugador, enemigo)
+                    self.stats.golpe_infligido(efectivo)
+                    self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
+                elif cmd == "usar":
+                    clave = self._buscar_item(arg, self.jugador.inventario)
+                    if clave and self.av.items[clave]["tipo"] == "consumible":
+                        self.jugador.inventario.remove(clave)
+                        antes = self.jugador.vida
+                        curacion = round(self.av.items[clave]["curacion"] * self.dificultad.curacion)
+                        self.jugador.curar(curacion)
+                        self.exito(f"{self.av.items[clave]['nombre']}: vida {antes} → {self.jugador.vida}.")
+                    else:
+                        self.tenue("Eso no se puede usar en combate.")
                         continue
-                    self.jugador.inventario.remove(clave)
-                    self.epico("El cuerno retumba en el aire: las criaturas menores huyen despavoridas.")
-                    self.enemigos[self.lugar].clear()
-                    return "cuerno"
-                self.tenue("No llevas ningún cuerno.")
-                continue
-            elif cmd == "huir":
-                if enemigo.sin_huida:
-                    self.aviso("No hay a dónde ir: el guardián cierra el paso.")
+                elif especial and cmd == especial and self.av.ataque_especial:
+                    # el daño del especial ocurre dentro del evento: se mide
+                    # por la vida que pierde el enemigo en la llamada
+                    antes = enemigo.vida
+                    self.av.ataque_especial(self, enemigo)
+                    self.stats.golpe_infligido(antes - enemigo.vida)
+                    if self.fin:
+                        return "seguir"
+                elif cmd == "cuerno":
+                    clave = next(
+                        (k for k in self.jugador.inventario if self.av.items[k]["tipo"] == "cuerno"),
+                        None,
+                    )
+                    if clave:
+                        if enemigo.sin_huida:
+                            self.aviso("El toque resuena… y el guardián ni parpadea.")
+                            continue
+                        self.jugador.inventario.remove(clave)
+                        self.epico("El cuerno retumba en el aire: las criaturas menores huyen despavoridas.")
+                        self.enemigos[self.lugar].clear()
+                        return "cuerno"
+                    self.tenue("No llevas ningún cuerno.")
                     continue
-                if self.rng.random() < 0.55:
-                    self.escribir("Retrocedes con el corazón en la garganta…")
-                    return "huida"
-                self.peligro("El enemigo te corta la retirada.")
-            elif cmd == "estado":
-                self._estado()
-                continue
-            elif cmd in ("inventario", "inv"):
-                self._inventario()
-                continue
-            else:
-                self.tenue(ayuda_combate(self.av))
-                continue
+                elif cmd == "huir":
+                    if enemigo.sin_huida:
+                        self.aviso("No hay a dónde ir: el guardián cierra el paso.")
+                        continue
+                    if self.rng.random() < 0.55:
+                        self.escribir("Retrocedes con el corazón en la garganta…")
+                        return "huida"
+                    self.peligro("El enemigo te corta la retirada.")
+                elif cmd == "estado":
+                    self._estado()
+                    continue
+                elif cmd in ("inventario", "inv"):
+                    self._inventario()
+                    continue
+                else:
+                    self.tenue(ayuda_combate(self.av))
+                    continue
 
-            # acción válida: los compañeros golpean también
-            for c in self.jugador.companeras_vivas():
-                dano = self.rng.randint(c.ataque, c.ataque + 2)
-                efectivo = enemigo.recibir(dano)
-                self.stats.golpe_infligido(efectivo)
-                self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
-                if not enemigo.vivo:
-                    break
+                # acción válida: los compañeros golpean también
+                for c in self.jugador.companeras_vivas():
+                    dano = self.rng.randint(c.ataque, c.ataque + 2)
+                    efectivo = enemigo.recibir(dano)
+                    self.stats.golpe_infligido(efectivo)
+                    self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
+                    if not enemigo.vivo:
+                        break
+            finally:
+                self._bloque_activo = False
             return "seguir"
 
     def _combate(self) -> None:
