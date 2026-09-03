@@ -55,23 +55,36 @@ def test_en_posix_el_jingle_viaja_a_un_reproductor_del_sistema(monkeypatch, tmp_
         return descriptor, ruta
     monkeypatch.setattr(audio.tempfile, "mkstemp", falso_mkstemp)
     procesos: list[list[str]] = []
-    monkeypatch.setattr(
-        audio.subprocess, "Popen", lambda comando, **_: procesos.append(comando)
-    )
-    limpieza: list = []
-    class FalsoTimer:
-        def __init__(self, _demora, funcion) -> None:
-            self.funcion = funcion
+
+    class FalsoProceso:
+        def wait(self) -> int:
+            return 0
+
+    def falso_popen(comando, **_):
+        procesos.append(comando)
+        return FalsoProceso()
+    monkeypatch.setattr(audio.subprocess, "Popen", falso_popen)
+    limpiadores: list = []
+
+    class FalsoHilo:
+        def __init__(self, target, args=(), daemon=False, **_) -> None:
+            self.target = target
+            self.args = args
+            self.daemon = daemon
         def start(self) -> None:
-            limpieza.append(self.funcion)
-    monkeypatch.setattr(audio.threading, "Timer", FalsoTimer)
+            limpiadores.append(self)
+
+    monkeypatch.setattr(audio.threading, "Thread", FalsoHilo)
 
     audio._sonar()
 
     assert procesos[0][0] == "afplay"  # el reproductor del sistema
     assert procesos[0][1].endswith(".wav")
-    for borrar in limpieza:
-        borrar()  # el archivo temporal no se queda tirado
+    assert len(limpiadores) == 1
+    # daemon: el limpiador jamás retiene la salida del juego
+    assert limpiadores[0].daemon is True
+    for limpiador in limpiadores:
+        limpiador.target(*limpiador.args)  # el archivo no se queda tirado
     assert not os.path.exists(ruta)
 
 
@@ -143,6 +156,11 @@ def _arrancar_con_presentacion_espia(monkeypatch, argv: list[str]) -> list[dict]
 
 
 def test_el_arranque_por_menu_presenta_el_sello(monkeypatch):
+    # preferencias por defecto: el archivo configuracion.json de verdad
+    # no ha de decidir aquí (si el jugador lo apagó, el sello sigue)
+    monkeypatch.setattr(
+        juego_mod.configuracion, "cargar", lambda *_, **__: Configuracion()
+    )
     presentadas = _arrancar_con_presentacion_espia(monkeypatch, ["--sin-flechas"])
     assert len(presentadas) == 1
     assert presentadas[0]["sonar"] is True
