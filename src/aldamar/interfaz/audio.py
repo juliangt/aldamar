@@ -89,6 +89,15 @@ def _reproductores_posix() -> list[list[str]]:
     ]
 
 
+def _borrar_al_acabar(proceso: subprocess.Popen, ruta: str) -> None:
+    """Borra el archivo temporal cuando el reproductor lo suelta."""
+    proceso.wait()
+    try:
+        os.unlink(ruta)
+    except OSError:
+        pass
+
+
 def _sonar() -> None:
     if os.name == "nt":
         import winsound
@@ -102,15 +111,18 @@ def _sonar() -> None:
         f.write(bytes_jingle())
     for comando in _reproductores_posix():
         try:
-            subprocess.Popen(
+            proceso = subprocess.Popen(
                 [*comando, ruta],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
         except OSError:
             continue  # este sistema no trae ese reproductor: el siguiente
-        # el archivo se borra cuando el reproductor ya lo abrió
-        threading.Timer(15, lambda: os.unlink(ruta) if os.path.exists(ruta) else None).start()
+        # el archivo se borra cuando el reproductor termina; el hilo es
+        # daemon: si el juego se cierra antes, no lo retiene jamás
+        threading.Thread(
+            target=_borrar_al_acabar, args=(proceso, ruta), daemon=True
+        ).start()
         return
     os.unlink(ruta)  # no había reproductor alguno: silencio
 

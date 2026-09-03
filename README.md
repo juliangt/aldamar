@@ -29,8 +29,24 @@ comprar, luchar… — y `ayuda` se abre a pantalla completa; **Esc** la
 cierra y devuelve la vista anterior. Las gestiones (estado,
 inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
 acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
-un comando…» abre el modo tipeado de siempre. Al elegir cualquier
-opción la pantalla se limpia: el contenido nuevo se ve solo.
+un comando…» abre el modo tipeado de siempre. La partida se lee por
+vistas: **mirar alrededor**, una conversación (**hablar**) y el viaje
+a otro lugar presentan su contenido con la pantalla limpia —se ve solo
+lo que acaba de pasar—; el resto (tomar, usar, comprar…) se anota
+debajo de lo anterior hasta que llegue la vista siguiente. Los menús
+viven en ese mismo flujo: navegar entre ellos no suma ni una línea
+(el submenú reemplaza al menú en su sitio) y al elegir se borran sin
+dejar rastro, porque el resultado ya narra lo que hiciste. En combate,
+encima del menú va un bloque con la vida de todos —en barras— y el
+último turno, que se actualiza en su sitio: los duelos largos no
+apilan líneas, y del combate queda en el relato el arranque y el
+desenlace. El nombre, la vida y las monedas viven siempre en la
+primera fila de la pantalla —anclada, con la historia corriendo
+debajo— y se actualizan en el sitio cuando algo cambia. La ayuda, el
+prólogo y la pantalla de
+cierre tienen la pantalla entera para sí. En modo tipeado no hay
+limpiezas: el relato se apila completo y el viaje marca la escena con
+una raya.
 
 También el arranque: si `uv` (o el lanzador de turno) contó su build
 en pantalla —«Building aldamar…», «Installed N packages…»—, el juego

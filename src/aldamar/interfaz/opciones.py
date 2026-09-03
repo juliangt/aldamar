@@ -143,6 +143,50 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 
 # ── render ───────────────────────────────────────────────────────────────
 
+def _desdibuja(dibujadas: int, titulo_renglones: int, salida, separador: bool = True) -> None:
+    """Borra el bloque del menú entero, título incluido, sin tocar el relato.
+
+    El cursor queda en la fila exacta donde vuelve a arrancar el
+    próximo menú: la del separador si lo lleva (el título se dibuja un
+    renglón más abajo), o la del propio título si no (el bloque del
+    duelo). Así el menú ocupa siempre las mismas filas, sin renglones
+    fantasma (issue 36). Solo vale si el bloque cabe en la pantalla;
+    si el título pudo haberse salido por arriba, no hay forma segura
+    de subir a borrar.
+    """
+    salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título (el salto del print lo compensa)
+    salida("\x1b[J\x1b[2A" if separador else "\x1b[J\x1b[1A")  # borrar desde el título; el salto del print deja el cursor en su sitio
+
+
+def _reescribe(
+    dibujadas: int,
+    titulo_renglones: int,
+    titulo: str,
+    lineas: list[str],
+    salida,
+    color: bool,
+) -> int:
+    """Cambia el menú por otro en el mismo sitio: cero crecimiento.
+
+    Sube hasta la primera fila del título, escribe el menú nuevo (título
+    incluido) y reescribe el bloque debajo. Si el menú nuevo es más
+    corto, los renglones que le sobran al viejo se borran. Devuelve los
+    renglones que ocupa el título nuevo.
+    """
+    titulo_renglones_nuevos = titulo.count("\n") + 1
+    salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título
+    for linea in titulo.split("\n"):
+        salida(f"\x1b[2K{_c(linea, color, TITULO)}")
+    for linea in lineas:
+        salida(f"\x1b[2K{linea}")
+    viejos = dibujadas + titulo_renglones - len(lineas) - titulo_renglones_nuevos
+    if viejos > 0:  # el menú nuevo es más corto: limpiar lo que le sobraba al viejo
+        for _ in range(viejos):
+            salida("\x1b[2K")
+        salida(f"\x1b[{viejos + 1}A")  # y volver a quedar justo debajo del bloque nuevo
+    return titulo_renglones_nuevos
+
+
 def _renglones_desc(desc: str, ancho: int) -> list[str]:
     """Reengloniza una descripción extensa al ancho de la terminal."""
     ancho = max(1, ancho)
@@ -186,11 +230,52 @@ def _elegir_con_flechas(
     salida,
     color: bool,
     aviso_esc: str | None = None,
+    relato: bool = False,
+    resuelve=None,
+    separador: bool = True,
 ) -> str | None:
+    """El bucle del menú navegable.
+
+    Con `resuelve`, el menú es una pila viva (solo con `relato`): al
+    elegir, `resuelve(clave)` devuelve el submenú a mostrar —y el menú
+    nuevo reemplaza al viejo en el mismo sitio, sin crecer una línea—,
+    o None si la clave ya es una decisión final; `resuelve(None)` trae
+    el menú de arriba al volver con Esc. Si no hay `resuelve`, toda
+    elección termina el menú.
+    Con `separador=False`, el título se dibuja en la fila del cursor,
+    sin línea en blanco propia: para los menús que se redibujan turno
+    a turno en el mismo sitio (el bloque del duelo).
+    """
+    if not relato:
+        resuelve = None
     sel = 0
     aviso: str | None = None
-    salida(_c(f"\n{titulo}", color, TITULO))
-    dibujadas = 0  # líneas del bloque; el cursor queda justo debajo
+    titulo_renglones = titulo.count("\n") + 1  # el bloque del duelo ocupa varios
+    for i, linea in enumerate(titulo.split("\n")):
+        prefijo = "\n" if (i == 0 and separador) else ""
+        salida(prefijo + f"\x1b[2K{_c(linea, color, TITULO)}")
+    dibujadas = 0  # líneas de las opciones; el cursor queda justo debajo
+
+    def cerrar() -> None:
+        """Salir del menú. En modo relato se borra el propio bloque —título
+        incluido— y el relato sigue debajo; si el bloque no cabe en
+        pantalla (el título pudo salirse por arriba) o el modo no es
+        relato, pantalla nueva como de toda la vida."""
+        cabe = dibujadas + titulo_renglones + 1 <= shutil.get_terminal_size().lines
+        if relato and cabe:
+            _desdibuja(dibujadas, titulo_renglones, salida, separador)
+        else:
+            salida(LIMPIAR)
+
+    def cambia(nuevo_titulo: str, nuevas: list[tuple[str, str, str]], nuevo_aviso: str | None) -> None:
+        """Otro menú, en el mismo lugar: navegar no suma ni una fila."""
+        nonlocal titulo, opciones, aviso_esc, aviso, sel, dibujadas, titulo_renglones
+        titulo, opciones, aviso_esc = nuevo_titulo, nuevas, nuevo_aviso
+        aviso, sel = None, 0
+        lineas = _lineas_menu(opciones, sel, color)
+        titulo_renglones = _reescribe(dibujadas, titulo_renglones, titulo, lineas, salida, color)
+        dibujadas = len(lineas)
+
     try:
         with _modo_crudo():
             while True:
@@ -214,15 +299,25 @@ def _elegir_con_flechas(
                     sel = (sel + 1) % len(opciones)
                 elif tecla in FLECHA_ARRIBA:
                     sel = (sel - 1) % len(opciones)
-                elif tecla in ("\r", "\n"):
-                    salida(LIMPIAR)  # al avanzar, el contenido nuevo se ve solo
-                    return opciones[sel][0]
-                elif tecla.isdigit() and tecla != "0" and int(tecla) <= len(opciones):
-                    salida(LIMPIAR)
-                    return opciones[int(tecla) - 1][0]
+                elif tecla in ("\r", "\n") or (tecla.isdigit() and tecla != "0" and int(tecla) <= len(opciones)):
+                    if tecla not in ("\r", "\n"):
+                        sel = int(tecla) - 1
+                    clave = opciones[sel][0]
+                    if resuelve is not None:
+                        siguiente = resuelve(clave)
+                        if siguiente is not None:
+                            cambia(*siguiente)
+                            continue
+                    cerrar()
+                    return clave
                 elif tecla in ("\x1b", "q", "Q", "\x04"):  # Esc, q o Ctrl-D: volver
                     if aviso_esc is None:
-                        salida(LIMPIAR)  # la pantalla queda limpia al volver, como al elegir
+                        if resuelve is not None:
+                            siguiente = resuelve(None)  # subir un nivel
+                            if siguiente is not None:
+                                cambia(*siguiente)
+                                continue
+                        cerrar()  # volver: sin rastro del menú
                         return None
                     # no hay a dónde volver: el menú se queda, el aviso queda
                     # dicho y nada se vuelve a imprimir (el bloque no se apila)
@@ -230,7 +325,10 @@ def _elegir_con_flechas(
                 elif tecla == "\x03":  # Ctrl-C en modo crudo llega como byte
                     raise KeyboardInterrupt
     finally:
-        salida("\x1b[?25h")  # devolver el cursor siempre
+        # devolver el cursor siempre; el [1A cancela el salto del print
+        # (movimiento neto cero: no corran ni una fila los menús que se
+        # redibujan en el sitio)
+        salida("\x1b[?25h\x1b[1A")
 
 
 def _elegir_tipeando(
@@ -272,6 +370,9 @@ def elegir_opcion(
     color: bool = False,
     flechas: bool | None = None,
     aviso_esc: str | None = None,
+    relato: bool = False,
+    resuelve=None,
+    separador: bool = True,
 ) -> str | None:
     """Menú de opciones. `opciones` son (clave, etiqueta, descripción).
 
@@ -279,13 +380,20 @@ def elegir_opcion(
     debajo de su opción). Con teclado real (o `flechas=True`) navega con
     ↑/↓ y Enter; los dígitos eligen al vuelo y Esc vuelve (None). Al
     salir, por cualquier vía —elegir o volver—, la pantalla se limpia:
-    lo que se pinte después se ve solo.
+    lo que se pinte después se ve solo. Con `relato=True`, en cambio,
+    el menú vive dentro del relato: al salir solo se borra su propio
+    bloque —título incluido— y lo que se pinte después continúa debajo
+    de lo que ya se estaba leyendo (issue 36).
     Con `aviso_esc`, Esc no saca del menú: el aviso queda escrito bajo
-    las opciones y se sigue eligiendo. En modo tipeado acepta número o
-    nombre. Sin opciones, devuelve None.
+    las opciones y se sigue eligiendo. Con `relato` y `resuelve`, el
+    menú es una pila: `resuelve(clave)` devuelve el (título, opciones,
+    aviso_esc) del submenú al que pasar —reemplazando al actual en el
+    mismo sitio— o None si la clave es una decisión final;
+    `resuelve(None)` trae el menú de arriba al volver con Esc.
+    En modo tipeado acepta número o nombre. Sin opciones, devuelve None.
     """
     if not opciones:
         return None
     if flechas or (flechas is None and _es_interactivo(entrada, salida)):
-        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc)
+        return _elegir_con_flechas(titulo, opciones, salida, color, aviso_esc, relato, resuelve, separador)
     return _elegir_tipeando(titulo, opciones, entrada, salida, color)

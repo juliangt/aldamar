@@ -29,14 +29,42 @@ class Terminal:
     def __init__(self):
         self.filas: list[str] = []
         self.fila = 0
+        self.guardada: int | None = None  # el cursor guardado (DECSC)
 
     def escribe(self, texto: str) -> None:
+        if texto == "\x1b7":  # guardar el cursor: la cabecera reescribe y restaura
+            self.guardada = self.fila
+            return
+        if texto == "\x1b8":
+            self.fila = self.guardada if self.guardada is not None else self.fila
+            return
+        if texto.startswith("\x1b7\x1b[1;1H\x1b[2K") and texto.endswith("\x1b8"):
+            # la cabecera: reescribe la primera fila y restaura el cursor
+            limpia = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", texto[12:-2])
+            self._poner(0, limpia)
+            return
+        if texto == "\x1b[J\x1b[2A":  # borrar desde el cursor hasta el fin; cursor en el separador
+            for i in range(self.fila, len(self.filas)):
+                self.filas[i] = ""
+            self.fila = max(0, self.fila - 1)  # el salto del print baja al separador
+            return
+        if texto == "\x1b[J\x1b[1A":  # lo mismo, sin separador: el cursor queda en el título
+            for i in range(self.fila, len(self.filas)):
+                self.filas[i] = ""
+            return
+        if texto == "\x1b[?25h\x1b[1A":  # devolver el cursor: movimiento neto cero
+            return
         subida = re.fullmatch(r"\x1b\[(\d+)A", texto)
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
             self.fila = max(0, self.fila - (int(subida.group(1)) - 1))
             return
-        self._poner(self.fila, re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", texto))
-        self.fila += 1
+        for i, parte in enumerate(texto.split("\n")):
+            if i:
+                self.fila += 1  # cada salto de línea baja una fila
+            limpia = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", parte)
+            if limpia or (parte and parte != limpia):  # texto, o la fila que \x1b[2K borra
+                self._poner(self.fila, limpia)
+        self.fila += 1  # el salto final del print
 
     def _poner(self, i: int, texto: str) -> None:
         while len(self.filas) <= i:
@@ -182,6 +210,110 @@ def test_ctrl_d_vuelve_y_tambien_limpia(monkeypatch):
     assert "\x1b[2J\x1b[H" in salida
 
 
+# ── modo relato: el menú se borra, el relato queda (issue 36) ────────────
+
+def elegir_en_relato(monkeypatch, teclas, lista=OPCIONES, filas=24):
+    """Menú con `relato=True`: devuelve (clave, impresos, pantalla).
+
+    `impresos` son los prints tal cual salieron; `pantalla`, la terminal
+    emulada después de aplicarlos.
+    """
+    terminal = os.terminal_size((80, filas))
+    monkeypatch.setattr(opciones_mod.shutil, "get_terminal_size", lambda: terminal)
+    pendientes = list(teclas)
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))
+    term = Terminal()
+    impresos: list[str] = []
+
+    def salida(texto: str) -> None:
+        impresos.append(texto)
+        term.escribe(texto)
+
+    clave = elegir_opcion(
+        "Prueba", lista, entrada=input, salida=salida, flechas=True, relato=True
+    )
+    return clave, impresos, term.texto()
+
+
+def test_en_relato_no_se_limpia_la_pantalla(monkeypatch):
+    clave, impresos, _pantalla = elegir_en_relato(monkeypatch, ["\r"])
+    assert clave == "a"
+    assert "\x1b[2J\x1b[H" not in "\n".join(impresos)  # el relato sigue donde estaba
+
+
+def test_en_relato_el_bloque_se_borra_entero(monkeypatch):
+    clave, _impresos, pantalla = elegir_en_relato(monkeypatch, ["\r"])
+    assert clave == "a"
+    assert "Prueba" not in pantalla  # el título también se borró
+    assert "❯" not in pantalla and "↑/↓" not in pantalla  # y el bloque con él
+
+
+def test_en_relato_volver_con_esc_no_deja_rastro_del_menu(monkeypatch):
+    clave, _impresos, pantalla = elegir_en_relato(monkeypatch, ["\x1b"])
+    assert clave is None
+    assert "Prueba" not in pantalla and "❯" not in pantalla
+
+
+def test_menu_mas_alto_que_la_pantalla_vuelve_a_limpiar(monkeypatch):
+    """Si el título pudo haberse salido por arriba, no hay forma segura
+    de subir a borrar: pantalla nueva, como de toda la vida."""
+    lista = [(c, f"Opción {c}", "") for c in "abcdefghijklmnopqrstu"]
+    clave, impresos, _pantalla = elegir_en_relato(monkeypatch, ["2"], lista=lista, filas=10)
+    assert clave == "b"
+    assert "\x1b[2J\x1b[H" in impresos
+
+
+def elegir_con_pila(monkeypatch, teclas):
+    """Un menú raíz con un verbo que abre submenú, navegable con `resuelve`.
+
+    Devuelve (clave, pantallas): cada pantalla es la terminal emulada
+    en el momento de esperar una tecla.
+    """
+    raiz = [("verbo", "Un verbo…", ""), ("fin", "Elegir", "")]
+    sub = [("a", "Todo", ""), ("b", "Una cosa", "")]
+    pantallas: list[str] = []
+
+    def resuelve(clave):
+        if clave == "verbo":
+            return ("Submenú", sub, None)
+        if clave is None:  # Esc: el menú de arriba, en su sitio
+            return ("Raíz", raiz, None)
+        return None  # una decisión final
+
+    pendientes = iter(teclas)
+    term = Terminal()
+
+    def tecla():
+        pantallas.append(term.texto())
+        return next(pendientes)
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", tecla)
+    clave = elegir_opcion(
+        "Raíz", raiz, entrada=input, salida=term.escribe, flechas=True,
+        relato=True, resuelve=resuelve,
+    )
+    return clave, pantallas
+
+
+def test_navegar_submenus_no_hace_crecer_la_pantalla(monkeypatch):
+    """Entrar al submenú y volver con Esc, dos veces: la pantalla queda
+    exactamente igual que al principio (issue 36: navegar no apila)."""
+    teclas = ["\r", "\x1b", "\r", "\x1b", "2"]  # entrar, volver, entrar, volver, elegir
+    clave, pantallas = elegir_con_pila(monkeypatch, teclas)
+    assert clave == "fin"
+    assert pantallas[0] == pantallas[2] == pantallas[4]  # la raíz, siempre en su sitio
+    assert pantallas[1] == pantallas[3]  # y el submenú, también
+
+
+def test_navegar_no_deja_restos_del_menu_anterior(monkeypatch):
+    """El submenú reemplaza al menú: ni el título viejo ni renglones sueltos."""
+    _clave, pantallas = elegir_con_pila(monkeypatch, ["\r", "\x1b", "2"])
+    pantalla = pantallas[1]  # el submenú, ya dibujado donde estaba la raíz
+    assert "Raíz" not in pantalla  # el título del menú anterior ya no está
+    assert "Un verbo…" not in pantalla
+    assert pantalla.count("Submenú") == 1  # y el nuevo título, escrito una vez
+
+
 def test_con_aviso_esc_se_queda_dentro_del_menu(monkeypatch):
     pendientes = ["\x1b", "\r"]
     monkeypatch.setattr(opciones_mod, "_leer_tecla", lambda: pendientes.pop(0))
@@ -227,7 +359,7 @@ def test_un_digito_elige_al_vuelo(monkeypatch):
 def test_esc_cancela_y_devuelve_el_cursor(monkeypatch):
     clave, salida = elegir_con_teclas(monkeypatch, ["\x1b"])
     assert clave is None
-    assert salida[-1] == "\x1b[?25h"  # cursor restaurado
+    assert salida[-1] == "\x1b[?25h\x1b[1A"  # cursor restaurado, sin mover una fila
 
 
 def test_la_tecla_q_tambien_cancela(monkeypatch):
@@ -250,7 +382,7 @@ def test_redibujo_reusa_el_bloque(monkeypatch):
     _clave, salida = elegir_con_teclas(monkeypatch, ["\x1b[B", "\x1b[B", "\r"])
     texto = "\n".join(salida)
     assert texto.count("Prueba") == 1  # el título no se repite: se reescribe el bloque
-    subidas = [l for l in salida if l.startswith("\x1b[") and l.endswith("A")]
+    subidas = [l for l in salida if re.fullmatch(r"\x1b\[\d+A", l)]
     assert len(subidas) == 2  # un redibujado por movimiento, sin apilar menús
 
 

@@ -116,6 +116,12 @@ class Juego:
         self.final: str | None = None
         self.en_combate = False
         self.reanudada = False
+        self._estado_mostrado: str | None = None  # la última cabecera de estado escrita
+        self._marco_activo = False  # la región de scroll: fila 1 fija, historia abajo
+        # el bloque del duelo (issue 36): los renglones del turno en curso
+        # se guardan para mostrarse en el bloque, no apilarse en el relato
+        self._bloque_activo = False
+        self._turno_lineas: list[str] = []
         # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
         self.stats = Estadisticas()
 
@@ -126,6 +132,9 @@ class Juego:
         return "\033[" + ";".join(codigos) + "m" + texto + "\033[0m"
 
     def escribir(self, texto: str = "", *codigos: str) -> None:
+        if self._bloque_activo:  # en pleno duelo: el turno va al bloque, no al relato
+            self._turno_lineas.append(self._c(texto, *codigos))
+            return
         self.salida(self._c(texto, *codigos))
 
     def epico(self, texto: str) -> None:
@@ -316,23 +325,25 @@ class Juego:
         """Juega hasta el final. Devuelve la decisión de la pantalla de
         cierre: "otra" (repetir), "menu" (otra aventura) o None (salir;
         también si se dejó a medias con «salir»)."""
-        if self.reanudada:
-            self._cabecera()
-            self._mirar()
-            self.tenue("(Partida recuperada.) " + self._pista())
-            self.reanudada = False
-        else:
-            self._prologo()
-        while not self.fin:
-            try:
-                linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
-            except EOFError:
-                linea = "salir"
-            self._cabecera()
-            self._ejecutar(linea)
-        if self.final:
-            return self._cierre()
-        return None
+        self._activa_marco()
+        try:
+            if self.reanudada:
+                self._mirar()
+                self.tenue("(Partida recuperada.) " + self._pista())
+                self.reanudada = False
+            else:
+                self._prologo()
+            while not self.fin:
+                try:
+                    linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
+                except EOFError:
+                    linea = "salir"
+                self._ejecutar(linea)
+            if self.final:
+                return self._cierre()
+            return None
+        finally:
+            self._desactiva_marco()
 
     # ── la pantalla de cierre ────────────────────────────────────────
     def _remate(self) -> str:
@@ -394,6 +405,7 @@ class Juego:
 
         Devuelve la decisión: "otra", "menu" o None/salir.
         """
+        self._desactiva_marco()  # el cierre es pantalla completa, sin marco
         if self._usa_flechas():
             self.salida(LIMPIAR)  # el cierre se ve solo, fuera del relato
         if self.audio:
@@ -418,23 +430,103 @@ class Juego:
             aviso_esc="Elige a dónde ir: otra partida, el menú o salir.",
         )
 
-    def _cabecera(self) -> None:
-        """Dos líneas ancladas a la primera fila: el juego y tu estado.
+    def _estado_linea(self) -> str:
+        """Quién, cómo y dónde: lo que vive en la primera fila (issue 36)."""
+        j = self.jugador
+        return (
+            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
+        )
 
-        Se pinta justo después de cada limpieza de pantalla —que es el
-        único momento en que se abre pantalla—, así que siempre está
-        arriba del todo y cuenta la situación fresca. Solo en modo
-        navegable: el modo tipeado es un relato, sin marco.
+    def _cabecera(self) -> None:
+        """Reescribe la primera fila con el estado del héroe, en el sitio.
+
+        Guarda el cursor, ancla la fila 1 y lo restaura: no importa
+        dónde esté el relato, la cabecera no lo mueve ni se mueve.
         """
         if not self._usa_flechas():
             return
-        linea1 = self._c(f"Aldamar {__version__}", TITULO)
-        j = self.jugador
-        linea2 = self._c(
-            f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}",
-            DIM,
+        self.salida(
+            "\x1b7\x1b[1;1H\x1b[2K" + self._c(self._estado_linea(), TITULO) + "\x1b8"
         )
-        self.salida(f"\x1b[H{linea1}\n{linea2}")
+
+    def _activa_marco(self) -> None:
+        """El marco de la partida: fila 1 fija para la cabecera, la
+        historia vive de la fila 2 para abajo (issue 36)."""
+        if not self._usa_flechas():
+            return
+        self._marco_activo = True
+        self.salida("\x1b[2r\x1b[2;1H")  # el scroll pasa a vivir bajo la cabecera
+        self._cabecera()
+        self._estado_mostrado = self._estado_linea()
+
+    def _desactiva_marco(self) -> None:
+        """Libera la región de scroll: la terminal queda como estaba."""
+        if self._marco_activo:
+            self._marco_activo = False
+            self.salida("\x1b[r")
+
+    def _limpiar(self) -> None:
+        """Una vista nueva: la pantalla limpia en modo navegable (issue 36).
+
+        Las vistas —mirar, una conversación, un lugar nuevo— se ven
+        solas; lo que no es una vista (tomar, usar, comprar…) se anota
+        debajo de lo anterior hasta que llegue la próxima. En modo
+        tipeado el relato es completo y no se limpia nunca.
+        """
+        if self._usa_flechas():
+            self.salida(LIMPIAR)
+            self._cabecera()
+            self.salida("\x1b[2;1H")  # la vista arranca bajo la cabecera
+            self._estado_mostrado = self._estado_linea()
+        else:
+            self._estado_mostrado = None
+
+    def _barra(self, vida: int, vida_max: int, ancho: int = 16) -> str:
+        llenos = round(ancho * max(0, min(vida, vida_max)) / max(1, vida_max))
+        return "█" * llenos + "░" * (ancho - llenos)
+
+    def _titulo_combate(self, enemigo: Enemigo) -> str:
+        """El bloque del duelo, como título del menú (issue 36).
+
+        La vida de todos en barras y los renglones del último turno,
+        en el mismo sitio: los duelos largos no apilan líneas. En modo
+        tipeado, el título de siempre — el turno se cuenta entero.
+        """
+        if not self._usa_flechas():
+            return f"¡{enemigo.nombre}! ¿Qué haces?"
+        lineas = [f"¡{enemigo.nombre}! ¿Qué haces?"]
+        margen = max(
+            [len(enemigo.nombre), len(self.jugador.nombre)]
+            + [len(c.nombre) for c in self.jugador.companeros]
+        )
+        filas = [(enemigo.nombre, enemigo.vida, enemigo.vida_max, ROJO)]
+        filas.append((self.jugador.nombre, self.jugador.vida, self.jugador.vida_max, VERDE))
+        filas += [
+            (c.nombre, c.vida, c.vida_max, None if c.viva else DIM)
+            for c in self.jugador.companeros
+        ]
+        for nombre, vida, vida_max, color in filas:
+            barra = f"{self._barra(vida, vida_max)} {vida}/{vida_max}"
+            linea = f"  {nombre:<{margen}}  {barra}"
+            lineas.append(self._c(linea, color) if color else linea)
+        if self.jugador.envenenado:
+            lineas.append(
+                self._c(
+                    f"  Envenenado: −{self.jugador.veneno_dano} por turno ({self.jugador.veneno_turnos} turnos).",
+                    self.color,
+                    AMARILLO,
+                )
+            )
+        if self._turno_lineas:  # el último turno, debajo del estado; nada se repite
+            lineas += self._turno_lineas[-4:]
+            self._turno_lineas.clear()
+        return "\n".join(lineas)
+
+    def _vuelca_bloque(self) -> None:
+        """Los renglones que quedaban en el bloque del duelo, al relato."""
+        for linea in self._turno_lineas:
+            self.salida(linea)
+        self._turno_lineas.clear()
 
     def _prologo(self) -> None:
         ficha = self.av.personajes[self.personaje]
@@ -458,12 +550,11 @@ class Juego:
                 nombre = ""
             if nombre:
                 self.jugador.nombre = nombre
-        if self._usa_flechas():
-            # el nombre también es "avanzar": la historia se ve sola
-            self.salida(LIMPIAR)
-            self._cabecera()
+        # el nombre también es "avanzar": la presentación y la vista del
+        # lugar se ven solas, sobre la pantalla recién limpiada
+        self._limpiar()
         self.escribir("\n" + ficha.presentacion)
-        self._mirar()
+        self._mirar(limpiar=False)
         self.tenue(self._pista())
 
     # ── la orden del jugador: menú con flechas o texto ───────────────
@@ -491,38 +582,53 @@ class Juego:
         es el menú del juego (o de combate), y cada verbo —«Tomar…»,
         «Comprar…», «Otras acciones…»— apila su listado; Esc sube un
         nivel y en la raíz no lleva a ningún sitio: queda un aviso y se
-        sigue eligiendo. Sin teclado real, se lee una línea, como toda
-        la vida.
+        sigue eligiendo. Los menús viven dentro del relato (issue 36):
+        se dibujan debajo de lo leído, navegar entre ellos no suma ni
+        una línea (el submenú reemplaza al menú en el mismo sitio) y al
+        elegir se borran solos, sin llevarse por delante lo de antes ni
+        dejar rastro: el resultado narra la decisión. Encima va una
+        línea de estado, y solo cuando algo cambió (vida, monedas o
+        lugar): lo repetido no se vuelve a escribir. Sin teclado real,
+        se lee una línea, como toda la vida.
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
+        estado = self._estado_linea()
+        if estado != self._estado_mostrado:  # lo que no cambió, no se reescribe
+            self._cabecera()  # el estado vive en la primera fila, nunca en el relato
+            self._estado_mostrado = estado
         pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
             (titulo, opciones, aviso_esc)
         ]
-        while True:
-            titulo, opciones, aviso_esc = pila[-1]
-            clave = elegir_opcion(
-                titulo,
-                opciones,
-                entrada=self.entrada,
-                salida=self.salida,
-                color=self.color,
-                flechas=True,
-                aviso_esc=aviso_esc,
-            )
-            if clave is None:  # Esc: subir un nivel; en la raíz, de vuelta al juego
+
+        def resuelve(clave: str | None) -> tuple[str, list[tuple[str, str, str]], str | None] | None:
+            """El menú al que se pasa: clave = un verbo; None = volver con Esc."""
+            if clave is None:
                 pila.pop()
-                if not pila:
-                    return ""
-                self._cabecera()  # la limpieza de la vuelta se lleva el ancla
-                continue
-            if clave == ESCRIBIR:
-                return self.entrada(prompt).strip()
+                return pila[-1] if pila else None
             sublista = self._submenu(clave)
-            if sublista is not None:  # un verbo: apila su listado
-                pila.append((sublista[0], sublista[1], None))
-                continue
-            return clave
+            if sublista is None:  # una decisión final: termina el menú
+                return None
+            pila.append((sublista[0], sublista[1], None))
+            return pila[-1]
+
+        clave = elegir_opcion(
+            titulo,
+            opciones,
+            entrada=self.entrada,
+            salida=self.salida,
+            color=self.color,
+            flechas=True,
+            aviso_esc=aviso_esc,
+            relato=True,
+            resuelve=resuelve,
+            separador=not self.en_combate,  # en duelo, el bloque vuelve a su fila
+        )
+        if clave is None:  # Esc en la raíz: de vuelta al juego sin orden
+            return ""
+        if clave == ESCRIBIR:
+            return self.entrada(prompt).strip()
+        return clave
 
     def _opciones_juego(self) -> list[tuple[str, str, str]]:
         """El menú de acciones del mundo: una entrada por verbo.
@@ -718,7 +824,9 @@ class Juego:
         pantalla_completa(ayuda(self.av), entrada=self.entrada, salida=self.salida, color=self.color)
 
     # ── mirar / estado / inventario ──────────────────────────────────
-    def _mirar(self, _arg: str = "") -> None:
+    def _mirar(self, _arg: str = "", limpiar: bool = True) -> None:
+        if limpiar:
+            self._limpiar()  # la vista del lugar se ve sola (issue 36)
         l = self.aqui()
         self.epico(f"\n{l.nombre.capitalize()}")
         self.escribir(l.descripcion)
@@ -870,6 +978,7 @@ class Juego:
         t = normaliza(arg)
         for npc, clave in l.npcs.items():
             if t and (t in normaliza(npc) or t in normaliza(clave)):
+                self._limpiar()  # la conversación se ve sola (issue 36)
                 self.epico("\n" + self._texto_heroe(self.av.dialogos[clave]))
                 return
         self.tenue("Aquí no hay nadie con ese nombre.")
@@ -936,6 +1045,10 @@ class Juego:
     def _entrar(self, destino: Lugar) -> None:
         if destino.id not in self.visitados:
             self.visitados.append(destino.id)
+        if self._usa_flechas():
+            self._limpiar()  # la escena nueva se ve sola (issue 36)
+        else:
+            self.tenue("\n" + "─" * 40)  # en el relato tipeado, la raya marca la escena
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
         eventos = [self.av.eventos[c] for c in destino.eventos if c in self.av.eventos]
@@ -998,9 +1111,16 @@ class Juego:
                 if not enemigo.vivo:
                     self.exito(f"{enemigo.nombre} cae y se deshace en humo pardo.")
                     return "victoria"
-                self._turno_enemigo(enemigo, usos)
+                # el turno del enemigo también va al bloque del duelo
+                self._bloque_activo = self._usa_flechas()
+                try:
+                    self._turno_enemigo(enemigo, usos)
+                finally:
+                    self._bloque_activo = False
         finally:
             self._limpiar_estados(enemigo)
+            if self.fin:  # muerte o partida suspendida: lo del bloque, al relato
+                self._vuelca_bloque()
         return "muerte"
 
     def _limpiar_estados(self, enemigo: Enemigo) -> None:
@@ -1130,7 +1250,7 @@ class Juego:
         while True:
             try:
                 linea = self._leer_orden(
-                    f"¡{enemigo.nombre}! ¿Qué haces?",
+                    self._titulo_combate(enemigo),
                     self._c("combate> ", DIM),
                     self._opciones_combate(enemigo),
                     aviso_esc="En combate no hay vuelta atrás: lucha, usa algo o huye.",
@@ -1145,72 +1265,75 @@ class Juego:
             arg = partes[1] if len(partes) > 1 else ""
             if not cmd:
                 continue  # Esc en el menú: se espera otra orden
-            self._cabecera()  # la elección limpió la pantalla: arriba, lo nuevo
-
-            if cmd == "atacar":
-                efectivo = self._golpea(self.jugador, enemigo)
-                self.stats.golpe_infligido(efectivo)
-                self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
-            elif cmd == "usar":
-                clave = self._buscar_item(arg, self.jugador.inventario)
-                if clave and self.av.items[clave]["tipo"] == "consumible":
-                    self.jugador.inventario.remove(clave)
-                    antes = self.jugador.vida
-                    curacion = round(self.av.items[clave]["curacion"] * self.dificultad.curacion)
-                    self.jugador.curar(curacion)
-                    self.exito(f"{self.av.items[clave]['nombre']}: vida {antes} → {self.jugador.vida}.")
-                else:
-                    self.tenue("Eso no se puede usar en combate.")
-                    continue
-            elif especial and cmd == especial and self.av.ataque_especial:
-                # el daño del especial ocurre dentro del evento: se mide
-                # por la vida que pierde el enemigo en la llamada
-                antes = enemigo.vida
-                self.av.ataque_especial(self, enemigo)
-                self.stats.golpe_infligido(antes - enemigo.vida)
-                if self.fin:
-                    return "seguir"
-            elif cmd == "cuerno":
-                clave = next(
-                    (k for k in self.jugador.inventario if self.av.items[k]["tipo"] == "cuerno"),
-                    None,
-                )
-                if clave:
-                    if enemigo.sin_huida:
-                        self.aviso("El toque resuena… y el guardián ni parpadea.")
+            # el turno se anota en el bloque del duelo, no en el relato
+            self._bloque_activo = self._usa_flechas()
+            try:
+                if cmd == "atacar":
+                    efectivo = self._golpea(self.jugador, enemigo)
+                    self.stats.golpe_infligido(efectivo)
+                    self.escribir(f"Golpeas a {enemigo.nombre}: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
+                elif cmd == "usar":
+                    clave = self._buscar_item(arg, self.jugador.inventario)
+                    if clave and self.av.items[clave]["tipo"] == "consumible":
+                        self.jugador.inventario.remove(clave)
+                        antes = self.jugador.vida
+                        curacion = round(self.av.items[clave]["curacion"] * self.dificultad.curacion)
+                        self.jugador.curar(curacion)
+                        self.exito(f"{self.av.items[clave]['nombre']}: vida {antes} → {self.jugador.vida}.")
+                    else:
+                        self.tenue("Eso no se puede usar en combate.")
                         continue
-                    self.jugador.inventario.remove(clave)
-                    self.epico("El cuerno retumba en el aire: las criaturas menores huyen despavoridas.")
-                    self.enemigos[self.lugar].clear()
-                    return "cuerno"
-                self.tenue("No llevas ningún cuerno.")
-                continue
-            elif cmd == "huir":
-                if enemigo.sin_huida:
-                    self.aviso("No hay a dónde ir: el guardián cierra el paso.")
+                elif especial and cmd == especial and self.av.ataque_especial:
+                    # el daño del especial ocurre dentro del evento: se mide
+                    # por la vida que pierde el enemigo en la llamada
+                    antes = enemigo.vida
+                    self.av.ataque_especial(self, enemigo)
+                    self.stats.golpe_infligido(antes - enemigo.vida)
+                    if self.fin:
+                        return "seguir"
+                elif cmd == "cuerno":
+                    clave = next(
+                        (k for k in self.jugador.inventario if self.av.items[k]["tipo"] == "cuerno"),
+                        None,
+                    )
+                    if clave:
+                        if enemigo.sin_huida:
+                            self.aviso("El toque resuena… y el guardián ni parpadea.")
+                            continue
+                        self.jugador.inventario.remove(clave)
+                        self.epico("El cuerno retumba en el aire: las criaturas menores huyen despavoridas.")
+                        self.enemigos[self.lugar].clear()
+                        return "cuerno"
+                    self.tenue("No llevas ningún cuerno.")
                     continue
-                if self.rng.random() < 0.55:
-                    self.escribir("Retrocedes con el corazón en la garganta…")
-                    return "huida"
-                self.peligro("El enemigo te corta la retirada.")
-            elif cmd == "estado":
-                self._estado()
-                continue
-            elif cmd in ("inventario", "inv"):
-                self._inventario()
-                continue
-            else:
-                self.tenue(ayuda_combate(self.av))
-                continue
+                elif cmd == "huir":
+                    if enemigo.sin_huida:
+                        self.aviso("No hay a dónde ir: el guardián cierra el paso.")
+                        continue
+                    if self.rng.random() < 0.55:
+                        self.escribir("Retrocedes con el corazón en la garganta…")
+                        return "huida"
+                    self.peligro("El enemigo te corta la retirada.")
+                elif cmd == "estado":
+                    self._estado()
+                    continue
+                elif cmd in ("inventario", "inv"):
+                    self._inventario()
+                    continue
+                else:
+                    self.tenue(ayuda_combate(self.av))
+                    continue
 
-            # acción válida: los compañeros golpean también
-            for c in self.jugador.companeras_vivas():
-                dano = self.rng.randint(c.ataque, c.ataque + 2)
-                efectivo = enemigo.recibir(dano)
-                self.stats.golpe_infligido(efectivo)
-                self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
-                if not enemigo.vivo:
-                    break
+                # acción válida: los compañeros golpean también
+                for c in self.jugador.companeras_vivas():
+                    dano = self.rng.randint(c.ataque, c.ataque + 2)
+                    efectivo = enemigo.recibir(dano)
+                    self.stats.golpe_infligido(efectivo)
+                    self.escribir(f"{c.nombre} ataca: −{efectivo} ({enemigo.vida}/{enemigo.vida_max}).")
+                    if not enemigo.vivo:
+                        break
+            finally:
+                self._bloque_activo = False
             return "seguir"
 
     def _combate(self) -> None:
