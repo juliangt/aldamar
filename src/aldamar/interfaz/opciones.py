@@ -94,8 +94,10 @@ def _tecla_posix() -> str:
     dato = os.read(fd, 1).decode("utf-8", "ignore")
     if dato == "\x1b":
         # Esc sola o el arranque de una secuencia (flechas)
+        # Optimizamos leyendo el resto de la secuencia de golpe
+        # reduciendo las llamadas a `os.read` y `select` si están en búfer
         while len(dato) < 3 and select.select([fd], [], [], 0.05)[0]:
-            dato += os.read(fd, 1).decode("utf-8", "ignore")
+            dato += os.read(fd, 3 - len(dato)).decode("utf-8", "ignore")
     return dato
 
 
