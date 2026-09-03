@@ -116,7 +116,8 @@ class Juego:
         self.final: str | None = None
         self.en_combate = False
         self.reanudada = False
-        self._estado_mostrado: str | None = None  # la última línea de estado escrita
+        self._estado_mostrado: str | None = None  # la última cabecera de estado escrita
+        self._marco_activo = False  # la región de scroll: fila 1 fija, historia abajo
         # el bloque del duelo (issue 36): los renglones del turno en curso
         # se guardan para mostrarse en el bloque, no apilarse en el relato
         self._bloque_activo = False
@@ -324,21 +325,25 @@ class Juego:
         """Juega hasta el final. Devuelve la decisión de la pantalla de
         cierre: "otra" (repetir), "menu" (otra aventura) o None (salir;
         también si se dejó a medias con «salir»)."""
-        if self.reanudada:
-            self._mirar()
-            self.tenue("(Partida recuperada.) " + self._pista())
-            self.reanudada = False
-        else:
-            self._prologo()
-        while not self.fin:
-            try:
-                linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
-            except EOFError:
-                linea = "salir"
-            self._ejecutar(linea)
-        if self.final:
-            return self._cierre()
-        return None
+        self._activa_marco()
+        try:
+            if self.reanudada:
+                self._mirar()
+                self.tenue("(Partida recuperada.) " + self._pista())
+                self.reanudada = False
+            else:
+                self._prologo()
+            while not self.fin:
+                try:
+                    linea = self._leer_orden("¿Qué haces?", self._c("> ", DIM), self._opciones_juego())
+                except EOFError:
+                    linea = "salir"
+                self._ejecutar(linea)
+            if self.final:
+                return self._cierre()
+            return None
+        finally:
+            self._desactiva_marco()
 
     # ── la pantalla de cierre ────────────────────────────────────────
     def _remate(self) -> str:
@@ -401,6 +406,7 @@ class Juego:
 
         Devuelve la decisión: "otra", "menu" o None/salir.
         """
+        self._desactiva_marco()  # el cierre es pantalla completa, sin marco
         if self._usa_flechas():
             self.salida(LIMPIAR)  # el cierre se ve solo, fuera del relato
         if self.audio:
@@ -426,11 +432,39 @@ class Juego:
         )
 
     def _estado_linea(self) -> str:
-        """Quién, cómo y dónde: la línea tenue que acompaña cada vista (issue 36)."""
+        """Quién, cómo y dónde: lo que vive en la primera fila (issue 36)."""
         j = self.jugador
         return (
             f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {self.aqui().nombre}"
         )
+
+    def _cabecera(self) -> None:
+        """Reescribe la primera fila con el estado del héroe, en el sitio.
+
+        Guarda el cursor, ancla la fila 1 y lo restaura: no importa
+        dónde esté el relato, la cabecera no lo mueve ni se mueve.
+        """
+        if not self._usa_flechas():
+            return
+        self.salida(
+            "\x1b7\x1b[1;1H\x1b[2K" + self._c(self._estado_linea(), TITULO) + "\x1b8"
+        )
+
+    def _activa_marco(self) -> None:
+        """El marco de la partida: fila 1 fija para la cabecera, la
+        historia vive de la fila 2 para abajo (issue 36)."""
+        if not self._usa_flechas():
+            return
+        self._marco_activo = True
+        self.salida("\x1b[2r\x1b[2;1H")  # el scroll pasa a vivir bajo la cabecera
+        self._cabecera()
+        self._estado_mostrado = self._estado_linea()
+
+    def _desactiva_marco(self) -> None:
+        """Libera la región de scroll: la terminal queda como estaba."""
+        if self._marco_activo:
+            self._marco_activo = False
+            self.salida("\x1b[r")
 
     def _limpiar(self) -> None:
         """Una vista nueva: la pantalla limpia en modo navegable (issue 36).
@@ -442,7 +476,11 @@ class Juego:
         """
         if self._usa_flechas():
             self.salida(LIMPIAR)
-        self._estado_mostrado = None  # la vista nueva incluye su estado
+            self._cabecera()
+            self.salida("\x1b[2;1H")  # la vista arranca bajo la cabecera
+            self._estado_mostrado = self._estado_linea()
+        else:
+            self._estado_mostrado = None
 
     def _barra(self, vida: int, vida_max: int, ancho: int = 16) -> str:
         llenos = round(ancho * max(0, min(vida, vida_max)) / max(1, vida_max))
@@ -556,11 +594,10 @@ class Juego:
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
-        if not self.en_combate:  # en duelo, el bloque ya muestra la vida de todos
-            estado = self._estado_linea()
-            if estado != self._estado_mostrado:  # lo que no cambió, no se repite
-                self.tenue(estado)
-                self._estado_mostrado = estado
+        estado = self._estado_linea()
+        if estado != self._estado_mostrado:  # lo que no cambió, no se reescribe
+            self._cabecera()  # el estado vive en la primera fila, nunca en el relato
+            self._estado_mostrado = estado
         pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
             (titulo, opciones, aviso_esc)
         ]

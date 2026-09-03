@@ -40,9 +40,10 @@ dejar rastro, porque el resultado ya narra lo que hiciste. En combate,
 encima del menú va un bloque con la vida de todos —en barras— y el
 último turno, que se actualiza en su sitio: los duelos largos no
 apilan líneas, y del combate queda en el relato el arranque y el
-desenlace. La línea
-de estado acompaña a cada vista; entre vistas solo se escribe si algo
-cambió —vida, monedas o lugar—. La ayuda, el prólogo y la pantalla de
+desenlace. El nombre, la vida y las monedas viven siempre en la
+primera fila de la pantalla —anclada, con la historia corriendo
+debajo— y se actualizan en el sitio cuando algo cambia. La ayuda, el
+prólogo y la pantalla de
 cierre tienen la pantalla entera para sí. En modo tipeado no hay
 limpiezas: el relato se apila completo y el viaje marca la escena con
 una raya.

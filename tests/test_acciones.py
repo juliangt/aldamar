@@ -144,28 +144,29 @@ def test_tras_el_nombre_se_limpia_la_pantalla(monkeypatch):
     assert texto.index(AVENTURA.prologo[:15]) < texto.index("\x1b[2J\x1b[H") < texto.index(presentacion)
 
 
-def test_el_estado_abre_cada_menu_de_raiz(monkeypatch):
-    """La línea de estado (quién, cómo y dónde) va encima de cada menú
-    de raíz; sin anclas: el relato fluye hacia abajo (issue 36)."""
+def test_la_cabecera_de_estado_vive_en_la_primera_fila(monkeypatch):
+    """Nombre, vida y monedas: siempre en la primera fila de la pantalla,
+    nunca debajo del texto de la historia (issue 36)."""
     juego, salida = juego_flechas(monkeypatch, ["\x1b", "3"], opciones=MENU_MINIMO)
-    juego._prologo()
     juego.ciclo()
     j = juego.jugador
     lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
     estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
-    assert estado in salida  # la línea de estado, antes del menú
-    assert salida.count(estado) == 1  # una vez por turno, no en cada redibujado
-    assert not any(l.startswith("\x1b[H") for l in salida)  # nada se ancla arriba
+    cabeceras = [l for l in salida if "\x1b[1;1H" in l]
+    assert len(cabeceras) >= 2  # la activación y cada vista limpia la reancla
+    assert all(estado in l for l in cabeceras)  # y siempre dice quién, cómo y dónde
+    assert all("\x1b[2K" in l for l in cabeceras)  # reescrita limpia, sin restos
+    assert estado not in salida  # ya no vive en el flujo del relato
 
 
 def test_al_elegir_el_menu_no_deja_rastro(monkeypatch):
     juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
-    juego._prologo()
     juego.ciclo()  # «3» elige Salir: el menú se borra y la despedida queda debajo
     texto = "\n".join(salida)
     assert "›" not in texto  # ni migas ni decisiones escritas: el resultado narra
     assert texto.count("¿Qué haces?") == 1  # el título se escribió una sola vez
-    assert texto.endswith("Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto.")
+    assert salida[-1] == "\x1b[r"  # al salir, la región de scroll queda liberada
+    assert salida[-2] == "Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto."
 
 
 def test_viajar_abre_la_escena_en_pantalla_limpia(monkeypatch):
@@ -191,29 +192,67 @@ def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
     assert not any("Aldamar " in l and __version__ in l for l in salida)
 
 
-def test_el_estado_se_escribe_solo_cuando_cambia(monkeypatch):
-    """Dos turnos sin novedades ni vistas: la línea de estado se escribe
-    una sola vez (el segundo turno no la repite)."""
-    juego, salida = juego_flechas(monkeypatch, ["2", "3"], opciones=MENU_MINIMO, lineas=["", ""])
-    juego._prologo()
+def test_la_cabecera_no_se_reescribe_si_nada_cambia(monkeypatch):
+    """Dos turnos sin novedades ni vistas: la cabecera se escribió al
+    arrancar y en la limpieza del prólogo, y no una vez por menú."""
+    juego, salida = juego_flechas(monkeypatch, ["2", "3"], opciones=MENU_MINIMO, lineas=[""])
     juego.ciclo()  # «estado» (una gestión, no una vista); después, «salir»
-    j = juego.jugador
-    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
-    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
-    assert estado in salida
-    assert salida.count(estado) == 1  # el segundo turno no la repite
-    assert sum(l.count("¿Qué haces?") for l in salida) == 2  # y hubo dos menús
+    assert sum(l.count("¿Qué haces?") for l in salida) == 2  # hubo dos menús
+    assert len([l for l in salida if "\x1b[1;1H" in l]) == 2  # activación + prólogo
 
 
-def test_las_vistas_abren_limpios_y_renuevan_el_estado(monkeypatch):
-    """Mirar es una vista: pantalla limpia y el estado, de vuelta."""
+def test_las_vistas_reanclan_la_cabecera(monkeypatch):
+    """Mirar es una vista: pantalla limpia y la cabecera, reanclada arriba."""
     juego, salida = juego_flechas(monkeypatch, ["\r", "3"], opciones=MENU_MINIMO, lineas=[""])
     juego.ciclo()  # prólogo, «mirar» (limpia y muestra la vista) y «salir»
-    j = juego.jugador
-    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
-    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
-    assert salida.count(estado) == 2  # al empezar y de nuevo, sobre la vista limpia
     assert salida.count("\x1b[2J\x1b[H") == 2  # la del nombre y la de la vista
+    assert len([l for l in salida if "\x1b[1;1H" in l]) == 3  # activación + 2 limpiezas
+
+
+def test_la_cabecera_se_refresca_cuando_cambia_el_estado(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego._prologo()
+    antes = len([l for l in salida if "\x1b[1;1H" in l])
+    juego._ejecutar("tomar todo")  # cambian las monedas y el inventario
+    juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
+    despues = len([l for l in salida if "\x1b[1;1H" in l])
+    assert despues == antes + 1  # la cabecera se reescribió con el estado nuevo
+
+
+def test_en_combate_la_cabecera_sigue_en_la_primera_fila(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, lineas=["", ""])
+    juego.jugador.vida = juego.jugador.vida_max = 200
+    juego.enemigos[juego.lugar] = ["lobo"]
+    juego._combate()
+    texto = "\n".join(salida)
+    # la vida cambia a cada turno y la cabecera se reescribe arriba,
+    # en la primera fila: nunca debajo del texto de la historia
+    assert texto.count("\x1b[1;1H") >= 2
+    assert "· Vida" in next(l for l in salida if "\x1b[1;1H" in l)
+
+
+def test_la_region_de_scroll_se_libera_al_terminar(monkeypatch):
+    juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
+    juego.ciclo()
+    texto = "\n".join(salida)
+    assert "\x1b[2r" in texto  # durante la partida, el scroll vive bajo la fila 1
+    assert "\x1b[r" in texto  # al salir, la terminal queda como estaba
+
+
+def test_la_cabecera_y_el_bloque_sobreviven_al_color(fabrica):
+    """Con color activo, los renderizados arman sus códigos ANSI sin
+    colar adentro valores que no son códigos (pasó: un bool)."""
+    juego, salida = fabrica(["", "salir"])
+    juego.color = True
+    juego.flechas = True  # el renderizado anclado solo existe en modo flechas
+    juego._cabecera()
+    juego.enemigos[juego.lugar] = ["lobo"]
+    titulo = juego._titulo_combate(juego.crear_enemigo("lobo"))
+    texto = "\n".join(salida) + "\n" + titulo
+    assert "\x1b[1;36m" in texto  # el título de la cabecera, en color
+    assert "█" in titulo  # las barras del bloque
+    for basura in ("True", "False", "None"):  # ningún valor colado en los códigos
+        assert basura not in texto
 
 
 def test_hablar_abre_la_conversacion_limpia(monkeypatch):

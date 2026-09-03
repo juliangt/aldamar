@@ -143,17 +143,19 @@ def pantalla_completa(texto: str, *, entrada, salida, color: bool = False) -> No
 
 # ── render ───────────────────────────────────────────────────────────────
 
-def _desdibuja(dibujadas: int, titulo_renglones: int, salida) -> None:
+def _desdibuja(dibujadas: int, titulo_renglones: int, salida, separador: bool = True) -> None:
     """Borra el bloque del menú entero, título incluido, sin tocar el relato.
 
-    El cursor queda en la fila del separador —la que estaba en blanco
-    encima del título—: el próximo menú, con su título, ocupa exactamente
-    las mismas filas y no queda ni un renglón fantasma (issue 36).
-    Solo vale si el bloque cabe en la pantalla; si el título pudo
-    haberse salido por arriba, no hay forma segura de subir a borrar.
+    El cursor queda en la fila exacta donde vuelve a arrancar el
+    próximo menú: la del separador si lo lleva (el título se dibuja un
+    renglón más abajo), o la del propio título si no (el bloque del
+    duelo). Así el menú ocupa siempre las mismas filas, sin renglones
+    fantasma (issue 36). Solo vale si el bloque cabe en la pantalla;
+    si el título pudo haberse salido por arriba, no hay forma segura
+    de subir a borrar.
     """
     salida(f"\x1b[{dibujadas + titulo_renglones + 1}A")  # a la primera fila del título (el salto del print lo compensa)
-    salida("\x1b[J\x1b[2A")  # borrar desde el título hasta el fin; el salto del print deja el cursor en el separador
+    salida("\x1b[J\x1b[2A" if separador else "\x1b[J\x1b[1A")  # borrar desde el título; el salto del print deja el cursor en su sitio
 
 
 def _reescribe(
@@ -261,7 +263,7 @@ def _elegir_con_flechas(
         relato, pantalla nueva como de toda la vida."""
         cabe = dibujadas + titulo_renglones + 1 <= shutil.get_terminal_size().lines
         if relato and cabe:
-            _desdibuja(dibujadas, titulo_renglones, salida)
+            _desdibuja(dibujadas, titulo_renglones, salida, separador)
         else:
             salida(LIMPIAR)
 
@@ -323,7 +325,10 @@ def _elegir_con_flechas(
                 elif tecla == "\x03":  # Ctrl-C en modo crudo llega como byte
                     raise KeyboardInterrupt
     finally:
-        salida("\x1b[?25h")  # devolver el cursor siempre
+        # devolver el cursor siempre; el [1A cancela el salto del print
+        # (movimiento neto cero: no corran ni una fila los menús que se
+        # redibujan en el sitio)
+        salida("\x1b[?25h\x1b[1A")
 
 
 def _elegir_tipeando(

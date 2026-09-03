@@ -29,12 +29,30 @@ class Terminal:
     def __init__(self):
         self.filas: list[str] = []
         self.fila = 0
+        self.guardada: int | None = None  # el cursor guardado (DECSC)
 
     def escribe(self, texto: str) -> None:
+        if texto == "\x1b7":  # guardar el cursor: la cabecera reescribe y restaura
+            self.guardada = self.fila
+            return
+        if texto == "\x1b8":
+            self.fila = self.guardada if self.guardada is not None else self.fila
+            return
+        if texto.startswith("\x1b7\x1b[1;1H\x1b[2K") and texto.endswith("\x1b8"):
+            # la cabecera: reescribe la primera fila y restaura el cursor
+            limpia = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", texto[12:-2])
+            self._poner(0, limpia)
+            return
         if texto == "\x1b[J\x1b[2A":  # borrar desde el cursor hasta el fin; cursor en el separador
             for i in range(self.fila, len(self.filas)):
                 self.filas[i] = ""
             self.fila = max(0, self.fila - 1)  # el salto del print baja al separador
+            return
+        if texto == "\x1b[J\x1b[1A":  # lo mismo, sin separador: el cursor queda en el título
+            for i in range(self.fila, len(self.filas)):
+                self.filas[i] = ""
+            return
+        if texto == "\x1b[?25h\x1b[1A":  # devolver el cursor: movimiento neto cero
             return
         subida = re.fullmatch(r"\x1b\[(\d+)A", texto)
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
@@ -341,7 +359,7 @@ def test_un_digito_elige_al_vuelo(monkeypatch):
 def test_esc_cancela_y_devuelve_el_cursor(monkeypatch):
     clave, salida = elegir_con_teclas(monkeypatch, ["\x1b"])
     assert clave is None
-    assert salida[-1] == "\x1b[?25h"  # cursor restaurado
+    assert salida[-1] == "\x1b[?25h\x1b[1A"  # cursor restaurado, sin mover una fila
 
 
 def test_la_tecla_q_tambien_cancela(monkeypatch):
@@ -364,7 +382,7 @@ def test_redibujo_reusa_el_bloque(monkeypatch):
     _clave, salida = elegir_con_teclas(monkeypatch, ["\x1b[B", "\x1b[B", "\r"])
     texto = "\n".join(salida)
     assert texto.count("Prueba") == 1  # el título no se repite: se reescribe el bloque
-    subidas = [l for l in salida if l.startswith("\x1b[") and l.endswith("A")]
+    subidas = [l for l in salida if re.fullmatch(r"\x1b\[\d+A", l)]
     assert len(subidas) == 2  # un redibujado por movimiento, sin apilar menús
 
 
