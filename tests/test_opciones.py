@@ -451,3 +451,47 @@ def test_el_modo_sin_buffer_conserva_el_salto_de_linea(monkeypatch):
     finally:
         os.close(maestro)
         os.close(esclavo)
+
+def test_tecla_posix_lee_secuencia_completa(monkeypatch):
+    """Verifica que una flecha (secuencia ESC) se lea completamente con pocas llamadas."""
+    import select
+
+    # Mocking os.read to return the sequence chunks
+    mock_data = list(b"\x1b[A")
+
+    def mock_read(fd, n):
+        nonlocal mock_data
+        if not mock_data: return b""
+        res = bytes(mock_data[:n])
+        mock_data = mock_data[n:]
+        return res
+
+    monkeypatch.setattr(opciones_mod.os, "read", mock_read)
+    # Mock select to return true immediately (simulating data available)
+    monkeypatch.setattr(opciones_mod.select, "select", lambda r, w, x, t: ([r[0]], [], []))
+    monkeypatch.setattr(opciones_mod.sys.stdin, "fileno", lambda: 0)
+
+    res = opciones_mod._tecla_posix()
+    assert res == "\x1b[A"
+
+def test_tecla_posix_esc_aislado(monkeypatch):
+    """Verifica que un ESC aislado devuelva tras el timeout sin fallar."""
+    import select
+
+    # Mocking os.read to return only the esc character
+    mock_data = list(b"\x1b")
+
+    def mock_read(fd, n):
+        nonlocal mock_data
+        if not mock_data: return b""
+        res = bytes(mock_data[:n])
+        mock_data = mock_data[n:]
+        return res
+
+    monkeypatch.setattr(opciones_mod.os, "read", mock_read)
+    # Mock select to simulate timeout (no data available after the first byte)
+    monkeypatch.setattr(opciones_mod.select, "select", lambda r, w, x, t: ([], [], []))
+    monkeypatch.setattr(opciones_mod.sys.stdin, "fileno", lambda: 0)
+
+    res = opciones_mod._tecla_posix()
+    assert res == "\x1b"
