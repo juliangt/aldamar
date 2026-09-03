@@ -158,24 +158,31 @@ def test_el_estado_abre_cada_menu_de_raiz(monkeypatch):
     assert not any(l.startswith("\x1b[H") for l in salida)  # nada se ancla arriba
 
 
-def test_la_decision_queda_escrita_en_el_relato(monkeypatch):
+def test_al_elegir_el_menu_no_deja_rastro(monkeypatch):
     juego, salida = juego_flechas(monkeypatch, ["3"], opciones=MENU_MINIMO, lineas=["", ""])
     juego._prologo()
-    juego.ciclo()  # «3» elige Salir: la decisión queda y la despedida, debajo
-    assert "\x1b[1A› Salir" in salida  # donde estaba el título del menú
-    assert salida.index("\x1b[1A› Salir") < salida.index(
-        "Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto."
-    )
+    juego.ciclo()  # «3» elige Salir: el menú se borra y la despedida queda debajo
+    texto = "\n".join(salida)
+    assert "›" not in texto  # ni migas ni decisiones escritas: el resultado narra
+    assert texto.count("¿Qué haces?") == 1  # el título se escribió una sola vez
+    assert texto.endswith("Guardas las tomillas en el bolsillo y miras atrás una vez. Hasta pronto.")
 
 
-def test_viajar_deja_una_raya_de_cambio_de_escena(monkeypatch):
+def test_viajar_abre_la_escena_en_pantalla_limpia(monkeypatch):
+    """Modo flechas: viajar es un cambio de escena y la escena se ve sola."""
     juego, salida = juego_flechas(monkeypatch, ["2"], lineas=["", ""])
     juego.jugador.vida = juego.jugador.vida_max = 200
     juego._prologo()
     orden = juego._leer_orden("¿Qué haces?", "> ", juego._opciones_juego())
     juego._ejecutar(orden)
     assert juego.lugar != juego.av.lugar_inicial
-    assert "\n" + "─" * 40 in salida  # la escena nueva se separa de lo anterior
+    assert salida.count("\x1b[2J\x1b[H") == 2  # la del prólogo y la del viaje
+
+
+def test_en_modo_tipeado_viajar_deja_una_raya_de_escena(fabrica):
+    juego, salida = fabrica(["", "ir 1", "salir"])
+    juego.ciclo()
+    assert "\n" + "─" * 40 in salida  # el relato tipeado sigue completo, con la raya
 
 
 def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
@@ -184,13 +191,26 @@ def test_el_modo_tipeado_no_lleva_cabecera(fabrica):
     assert not any("Aldamar " in l and __version__ in l for l in salida)
 
 
+def test_el_estado_se_escribe_solo_cuando_cambia(monkeypatch):
+    """Dos turnos sin novedades: la línea de estado se escribe una vez."""
+    juego, salida = juego_flechas(monkeypatch, ["\r", "3"], opciones=MENU_MINIMO, lineas=["", ""])
+    juego._prologo()
+    juego.ciclo()  # «mirar» no cambia nada; después, «salir»
+    j = juego.jugador
+    lugar = AVENTURA.lugares[AVENTURA.lugar_inicial].nombre
+    estado = f"{j.nombre} · Vida {j.vida}/{j.vida_max} · {j.monedas} monedas · {lugar}"
+    assert estado in salida
+    assert salida.count(estado) == 1  # el segundo turno no la repite
+    assert sum(l.count("¿Qué haces?") for l in salida) == 2  # y hubo dos menús
+
+
 def test_las_otras_acciones_son_un_submenu_de_ida_y_vuelta(monkeypatch):
     opciones = [("mirar", "Mirar alrededor", ""), (OTRAS, "Otras acciones…", "")]
     juego, salida = juego_flechas(monkeypatch, ["2", "\x1b", "2", "7"], opciones=opciones)
     juego.ciclo()
     texto = "\n".join(salida)
     assert juego.fin  # la segunda visita terminó en "salir"
-    assert texto.count("\nOtras acciones\n") == 2  # entró, volvió con Esc y reentró
+    assert salida.count("\x1b[2KOtras acciones") == 2  # el título del submenú, en cada visita
     assert texto.count("¿Qué haces?") == 2  # el menú del juego, al inicio y al volver
 
 

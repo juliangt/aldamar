@@ -116,6 +116,7 @@ class Juego:
         self.final: str | None = None
         self.en_combate = False
         self.reanudada = False
+        self._estado_mostrado: str | None = None  # la última línea de estado escrita
         # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
         self.stats = Estadisticas()
 
@@ -479,41 +480,51 @@ class Juego:
         «Comprar…», «Otras acciones…»— apila su listado; Esc sube un
         nivel y en la raíz no lleva a ningún sitio: queda un aviso y se
         sigue eligiendo. Los menús viven dentro del relato (issue 36):
-        se dibujan debajo de lo leído y al elegir se borran solos, sin
-        llevarse por delante lo de antes; donde estaba el título queda
-        la decisión escrita. Sin teclado real, se lee una línea, como
-        toda la vida.
+        se dibujan debajo de lo leído, navegar entre ellos no suma ni
+        una línea (el submenú reemplaza al menú en el mismo sitio) y al
+        elegir se borran solos, sin llevarse por delante lo de antes ni
+        dejar rastro: el resultado narra la decisión. Encima va una
+        línea de estado, y solo cuando algo cambió (vida, monedas o
+        lugar): lo repetido no se vuelve a escribir. Sin teclado real,
+        se lee una línea, como toda la vida.
         """
         if not self._usa_flechas():
             return self.entrada(prompt).strip()
-        self.tenue(self._estado_linea())  # el estado, encima de cada menú de raíz
+        estado = self._estado_linea()
+        if estado != self._estado_mostrado:  # lo que no cambió, no se repite
+            self.tenue(estado)
+            self._estado_mostrado = estado
         pila: list[tuple[str, list[tuple[str, str, str]], str | None]] = [
             (titulo, opciones, aviso_esc)
         ]
-        while True:
-            titulo, opciones, aviso_esc = pila[-1]
-            clave = elegir_opcion(
-                titulo,
-                opciones,
-                entrada=self.entrada,
-                salida=self.salida,
-                color=self.color,
-                flechas=True,
-                aviso_esc=aviso_esc,
-                relato=True,
-            )
-            if clave is None:  # Esc: subir un nivel; en la raíz, de vuelta al juego
+
+        def resuelve(clave: str | None) -> tuple[str, list[tuple[str, str, str]], str | None] | None:
+            """El menú al que se pasa: clave = un verbo; None = volver con Esc."""
+            if clave is None:
                 pila.pop()
-                if not pila:
-                    return ""
-                continue
-            if clave == ESCRIBIR:
-                return self.entrada(prompt).strip()
+                return pila[-1] if pila else None
             sublista = self._submenu(clave)
-            if sublista is not None:  # un verbo: apila su listado
-                pila.append((sublista[0], sublista[1], None))
-                continue
-            return clave
+            if sublista is None:  # una decisión final: termina el menú
+                return None
+            pila.append((sublista[0], sublista[1], None))
+            return pila[-1]
+
+        clave = elegir_opcion(
+            titulo,
+            opciones,
+            entrada=self.entrada,
+            salida=self.salida,
+            color=self.color,
+            flechas=True,
+            aviso_esc=aviso_esc,
+            relato=True,
+            resuelve=resuelve,
+        )
+        if clave is None:  # Esc en la raíz: de vuelta al juego sin orden
+            return ""
+        if clave == ESCRIBIR:
+            return self.entrada(prompt).strip()
+        return clave
 
     def _opciones_juego(self) -> list[tuple[str, str, str]]:
         """El menú de acciones del mundo: una entrada por verbo.
@@ -927,7 +938,12 @@ class Juego:
     def _entrar(self, destino: Lugar) -> None:
         if destino.id not in self.visitados:
             self.visitados.append(destino.id)
-        self.tenue("\n" + "─" * 40)  # cambia la escena: el viaje se marca en el relato
+        if self._usa_flechas():
+            # la escena nueva se ve sola: lo anterior ya se leyó (issue 36);
+            # dentro de la escena, la historia sí se acumula
+            self.salida(LIMPIAR)
+        else:
+            self.tenue("\n" + "─" * 40)  # en el relato tipeado, la raya marca la escena
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
         eventos = [self.av.eventos[c] for c in destino.eventos if c in self.av.eventos]

@@ -30,13 +30,16 @@ cierra y devuelve la vista anterior. Las gestiones (estado,
 inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
 acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
 un comando…» abre el modo tipeado de siempre. La partida se lee como
-un relato continuo: cada resultado se escribe debajo de lo que ya
-estabas leyendo —también el aviso del turno anterior en pleno
-combate—, los menús se dibujan en ese mismo flujo sin que pierdas de
-vista lo de antes, y al elegir el bloque del menú se borra y queda
-escrita la decisión («› Tomar todo»). Viajar marca el cambio de
-escena con una raya. La ayuda, el prólogo y la pantalla de cierre
-conservan la pantalla entera para sí.
+un relato: cada resultado se escribe debajo de lo que ya estabas
+leyendo —también el aviso del turno anterior en pleno combate— y los
+menús se dibujan en ese mismo flujo; navegar entre ellos no suma ni
+una línea (el submenú reemplaza al menú en su sitio) y al elegir se
+borran sin dejar rastro, porque el resultado ya narra lo que hiciste.
+La línea de estado solo se escribe cuando algo cambia —vida, monedas
+o lugar—. Viajar abre la escena nueva en pantalla limpia, y adentro
+de la escena la historia sí se acumula; la ayuda, el prólogo y la
+pantalla de cierre tienen la pantalla entera para sí. En modo tipeado
+el viaje marca la escena con una raya.
 
 También el arranque: si `uv` (o el lanzador de turno) contó su build
 en pantalla —«Building aldamar…», «Installed N packages…»—, el juego

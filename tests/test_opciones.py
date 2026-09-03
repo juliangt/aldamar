@@ -31,15 +31,14 @@ class Terminal:
         self.fila = 0
 
     def escribe(self, texto: str) -> None:
+        if texto.startswith("\n"):  # la línea en blanco que abre el menú: baja una fila
+            self.fila += 1
+            texto = texto[1:]
         if texto == "\x1b[1A\x1b[J":  # borrar desde la fila de arriba hasta el final
             self.fila = max(0, self.fila - 1)
             for i in range(self.fila, len(self.filas)):
                 self.filas[i] = ""
             self.fila += 1  # el salto del print devuelve el cursor a su fila
-            return
-        escritura = re.fullmatch(r"\x1b\[1A(.+)", texto)
-        if escritura:  # subir una fila y escribir en ella: la decisión del relato
-            self._poner(max(0, self.fila - 1), escritura.group(1))
             return
         subida = re.fullmatch(r"\x1b\[(\d+)A", texto)
         if subida:  # el print añade un salto: subir n deja el cursor n-1 más arriba
@@ -243,6 +242,57 @@ def test_menu_mas_alto_que_la_pantalla_vuelve_a_limpiar(monkeypatch):
     clave, impresos, _pantalla = elegir_en_relato(monkeypatch, ["2"], lista=lista, filas=10)
     assert clave == "b"
     assert "\x1b[2J\x1b[H" in impresos
+
+
+def elegir_con_pila(monkeypatch, teclas):
+    """Un menú raíz con un verbo que abre submenú, navegable con `resuelve`.
+
+    Devuelve (clave, pantallas): cada pantalla es la terminal emulada
+    en el momento de esperar una tecla.
+    """
+    raiz = [("verbo", "Un verbo…", ""), ("fin", "Elegir", "")]
+    sub = [("a", "Todo", ""), ("b", "Una cosa", "")]
+    pantallas: list[str] = []
+
+    def resuelve(clave):
+        if clave == "verbo":
+            return ("Submenú", sub, None)
+        if clave is None:  # Esc: el menú de arriba, en su sitio
+            return ("Raíz", raiz, None)
+        return None  # una decisión final
+
+    pendientes = iter(teclas)
+    term = Terminal()
+
+    def tecla():
+        pantallas.append(term.texto())
+        return next(pendientes)
+
+    monkeypatch.setattr(opciones_mod, "_leer_tecla", tecla)
+    clave = elegir_opcion(
+        "Raíz", raiz, entrada=input, salida=term.escribe, flechas=True,
+        relato=True, resuelve=resuelve,
+    )
+    return clave, pantallas
+
+
+def test_navegar_submenus_no_hace_crecer_la_pantalla(monkeypatch):
+    """Entrar al submenú y volver con Esc, dos veces: la pantalla queda
+    exactamente igual que al principio (issue 36: navegar no apila)."""
+    teclas = ["\r", "\x1b", "\r", "\x1b", "2"]  # entrar, volver, entrar, volver, elegir
+    clave, pantallas = elegir_con_pila(monkeypatch, teclas)
+    assert clave == "fin"
+    assert pantallas[0] == pantallas[2] == pantallas[4]  # la raíz, siempre en su sitio
+    assert pantallas[1] == pantallas[3]  # y el submenú, también
+
+
+def test_navegar_no_deja_restos_del_menu_anterior(monkeypatch):
+    """El submenú reemplaza al menú: ni el título viejo ni renglones sueltos."""
+    _clave, pantallas = elegir_con_pila(monkeypatch, ["\r", "\x1b", "2"])
+    pantalla = pantallas[1]  # el submenú, ya dibujado donde estaba la raíz
+    assert "Raíz" not in pantalla  # el título del menú anterior ya no está
+    assert "Un verbo…" not in pantalla
+    assert pantalla.count("Submenú") == 1  # y el nuevo título, escrito una vez
 
 
 def test_con_aviso_esc_se_queda_dentro_del_menu(monkeypatch):
