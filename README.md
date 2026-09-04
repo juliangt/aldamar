@@ -48,10 +48,12 @@ historia que nace al vuelo.
   superior para jugar desde el código.
 - Una terminal. Con teclado y pantalla reales, los menús se navegan
   con flechas; en tuberías o tests, responden a texto.
-- Para el modo «Aventura Viva», opcional:
-  [Ollama](https://ollama.com) corriendo en tu propia máquina y un
-  modelo bajado (`ollama pull llama3.1:8b` va bien). Sin él, el juego
-  completo funciona igual que siempre.
+- Para el modo «Aventura Viva», opcional: un cronista. Suele ser
+  [Ollama](https://ollama.com) en tu propia máquina con un modelo
+  bajado (`ollama pull llama3.1:8b` va bien); también sirve cualquier
+  servidor externo con el protocolo de OpenAI — mira «El cronista:
+  local o externo». Sin cronista, el juego completo funciona igual
+  que siempre.
 
 ## Instalación
 
@@ -153,12 +155,13 @@ La partida guardada recuerda aventura, héroe y dificultad.
 
 ### El modo «Aventura Viva»
 
-Una experiencia opcional para quien tenga un Ollama corriendo en su
-propia máquina: eliges una premisa («el mar que calla», o una que
-escribas tú), un héroe y la dificultad, y un cronista local escribe la
-historia al volar — las llegadas, los nombres, la gente que habla, el
-desenlace. Ninguna partida se parece a otra, y el mundo se escribe
-mientras lo andas, lugar a lugar.
+Una experiencia opcional para quien tenga un cronista al alcance: el
+Ollama de tu propia máquina o un servidor externo con el protocolo de
+OpenAI. Eliges una premisa («el mar que calla», o una que escribas
+tú), un héroe y la dificultad, y el cronista escribe la historia al
+volar — las llegadas, los nombres, la gente que habla, el desenlace.
+Ninguna partida se parece a otra, y el mundo se escribe mientras lo
+andas, lugar a lugar.
 
 La mecánica nunca es cosa del modelo: un director procedural decide
 mapa, enemigos, botín y consecuencias, y todo lo que el cronista
@@ -172,10 +175,42 @@ ollama pull llama3.1:8b    # o el modelo que prefieras (7–8B van bien)
 aldamar                    # menú → «Aventura Viva…»
 ```
 
-El modo solo habla con tu propia máquina (`127.0.0.1` u `OLLAMA_HOST`):
-cero red exterior. Sin servicio, la pantalla explica cómo encenderlo y
-se vuelve al menú sin crear nada. Con `--debug`, lo hablado con el
-modelo queda en `cronista_viva.log`.
+El modo solo habla con la máquina que le digas: por defecto, tu propia
+casa (`127.0.0.1` u `OLLAMA_HOST`); con un cronista externo, el
+servidor que configures. Sin servicio, la pantalla explica cómo
+encenderlo y se vuelve al menú sin crear nada. Con `--debug`, lo
+hablado con el modelo queda en `cronista_viva.log`.
+
+#### El cronista: local o externo
+
+Por defecto, el modo narra un Ollama local. Para usar un cronista
+externo — cualquier servidor con el protocolo de OpenAI: OpenAI,
+OpenRouter, Groq, Mistral, LM Studio, vLLM… — fija el proveedor, el
+host y la clave, en `configuracion.json` o en el entorno (que manda):
+
+| Preferencia | Entorno | Qué pone |
+| ----------- | ------- | -------- |
+| `viva_proveedor` | `ALDAMAR_PROVEEDOR` | `ollama` (el local de siempre) o `api`; si falta, se infiere: con clave de API, `api` |
+| `viva_host` | `ALDAMAR_HOST` | la base del servidor, con su versión: `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`… |
+| `viva_api_key` | `ALDAMAR_API_KEY` | la clave del servidor externo |
+| `modelo_viva` | `ALDAMAR_MODELO` | el modelo que narra (p. ej. `mistralai/mistral-nemo`) |
+
+Ejemplo, con OpenRouter:
+
+```json
+{
+  "viva_proveedor": "api",
+  "viva_host": "https://openrouter.ai/api/v1",
+  "viva_api_key": "sk-or-…",
+  "modelo_viva": "mistralai/mistral-nemo"
+}
+```
+
+Ojo con el secreto: la clave escrita en `configuracion.json` queda en
+claro en disco. Si prefieres no dejarla ahí, exporta
+`ALDAMAR_API_KEY` en el entorno y deja el campo fuera del archivo. El
+Ollama local no necesita clave, y `contexto_viva` solo le aplica a él
+(los servidores externos gestionan su propio contexto).
 
 ## Configuración
 
@@ -192,6 +227,9 @@ La primera partida de verdad deja en el directorio un
 | `semilla` | `null`  | semilla de cada partida, para una campaña repetible por defecto |
 | `modelo_viva` | `null` | el modelo que narra el modo «Aventura Viva» (también `ALDAMAR_MODELO`) |
 | `contexto_viva` | `null` | el `num_ctx` del cronista (16384 si no se fija; bajarlo alivia en máquinas sin GPU) |
+| `viva_proveedor` | `null` | el tipo de cronista: `ollama` o `api` (protocolo de OpenAI); sin él, se infiere de la clave |
+| `viva_host` | `null` | el servidor del cronista (`ALDAMAR_HOST`); vacío = el Ollama local |
+| `viva_api_key` | `null` | la clave del cronista externo (mejor `ALDAMAR_API_KEY`, que no deja secreto en el archivo) |
 
 La precedencia es siempre la misma: **flag de CLI > variable de
 entorno > `configuracion.json` > valores por defecto**. El archivo solo

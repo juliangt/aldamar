@@ -759,3 +759,17 @@ Dos detalles de contrato que acompañan:
 
 El presupuesto del paso B sube a 450 tokens (`PRESUPUESTO_DATOS`): con
 criaturas, botín y detalles, los 300 se quedaban cortos.
+
+### 14.3 El cronista puede ser externo
+
+El proveedor ya no es solo Ollama. `viva_proveedor` (`ollama`/`api`),
+`viva_host` y `viva_api_key` — o `ALDAMAR_PROVEEDOR`/`ALDAMAR_HOST`/
+`ALDAMAR_API_KEY` en el entorno, que manda — apuntan el modo a
+cualquier servidor con el protocolo de OpenAI (`/chat/completions`,
+`/models`, `Authorization: Bearer`). Sin proveedor fijado, una clave
+de API infiere «api». La clase `ApiCompatible` vive junto a `Ollama`
+bajo el mismo protocolo `Proveedor`: el JSON va con
+`response_format: json_object` y el schema dentro del prompt (si el
+servidor rechaza el `response_format`, se deja de mandar), y la
+sesión, la degradación y el guardado no saben —ni les importa— quién
+narra.

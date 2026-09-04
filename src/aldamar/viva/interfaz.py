@@ -29,8 +29,10 @@ Cómo se enciende:
   3. Vuelve al menú y entra de nuevo en «Aventura Viva…».
 
 Si prefieres otro modelo, ponlo en configuracion.json
-("modelo_viva") o exporta ALDAMAR_MODELO. Sin modelo, el juego
-completo funciona igual que siempre: este modo es opcional.
+("modelo_viva") o exporta ALDAMAR_MODELO. Para un cronista externo
+(una API con el protocolo de OpenAI), configura "viva_proveedor",
+"viva_host" y "viva_api_key". Sin modelo, el juego completo funciona
+igual que siempre: este modo es opcional.
 """
 
 SIN_MODELO = """\
@@ -44,6 +46,36 @@ Bájate uno y vuelve al menú:
 con tu propia máquina). Si prefieres otro, ponlo en
 configuracion.json ("modelo_viva") o exporta ALDAMAR_MODELO.
 """
+
+SIN_SERVICIO_API = """\
+El modo «Aventura Viva» va con un cronista externo y no hay servicio a la vista.
+
+Revisa, en configuracion.json o en el entorno:
+
+  1. "viva_host" (o ALDAMAR_HOST): la base del servidor, con su
+     versión incluida — p. ej. https://api.openai.com/v1
+  2. "viva_api_key" (o ALDAMAR_API_KEY): tu clave, si el servidor la pide.
+  3. Que el servidor esté vivo y acepte el protocolo de OpenAI
+     (/chat/completions).
+
+Sin cronista, el juego completo funciona igual que siempre: este modo
+es opcional.
+"""
+
+SIN_MODELO_API = """\
+El cronista externo responde, pero no hay ningún modelo a la vista.
+
+Revisa que "modelo_viva" (o ALDAMAR_MODELO) nombre un modelo que
+exista en ese servidor, y que la clave ("viva_api_key" o
+ALDAMAR_API_KEY) sea válida. Sin cronista, el juego completo funciona
+igual que siempre.
+"""
+
+
+def _pantalla_sin_servicio(proveedor: cronista.Proveedor, entrada, salida, color: bool) -> None:
+    """El aviso de «no hay cronista», con la ayuda del tipo que toque."""
+    texto = SIN_SERVICIO_API if isinstance(proveedor, cronista.ApiCompatible) else SIN_OLLAMA
+    pantalla_completa(texto, entrada=entrada, salida=salida, color=color)
 
 
 def partida_viva(
@@ -64,12 +96,14 @@ def partida_viva(
     Con `debug`, lo hablado con el modelo queda en `cronista_viva.log`.
     """
     proveedor = cronista.proveedor_por_defecto()
+    es_api = isinstance(proveedor, cronista.ApiCompatible)
     if not proveedor.disponible():
-        pantalla_completa(SIN_OLLAMA, entrada=entrada, salida=salida, color=bool(color))
+        _pantalla_sin_servicio(proveedor, entrada, salida, bool(color))
         return None
     if not proveedor.modelos():
         # el servicio vive pero no hay nada que narre: aviso y fuera
-        pantalla_completa(SIN_MODELO, entrada=entrada, salida=salida, color=bool(color))
+        texto = SIN_MODELO_API if es_api else SIN_MODELO
+        pantalla_completa(texto, entrada=entrada, salida=salida, color=bool(color))
         return None
     menu_color = bool(color)
     elegido = _elegir_modelo(entrada, salida, menu_color, flechas, proveedor)
@@ -158,7 +192,11 @@ def _elegir_modelo(
 
 
 def _con_modelo(proveedor: cronista.Proveedor, modelo: str) -> cronista.Proveedor:
-    """El mismo proveedor, con otro modelo (mismo hospedaje y contexto)."""
+    """El mismo proveedor, con otro modelo (mismo hospedaje y clave)."""
+    if isinstance(proveedor, cronista.ApiCompatible):
+        return cronista.ApiCompatible(
+            modelo=modelo, hospedaje=proveedor.hospedaje, api_key=proveedor.api_key
+        )
     if isinstance(proveedor, cronista.Ollama):
         return cronista.Ollama(
             modelo=modelo,

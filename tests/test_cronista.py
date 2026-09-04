@@ -19,12 +19,20 @@ from aldamar.motor import configuracion
 from aldamar.viva import cronista
 
 
+def _sacar(server, metodo: str, ruta: str):
+    """La respuesta enlatada; si es una lista, va soltando en orden."""
+    dato = server.respuestas.get((metodo, ruta), (200, b"{}"))
+    if isinstance(dato, list):
+        dato = dato.pop(0) if dato else (200, b"{}")
+    return dato
+
+
 class _Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args):  # silencio: los tests miran `srv.pedidos`
         pass
 
     def do_GET(self):
-        estado, cuerpo = self.server.respuestas.get(("GET", self.path), (200, b"{}"))
+        estado, cuerpo = _sacar(self.server, "GET", self.path)
         self.send_response(estado)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -32,8 +40,9 @@ class _Handler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         largo = int(self.headers.get("Content-Length", 0))
+        self.server.cabeceras.append(dict(self.headers))
         self.server.pedidos.append((self.path, json.loads(self.rfile.read(largo) or b"{}")))
-        estado, cuerpo = self.server.respuestas.get(("POST", self.path), (200, b"{}"))
+        estado, cuerpo = _sacar(self.server, "POST", self.path)
         self.send_response(estado)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -50,7 +59,8 @@ def servidor():
     srv = _Servidor(("127.0.0.1", 0), _Handler)
     srv.respuestas = {}
     srv.pedidos = []
-    hilo = threading.Thread(target=srv.serve_forever, daemon=True)
+    srv.cabeceras = []
+    hilo = threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True)
     hilo.start()
     try:
         yield srv
@@ -183,8 +193,10 @@ def test_generar_json_con_algo_que_no_es_objeto_da_cronista_error(servidor):
 # ── la configuración de hospedaje y modelo ───────────────────────────────
 
 
-def test_el_hospedaje_honra_ollama_host(monkeypatch):
+def test_el_hospedaje_honra_ollama_host(monkeypatch, tmp_path):
     monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    monkeypatch.delenv("ALDAMAR_HOST", raising=False)
+    monkeypatch.chdir(tmp_path)  # sin configuracion.json ajeno en medio
     assert cronista.hospedaje_por_defecto() == "http://127.0.0.1:11434"
     monkeypatch.setenv("OLLAMA_HOST", "192.168.1.5:11434")
     assert cronista.hospedaje_por_defecto() == "http://192.168.1.5:11434"
@@ -204,8 +216,12 @@ def test_el_modelo_fijado_viene_del_entorno_o_de_la_configuracion(monkeypatch, t
     assert cronista.modelo_fijado() == "llama3.1:8b"  # el entorno manda
 
 
-def test_proveedor_por_defecto_honra_al_modelo_del_entorno(monkeypatch):
+def test_proveedor_por_defecto_honra_al_modelo_del_entorno(monkeypatch, tmp_path):
     monkeypatch.setenv("ALDAMAR_MODELO", "mifijo:8b")
+    monkeypatch.delenv("ALDAMAR_HOST", raising=False)
+    monkeypatch.delenv("ALDAMAR_API_KEY", raising=False)
+    monkeypatch.delenv("ALDAMAR_PROVEEDOR", raising=False)
+    monkeypatch.chdir(tmp_path)  # sin configuracion.json ajeno en medio
     proveedor = cronista.proveedor_por_defecto()
     assert isinstance(proveedor, cronista.Ollama)
     assert proveedor.modelo == "mifijo:8b"
@@ -279,3 +295,211 @@ def test_un_modelo_thinking_se_le_pide_que_no_piense(servidor):
     calla.generar("s", "p")
     assert servidor.pedidos[0][1].get("think") is False  # el thinking, callado
     assert "think" not in servidor.pedidos[1][1]  # el que no piensa, tal cual
+
+
+# ── el cronista externo: el protocolo de OpenAI ──────────────────────────
+
+CHAT = {"choices": [{"message": {"content": "hola mundo"}}]}
+
+
+def cliente_api(
+    srv, modelo: str = "nemo-remoto", clave: str = "sk-prueba"
+) -> cronista.ApiCompatible:
+    return cronista.ApiCompatible(modelo=modelo, hospedaje=hospedaje(srv), api_key=clave)
+
+
+def test_la_api_lista_modelos_y_esta_disponible(servidor):
+    servidor.respuestas[("GET", "/models")] = (
+        200,
+        json.dumps({"data": [{"id": "m-uno"}, {"id": "m-dos"}]}).encode(),
+    )
+    assert cliente_api(servidor).disponible()
+    assert cliente_api(servidor).modelos() == ["m-uno", "m-dos"]
+
+
+def test_la_api_con_clave_rechazada_no_esta_disponible(servidor):
+    servidor.respuestas[("GET", "/models")] = (401, b'{"error": "clave mala"}')
+    assert not cliente_api(servidor).disponible()
+    assert cliente_api(servidor).modelos() == []
+
+
+def test_la_api_sin_servicio_no_esta_disponible():
+    fria = cronista.ApiCompatible(modelo="m", hospedaje=_puerto_apagado(), api_key="sk")
+    assert not fria.disponible()
+    assert fria.modelos() == []
+
+
+def test_la_api_sin_host_tampoco_esta_disponible():
+    desnuda = cronista.ApiCompatible(modelo="m")
+    assert not desnuda.disponible()
+    assert desnuda.modelos() == []
+
+
+def test_la_api_genera_prosa_por_chat_completions(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (200, json.dumps(CHAT).encode())
+    texto = cliente_api(servidor).generar("sistema", "prompt", num_predict=600)
+    assert texto == "hola mundo"
+    ((ruta, carga),) = servidor.pedidos
+    assert ruta == "/chat/completions"
+    assert carga["model"] == "nemo-remoto"
+    assert carga["messages"][0] == {"role": "system", "content": "sistema"}
+    assert carga["messages"][1]["content"] == "prompt"
+    assert carga["temperature"] == 0.9
+    assert carga["max_tokens"] == 600
+    assert carga["stream"] is False
+    assert servidor.cabeceras[0].get("Authorization") == "Bearer sk-prueba"
+
+
+def test_la_api_sin_clave_no_manda_autorizacion(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (200, json.dumps(CHAT).encode())
+    desnuda = cronista.ApiCompatible(modelo="m", hospedaje=hospedaje(servidor))
+    assert desnuda.generar("s", "p") == "hola mundo"
+    assert "Authorization" not in servidor.cabeceras[0]
+
+
+def test_la_api_hace_streaming_sse(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (
+        200,
+        (
+            b'data: {"choices":[{"delta":{"content":"un "}}]}\n\n'
+            b'data: {"choices":[{"delta":{"content":"trozo"}}]}\n\n'
+            b"data: [DONE]\n\n"
+        ),
+    )
+    trozos: list[str] = []
+    texto = cliente_api(servidor).generar("s", "p", stream_en=trozos.append)
+    assert texto == "un trozo"
+    assert trozos == ["un ", "trozo"]
+    assert servidor.pedidos[0][1]["stream"] is True
+
+
+def test_la_api_genera_json_con_response_format_y_schema_en_el_prompt(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (
+        200,
+        json.dumps({"choices": [{"message": {"content": '{"vida": 3}'}}]}).encode(),
+    )
+    schema = {"type": "object", "properties": {"vida": {"type": "integer"}}}
+    assert cliente_api(servidor).generar_json("s", "p", schema) == {"vida": 3}
+    ((_, carga),) = servidor.pedidos
+    assert carga["response_format"] == {"type": "json_object"}
+    assert '"vida"' in carga["messages"][1]["content"]  # el schema, dentro del prompt
+
+
+def test_la_api_reintenta_sin_response_format_si_el_servidor_lo_rechaza(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = [
+        (400, b'{"error": "response_format no soportado"}'),
+        (200, json.dumps({"choices": [{"message": {"content": '{"ok": true}'}}]}).encode()),
+    ]
+    cliente = cliente_api(servidor)
+    assert cliente.generar_json("s", "p", {}) == {"ok": True}
+    assert servidor.pedidos[0][1].get("response_format")
+    assert "response_format" not in servidor.pedidos[1][1]
+    # y a partir de aquí, ni lo intenta de nuevo
+    servidor.respuestas[("POST", "/chat/completions")] = (
+        200,
+        json.dumps({"choices": [{"message": {"content": '{"mas": 1}'}}]}).encode(),
+    )
+    assert cliente.generar_json("s", "p", {}) == {"mas": 1}
+    assert "response_format" not in servidor.pedidos[2][1]
+
+
+def test_la_api_con_json_basura_da_cronista_error(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (
+        200,
+        json.dumps({"choices": [{"message": {"content": "no soy json"}}]}).encode(),
+    )
+    with pytest.raises(cronista.CronistaError):
+        cliente_api(servidor).generar_json("s", "p", {})
+
+
+def test_un_http_400_agotado_da_cronista_error(servidor):
+    servidor.respuestas[("POST", "/chat/completions")] = (400, b'{"error": "nada"}')
+    with pytest.raises(cronista.CronistaError):
+        cliente_api(servidor).generar_json("s", "p", {})
+
+
+# ── local o externo: la resolución del proveedor ─────────────────────────
+
+
+def _sin_entorno_cronista(monkeypatch) -> None:
+    for clave in (
+        "ALDAMAR_MODELO",
+        "ALDAMAR_HOST",
+        "ALDAMAR_API_KEY",
+        "ALDAMAR_PROVEEDOR",
+        "OLLAMA_HOST",
+    ):
+        monkeypatch.delenv(clave, raising=False)
+
+
+def test_sin_configuracion_el_proveedor_es_el_ollama_local(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ALDAMAR_MODELO", "mifijo:8b")  # sin mirar /api/tags
+    proveedor = cronista.proveedor_por_defecto()
+    assert isinstance(proveedor, cronista.Ollama)
+    assert proveedor.hospedaje == cronista.HOSPEDAJE_DEFECTO
+
+
+def test_con_host_y_clave_en_el_entorno_el_cronista_es_externo(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ALDAMAR_HOST", "https://api.example.com/v1")
+    monkeypatch.setenv("ALDAMAR_API_KEY", "sk-entorno")
+    monkeypatch.setenv("ALDAMAR_MODELO", "nemo")
+    proveedor = cronista.proveedor_por_defecto()
+    assert isinstance(proveedor, cronista.ApiCompatible)
+    assert proveedor.hospedaje == "https://api.example.com/v1"
+    assert proveedor.api_key == "sk-entorno"
+    assert proveedor.modelo == "nemo"
+
+
+def test_el_proveedor_api_sale_de_la_configuracion(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    config = configuracion.cargar()
+    config.viva_proveedor = "api"
+    config.viva_host = "https://openrouter.example/api/v1"
+    config.viva_api_key = "sk-archivo"
+    config.modelo_viva = "nemo-remoto"
+    configuracion.guardar(config)
+    proveedor = cronista.proveedor_por_defecto()
+    assert isinstance(proveedor, cronista.ApiCompatible)
+    assert proveedor.hospedaje == "https://openrouter.example/api/v1"
+    assert proveedor.api_key == "sk-archivo"
+    assert proveedor.modelo == "nemo-remoto"
+
+
+def test_la_clave_sola_infiere_el_proveedor_externo(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ALDAMAR_API_KEY", "sk-solo")
+    assert cronista.proveedor_fijado() == "api"
+    # sin host no hay a dónde llamar: disponible False, pero sin explotar
+    proveedor = cronista.proveedor_por_defecto()
+    assert isinstance(proveedor, cronista.ApiCompatible)
+    assert not proveedor.disponible()
+
+
+def test_viva_proveedor_ollama_manda_sobre_la_clave(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ALDAMAR_API_KEY", "sk-solo")
+    monkeypatch.setenv("ALDAMAR_MODELO", "mifijo:8b")  # sin mirar /api/tags
+    config = configuracion.cargar()
+    config.viva_proveedor = "ollama"
+    configuracion.guardar(config)
+    assert cronista.proveedor_fijado() == "ollama"
+    assert isinstance(cronista.proveedor_por_defecto(), cronista.Ollama)
+
+
+def test_el_hospedaje_por_defecto_prefiere_aldamar_host_a_viva_host(monkeypatch, tmp_path):
+    _sin_entorno_cronista(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    assert cronista.hospedaje_por_defecto() == cronista.HOSPEDAJE_DEFECTO
+    config = configuracion.cargar()
+    config.viva_host = "http://192.168.1.5:11434"
+    configuracion.guardar(config)
+    assert cronista.hospedaje_por_defecto() == "http://192.168.1.5:11434"
+    monkeypatch.setenv("ALDAMAR_HOST", "http://otro:11434")
+    assert cronista.hospedaje_por_defecto() == "http://otro:11434"

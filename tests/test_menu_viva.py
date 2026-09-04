@@ -16,7 +16,7 @@ from aldamar.motor import configuracion
 from aldamar.motor.juego import main
 from aldamar.viva import cronista
 from aldamar.viva.cronista import ProveedorFalso
-from aldamar.viva.interfaz import partida_viva
+from aldamar.viva.interfaz import _con_modelo, partida_viva
 
 PROLOGO = "Prólogo de latón, dos párrafos y a jugar." * 2
 EPILOGOS = {
@@ -37,8 +37,14 @@ DATOS_P1 = {
 @pytest.fixture(autouse=True)
 def entorno_limpio(monkeypatch, tmp_path):
     """Ni Ollama real ni restos de configuración: cada test, su mundo."""
-    monkeypatch.delenv("ALDAMAR_MODELO", raising=False)
-    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    for clave in (
+        "ALDAMAR_MODELO",
+        "OLLAMA_HOST",
+        "ALDAMAR_HOST",
+        "ALDAMAR_API_KEY",
+        "ALDAMAR_PROVEEDOR",
+    ):
+        monkeypatch.delenv(clave, raising=False)
     monkeypatch.chdir(tmp_path)
 
 
@@ -98,6 +104,36 @@ def test_con_ollama_pero_sin_ningun_modelo_instalado_avisa_y_no_continua(monkeyp
     texto = "\n".join(pantalla)
     assert "ningún modelo instalado" in texto
     assert "ollama pull" in texto
+
+
+# ── el cronista externo (protocolo de OpenAI) ────────────────────────────
+
+
+def test_con_cronista_externo_apagado_la_pantalla_habla_de_host_y_clave(monkeypatch):
+    frio = cronista.ApiCompatible(modelo="m", hospedaje="http://127.0.0.1:9", api_key="sk")
+    monkeypatch.setattr(cronista, "proveedor_por_defecto", lambda: frio)
+    pantalla: list[str] = []
+    juego = partida_viva(
+        entrada=EntradaTipeada([]),
+        salida=pantalla.append,
+        color=False,
+        flechas=False,
+        semilla=7,
+    )
+    assert juego is None
+    texto = "\n".join(pantalla)
+    assert "viva_host" in texto and "viva_api_key" in texto
+
+
+def test_cambiar_modelo_en_la_api_conserva_hospedaje_y_clave():
+    api = cronista.ApiCompatible(
+        modelo="m-uno", hospedaje="https://api.example.com/v1", api_key="sk-uno"
+    )
+    otro = _con_modelo(api, "m-dos")
+    assert isinstance(otro, cronista.ApiCompatible)
+    assert otro.modelo == "m-dos"
+    assert otro.hospedaje == "https://api.example.com/v1"
+    assert otro.api_key == "sk-uno"
 
 
 def test_con_ollama_arranca_la_partida(monkeypatch):
