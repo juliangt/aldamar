@@ -264,8 +264,8 @@ lo aprueba a mano — Actions → CI → «Review deployments» → Approve and
 deploy. Sus checks son requisito para mergear a `main`: sin una
 corrida aprobada y en verde sobre el último commit, el merge queda
 bloqueado. La corrida trae las tres piezas: ruff y mypy, y la suite
-completa sobre Ubuntu, macOS y Windows con Python 3.11, 3.12 y 3.13 —
-donde además se construye el wheel, se instala solo en un entorno
+completa sobre Ubuntu, macOS y Windows con Python 3.13 — donde además
+se construye el wheel, se instala solo en un entorno
 limpio y se comprueba que arranca con sus aventuras, dones y
 dificultades dentro (los tres SO, que es donde vive el código de
 teclado y audio, dejan de ser terra incógnita).
