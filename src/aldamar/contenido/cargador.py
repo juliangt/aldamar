@@ -627,7 +627,7 @@ def _chequea_referencias(
                 raise _mal(origen, f"personajes[{clave!r}]: lleva {item!r}, que no existe en items")
 
 
-# ── fragmentos (el modo «Aventura Viva», issue 22, y el autor offline #55) ─
+# ── fragmentos (el modo «Aventura Viva» y el autor offline) ───────────────
 
 def valida_fragmento(
     fragmento: Any,

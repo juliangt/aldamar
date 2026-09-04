@@ -1,4 +1,4 @@
-"""Lo que el modo vivo le pide al cronista, y cómo se lo pide (issue 22).
+"""Lo que el modo vivo le pide al cronista, y cómo se lo pide.
 
 Constructores puros de prompts, sin red. El reparto del trabajo:
 

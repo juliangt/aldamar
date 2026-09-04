@@ -1,4 +1,4 @@
-"""El modo «Aventura Viva»: una historia generada al vuelo (issue 22).
+"""El modo «Aventura Viva»: una historia generada al vuelo.
 
 Import perezoso garantizado: este paquete solo se carga cuando el
 jugador entra al modo (menú principal → «Aventura Viva…»); sin él, el

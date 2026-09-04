@@ -1,4 +1,4 @@
-"""Las pantallas del modo «Aventura Viva» (issue 22): premisa, héroe, arranque.
+"""Las pantallas del modo «Aventura Viva»: premisa, héroe, arranque.
 
 Reutiliza `elegir_opcion` y `pantalla_completa` de la interfaz del
 juego. La detección de Ollama falla rápido y sin traceback: sin

@@ -26,7 +26,7 @@ class Configuracion:
     flechas: bool = True  # menús navegables con ↑/↓ (como --sin-flechas, al revés)
     splash: bool = True  # pantalla de presentación con el sello y su jingle
     semilla: int | None = None  # semilla de cada partida, si se quiere repetible
-    modelo_viva: str | None = None  # modelo del modo «Aventura Viva» (issue 22);
+    modelo_viva: str | None = None  # modelo del modo «Aventura Viva»;
     # si falta, manda ALDAMAR_MODELO y, sin ella, el primero instalado
     contexto_viva: int | None = None  # num_ctx del modelo vivo (16384 por
     # defecto); bajarlo (p. ej. 8192) alivia máquinas sin GPU

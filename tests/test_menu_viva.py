@@ -1,6 +1,6 @@
 """La entrada del modo «Aventura Viva» en el menú y sus pantallas.
 
-El modo es opcional por contrato (issue 22): sin Ollama, la pantalla
+El modo es opcional por contrato: sin Ollama, la pantalla
 explica cómo encenderlo y no se crea ninguna sesión. Y la elección de
 modelo respeta lo fijado por el jugador; con varios instalados y nada
 fijado, pregunta.

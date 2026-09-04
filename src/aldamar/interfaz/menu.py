@@ -124,7 +124,7 @@ def menu_principal(
             return Eleccion("salir")
 
         if clave == "viva":
-            # el modo vivo (issue 22) pregunta todo dentro: premisa, héroe
+            # el modo vivo pregunta todo dentro: premisa, héroe
             # y dificultad; el enrutado lo hace `main`
             return Eleccion("viva")
 

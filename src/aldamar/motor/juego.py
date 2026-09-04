@@ -129,7 +129,7 @@ class Juego:
         self._turno_lineas: list[str] = []
         # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
         self.stats = Estadisticas()
-        # el modo «Aventura Viva» (issue 22): None en las partidas
+        # el modo «Aventura Viva»: None en las partidas
         # clásicas; su sesión rellena lugares al pisarlos y viaja en el
         # guardado bajo la clave "viva"
         self.viva = viva
@@ -828,8 +828,8 @@ class Juego:
         elif cmd in ("atacar", "huir", "cuerno"):
             self.escribir("No hay combate aquí. Viaja con  ir <destino>.")
         elif self.viva is not None and (comando := self.viva.interpretar(linea)):
-            # el intérprete del modo vivo (issue 22, Nivel 2) solo puede
-            # devolver una orden de esta misma tabla: se re-despacha una vez
+            # el intérprete del modo vivo solo puede devolver una orden de
+            # esta misma tabla: se re-despacha una vez
             self._ejecutar(comando)
         else:
             self.tenue("No entiendo eso. Escribe  ayuda  para ver los comandos.")
@@ -1097,7 +1097,7 @@ class Juego:
         else:
             self.tenue("\n" + "─" * 40)  # en el relato tipeado, la raya marca la escena
         if self.viva is not None:
-            # el modo vivo rellena el lugar si aún era un borrador (issue 22);
+            # el modo vivo rellena el lugar si aún era un borrador;
             # puede reemplazar `self.av` entera: el lugar se vuelve a pedir
             self.viva.al_entrar(self, destino.id)
             destino = self.aqui()
@@ -1576,7 +1576,7 @@ class Juego:
 def _aventura_del_guardado(estado: dict, ruta: str) -> Aventura:
     """La aventura que trae un guardado: la registrada, o la viva reconstruida.
 
-    Una partida viva (issue 22) lleva su aventura generada dentro del
+    Una partida viva lleva su aventura generada dentro del
     propio archivo: `cargar_aventura_dict` sobre lo acumulado basta, sin
     modelo instalado y sin depender del registro de aventuras.
     """
@@ -1735,7 +1735,7 @@ def main(
                     audio=audio,
                 )
             if eleccion.accion == "viva":
-                # el modo vivo (issue 22): premisa, héroe y arranque, todo
+                # el modo vivo: premisa, héroe y arranque, todo
                 # suyo; import perezoso: sin modo vivo, ni se carga el
                 # paquete. Si no arranca (sin Ollama, sin modelo, o se
                 # arrepintió), el aviso se dio y el menú vuelve a mostrarse
@@ -1816,7 +1816,7 @@ def main(
                 # nueva partida al instante: misma aventura, héroe y
                 # dificultad, y el nombre puesto se conserva. Una partida
                 # viva se rejuega estática: el mundo ya generado queda
-                # como contenido, sin cronista (issue 22)
+                # como contenido, sin cronista
                 juego = Juego(
                     aventura=juego.av,
                     dificultad=juego.dificultad,

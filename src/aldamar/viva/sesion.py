@@ -1,4 +1,4 @@
-"""La sesión viva: el orquestador del modo (issue 22).
+"""La sesión viva: el orquestador del modo.
 
 El único módulo que habla con cronista, director y memoria a la vez, y
 la única puerta por la que entra contenido generado al juego:
@@ -166,10 +166,10 @@ class SesionViva:
         )
 
     def interpretar(self, linea: str) -> str | None:
-        """La entrada libre traducida a un comando del motor (Nivel 2).
+        """La entrada libre traducida a un comando del motor.
 
-        Pendiente en el spike (Nivel 1): sin intérprete, la línea que no
-        corresponde a ningún comando queda en el aviso de siempre.
+        Pendiente: sin intérprete, la línea que no corresponde a ningún
+        comando queda en el aviso de siempre.
         """
         return None
 

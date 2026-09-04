@@ -1,4 +1,4 @@
-"""La memoria de la sesión: hilo rodante y hechos atómicos (issue 22).
+"""La memoria de la sesión: hilo rodante y hechos atómicos.
 
 Los flags del motor recuerdan lo mecánico; esto recuerda lo narrable.
 Los `hechos` son frases cortas en pasado («Ruy prometió llevar la

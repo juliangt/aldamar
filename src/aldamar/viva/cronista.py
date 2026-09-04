@@ -1,6 +1,6 @@
 """El cronista: cliente del modelo local (Ollama) con la biblioteca estándar.
 
-El modo «Aventura Viva» (issue 22) habla con un Ollama en la propia
+El modo «Aventura Viva» habla con un Ollama en la propia
 máquina: `urllib` de stdlib, cero dependencias y cero red — el único
 hospedaje es localhost (u `OLLAMA_HOST`). `Proveedor` es la costura para
 los tests: `ProveedorFalso` responde enlatado y en CI jamás se llama a

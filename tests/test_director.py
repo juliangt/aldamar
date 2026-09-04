@@ -1,6 +1,6 @@
 """El director del modo vivo: esqueleto válido, determinista y sin cronista.
 
-La garantía central del Nivel 1 (issue 22): con tablas y una semilla
+La garantía central del piso procedural: con tablas y una semilla
 solos — sin modelo — la aventura completa nace válida y se rellena
 entera con plantillas. Si esto falla, el piso procedural no existe.
 """

@@ -1,7 +1,7 @@
 """El director: tablas + RNG que deciden TODA la mecánica del modo vivo.
 
-Del issue 22 (Nivel 1): el director produce plantillas de evento del
-vocabulario con huecos de texto — el cronista solo redacta y nombra.
+El director produce plantillas de evento del vocabulario con huecos de
+texto — el cronista solo redacta y nombra.
 Lo que aquí se decide (mapa, enemigos, botín, decisiones, curva de
 actos) sale de `datos.json` con una `random.Random(semilla)`: el mismo
 esqueleto con la misma semilla, con modelo o sin él. `plantilla()` es

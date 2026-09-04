@@ -1,6 +1,6 @@
 """La sesión viva: sanear, ingerir, reparar, degradar y jugarse entera.
 
-El contrato del issue 22: todo lo que el cronista escribe pasa por
+El contrato del modo: todo lo que el cronista escribe pasa por
 `cargar_aventura_dict`; el error de validación vuelve al modelo; si el
 modelo no está (o insiste), la plantilla del director sostiene la
 partida; y una partida viva guardada se carga y se sigue jugando sin

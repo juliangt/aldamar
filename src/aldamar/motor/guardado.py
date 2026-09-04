@@ -76,7 +76,7 @@ def _de_0_a_1(estado: dict) -> dict:
 
 
 def _de_1_a_2(estado: dict) -> dict:
-    """1 → 2: la sesión del modo «Aventura Viva» viaja en `viva` (issue 22).
+    """1 → 2: la sesión del modo «Aventura Viva» viaja en `viva`.
 
     En las partidas clásicas es `None` y no cambia nada; en las vivas
     trae el dict de la aventura generada, la memoria de la sesión y los

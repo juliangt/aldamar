@@ -47,7 +47,7 @@ def test_la_migracion_va_campo_a_campo():
     # y el camino completo llega hasta la versión actual
     estado = migrar(dict(crudo), 0)
     assert estado["version"] == guardado.VERSION
-    assert estado["viva"] is None  # el modo vivo (issue 22) nace apagado
+    assert estado["viva"] is None  # el modo vivo nace apagado
     # lo que el guardado traía queda tal cual
     for campo in ("aventura", "dificultad", "personaje", "nombre", "vida",
                   "monedas", "corrupcion", "inventario", "companeros",
