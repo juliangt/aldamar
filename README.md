@@ -258,12 +258,16 @@ uv run mypy src        # tipos
 uv run python -m aldamar --semilla 7
 ```
 
-El CI corre las tres piezas en cada push: ruff y mypy, y la suite
-completa sobre Ubuntu, macOS y Windows con Python 3.11, 3.12 y 3.13 —
-donde además se construye el wheel, se instala solo en un entorno
-limpio y se comprueba que arranca con sus aventuras, dones y
-dificultades dentro (los tres SO, que es donde vive el código de
-teclado y audio, dejan de ser terra incógnita).
+El pipeline no corre solo: se dispara a mano (`gh workflow run
+ci.yml --ref <rama>`, o Actions → CI → Run workflow) y sus checks son
+requisito para mergear a `main`: sin una corrida en verde sobre el
+último commit de la rama, el merge queda bloqueado. La corrida trae
+las tres piezas: ruff y mypy, y la suite completa sobre Ubuntu, macOS
+y Windows con Python 3.11, 3.12 y 3.13 — donde además se construye el
+wheel, se instala solo en un entorno limpio y se comprueba que
+arranca con sus aventuras, dones y dificultades dentro (los tres SO,
+que es donde vive el código de teclado y audio, dejan de ser terra
+incógnita).
 
 La semilla hace el juego reproducible: los tests usan una partida
 completa scripted de Vegaverde a la cumbre, y la sanidad del mapa corre

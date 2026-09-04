@@ -1,12 +1,17 @@
 # CI de Aldamar (issue 14): ruff, mypy y pytest en los tres sistemas,
 # más la prueba de empaquetado del issue 20 (el wheel se construye, se
 # instala solo y arranca con sus JSON de datos, en cada SO).
+#
+# El pipeline NO corre solo: se dispara a mano (Actions → CI → Run
+# workflow, o `gh workflow run ci.yml --ref <rama>`) contra la rama del
+# PR que quiere mergearse. Sus checks son requisito de la protección de
+# `main`: sin una corrida manual en verde sobre el último commit, el
+# merge queda bloqueado. Al pushear cambios nuevos, los checks quedan
+# viejos y hay que volver a dispararlo.
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   calidad:
