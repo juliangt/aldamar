@@ -1,0 +1,27 @@
+# Release (issue 20): al etiquetar una versión (v*), construye el
+# paquete y publica una GitHub Release con el sdist y el wheel como
+# artefactos. Las notas se generan de las etiquetas y PRs del tramo.
+# La publicación en PyPI queda para cuando haya cuenta de publisher:
+# mientras tanto, `uv tool install git+https://github.com/juliangt/aldamar.git`
+# instala el juego desde el repositorio.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv build
+      - name: Publicar la release con los artefactos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --title "Aldamar $GITHUB_REF_NAME"

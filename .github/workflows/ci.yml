@@ -1,0 +1,57 @@
+# CI de Aldamar (issue 14): ruff, mypy y pytest en los tres sistemas,
+# más la prueba de empaquetado del issue 20 (el wheel se construye, se
+# instala solo y arranca con sus JSON de datos, en cada SO).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  calidad:
+    name: ruff + mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run mypy src
+
+  pruebas:
+    name: pytest + wheel · ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest
+      # issue 20: instalar el wheel en un entorno limpio (solo él, sin el
+      # repo) y confirmar que el entry point vive y los datos viajan dentro
+      - run: uv build
+      - name: El wheel se instala solo y trae sus datos
+        shell: bash
+        run: |
+          uv run --no-project --with dist/aldamar-*.whl aldamar --version
+          uv run --no-project --with dist/aldamar-*.whl python -c "
+          import aldamar.datos
+          from aldamar.contenido.aventura import AVENTURAS
+          from aldamar.contenido.rasgos import RASGOS
+          from aldamar.motor.dificultad import DIFICULTADES, DIFICULTAD_POR_DEFECTO
+          assert len(AVENTURAS) >= 1, 'las aventuras no viajaron con el wheel'
+          assert set(DIFICULTADES) == {'paseo', 'camino', 'ceniza'}
+          assert DIFICULTAD_POR_DEFECTO == 'camino'
+          assert len(RASGOS) >= 1, 'los dones no viajaron con el wheel'
+          print('wheel ok:', len(AVENTURAS), 'aventuras ·', len(DIFICULTADES), 'dificultades ·', len(RASGOS), 'dones')
+          "

@@ -1,5 +1,7 @@
 # Aldamar
 
+[![CI](https://github.com/juliangt/aldamar/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangt/aldamar/actions/workflows/ci.yml)
+
 Aventuras de fantasía épica original para la terminal, en español.
 El amuleto que durmió veinte generaciones acaba de despertar: elígete
 un héroe, crúzate medio continente y devuélvelo al fuego que lo vio
@@ -11,6 +13,19 @@ nacer. Y cuando el fuego se apague, quedará mucho humo que recoger.
 > nombres, lugares ni textos de franquicias o libros con derechos.
 
 ## Cómo jugar
+
+Sin clonar nada, desde cualquier sitio (requiere [`uv`](https://docs.astral.sh/uv/)):
+
+```bash
+uv tool install git+https://github.com/juliangt/aldamar.git
+aldamar
+```
+
+(o descarga el wheel de una
+[release](https://github.com/juliangt/aldamar/releases) y ejecuta
+`uv tool install aldamar-*.whl`.)
+
+Para jugar con el código delante, clona el repositorio y:
 
 ```bash
 uv sync
@@ -238,8 +253,17 @@ En combate: `atacar`, `usar <cosa>`, `corazon`, `cuerno`, `huir`, `estado`.
 
 ```bash
 uv run pytest          # suite completa, incluida una partida scripted
+uv run ruff check .    # estilo y errores baratos
+uv run mypy src        # tipos
 uv run python -m aldamar --semilla 7
 ```
+
+El CI corre las tres piezas en cada push: ruff y mypy, y la suite
+completa sobre Ubuntu, macOS y Windows con Python 3.11, 3.12 y 3.13 —
+donde además se construye el wheel, se instala solo en un entorno
+limpio y se comprueba que arranca con sus aventuras, dones y
+dificultades dentro (los tres SO, que es donde vive el código de
+teclado y audio, dejan de ser terra incógnita).
 
 La semilla hace el juego reproducible: los tests usan una partida
 completa scripted de Vegaverde a la cumbre, y la sanidad del mapa corre
