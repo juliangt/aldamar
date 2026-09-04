@@ -128,7 +128,7 @@ def test_menu_principal_preset_personaje_invalido_avisa_y_pregunta():
 
 def test_menu_principal_cargar_pide_archivo():
     eleccion = menu_principal(
-        entrada=EntradaTipeada(["2", "mis_guardados.json"]),
+        entrada=EntradaTipeada(["3", "mis_guardados.json"]),
         salida=lambda _t: None,
     )
     assert eleccion.accion == "cargar"

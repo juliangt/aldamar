@@ -26,6 +26,10 @@ class Configuracion:
     flechas: bool = True  # menús navegables con ↑/↓ (como --sin-flechas, al revés)
     splash: bool = True  # pantalla de presentación con el sello y su jingle
     semilla: int | None = None  # semilla de cada partida, si se quiere repetible
+    modelo_viva: str | None = None  # modelo del modo «Aventura Viva» (issue 22);
+    # si falta, manda ALDAMAR_MODELO y, sin ella, el primero instalado
+    contexto_viva: int | None = None  # num_ctx del modelo vivo (16384 por
+    # defecto); bajarlo (p. ej. 8192) alivia máquinas sin GPU
 
 
 def defecto() -> Configuracion:
@@ -53,6 +57,12 @@ def cargar(ruta: str = ARCHIVO_CONFIGURACION) -> Configuracion:
         if campo.name == "semilla":
             if valor is None or (isinstance(valor, int) and not isinstance(valor, bool)):
                 config.semilla = valor
+        elif campo.name == "modelo_viva":
+            if valor is None or isinstance(valor, str):
+                config.modelo_viva = valor
+        elif campo.name == "contexto_viva":
+            if valor is None or (isinstance(valor, int) and not isinstance(valor, bool)):
+                config.contexto_viva = valor
         elif isinstance(valor, bool):
             setattr(config, campo.name, valor)
     return config
