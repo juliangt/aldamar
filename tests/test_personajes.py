@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import pytest
+from conftest import AVENTURA, CAMINO, EntradaTipeada
 
 from aldamar.contenido.aventura import PersonajeInicial
-from aldamar.motor.juego import Juego
 from aldamar.contenido.personajes import Enemigo
 from aldamar.contenido.rasgos import RASGOS
-
-from conftest import AVENTURA, CAMINO, EntradaTipeada
+from aldamar.motor.juego import Juego
 
 
 def test_hay_cuatro_heroes_y_todos_cargan_el_corazon():

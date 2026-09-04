@@ -185,41 +185,30 @@ class Enemigo(Combatiente):
 
 
 @dataclass
-class Companero:
-    """Aliado que viaja y pelea con el jugador."""
+class Companero(Combatiente):
+    """Aliado que viaja y pelea con el jugador.
 
-    clave: str
-    nombre: str
-    vida: int
-    vida_max: int
-    ataque: int
-    defensa: int = 0
+    `vivo` y `recibir` vienen de `Combatiente`; `viva` es el recordatorio
+    persistido en la partida (una compañera caída no pelea más).
+    """
+
+    clave: str = ""
     viva: bool = True
-
-    @property
-    def vivo(self) -> bool:
-        return self.vida > 0
-
-    def recibir(self, dano: int) -> int:
-        efectivo = max(1, dano - self.defensa)
-        self.vida = max(0, self.vida - efectivo)
-        return efectivo
-
-    def como_combatiente(self) -> Combatiente:
-        return Combatiente(self.nombre, self.vida, self.vida_max, self.ataque, self.defensa)
 
 
 @dataclass
-class Jugador:
+class Jugador(Combatiente):
     """El héroe elegido: lleva los rasgos de su ficha sobre sus hombros.
 
     La progresión de una campaña cabe en dos campos: `experiencia`
     acumulada y `nivel` (1..len(XP_NIVEL) + 1). El equipamiento es lo
     que declara `equipado` —clave de item por tipo—, no «lo mejor del
     inventario»: llevar y llevar puesto son decisiones distintas.
+    Los campos y métodos de combate (vida, veneno, curación) vienen de
+    `Combatiente`; la defensa del héroe la calcula el motor con la
+    armadura equipada, no este campo heredado.
     """
 
-    nombre: str
     vida: int = 45
     vida_max: int = 45
     ataque: int = 4
@@ -228,29 +217,12 @@ class Jugador:
     inventario: list[str] = field(default_factory=list)
     companeros: list[Companero] = field(default_factory=list)
     rasgos: list[str] = field(default_factory=list)  # claves de RASGOS
-    veneno_dano: int = 0
-    veneno_turnos: int = 0
     experiencia: int = 0
     nivel: int = 1
     equipado: dict[str, str] = field(default_factory=dict)  # tipo -> clave de item
 
-    @property
-    def vivo(self) -> bool:
-        return self.vida > 0
-
-    @property
-    def envenenado(self) -> bool:
-        return self.veneno_turnos > 0 and self.veneno_dano > 0
-
-    def envenenar(self, dano: int, turnos: int) -> None:
-        self.veneno_dano = max(self.veneno_dano, dano)
-        self.veneno_turnos = max(self.veneno_turnos, turnos)
-
     def companeras_vivas(self) -> list[Companero]:
         return [c for c in self.companeros if c.viva]
-
-    def curar(self, puntos: int) -> None:
-        self.vida = min(self.vida_max, self.vida + max(0, puntos))
 
     def corruptear(self, puntos: int) -> None:
         self.corrupcion = max(0, min(CORRUPCION_MAXIMA, self.corrupcion + puntos))

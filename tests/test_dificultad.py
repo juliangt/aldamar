@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from aldamar.motor.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
-
 from conftest import AVENTURA, CAMINO, EntradaTipeada
+
+from aldamar.motor.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
 from aldamar.motor.juego import Juego
 
 

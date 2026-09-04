@@ -6,11 +6,10 @@ import os
 import re
 
 import pytest
+from conftest import EntradaTipeada
 
 import aldamar.interfaz.opciones as opciones_mod
 from aldamar.interfaz.opciones import elegir_opcion
-
-from conftest import EntradaTipeada
 
 OPCIONES = [
     ("a", "Uno", ""),
@@ -454,7 +453,6 @@ def test_el_modo_sin_buffer_conserva_el_salto_de_linea(monkeypatch):
 
 def test_tecla_posix_lee_secuencia_completa(monkeypatch):
     """Verifica que una flecha (secuencia ESC) se lea completamente con pocas llamadas."""
-    import select
 
     # Mocking os.read to return the sequence chunks
     mock_data = list(b"\x1b[A")
@@ -476,7 +474,6 @@ def test_tecla_posix_lee_secuencia_completa(monkeypatch):
 
 def test_tecla_posix_esc_aislado(monkeypatch):
     """Verifica que un ESC aislado devuelva tras el timeout sin fallar."""
-    import select
 
     # Mocking os.read to return only the esc character
     mock_data = list(b"\x1b")

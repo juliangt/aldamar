@@ -30,19 +30,18 @@ from ..contenido.personajes import (
     Jugador,
 )
 from ..contenido.rasgos import RASGOS
-from ..interfaz.menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from ..interfaz import audio as modulo_audio
 from ..interfaz import opciones, presentacion
+from ..interfaz.menu import ARCHIVO_PARTIDA, ayuda, menu_principal
 from ..interfaz.opciones import (
     LIMPIAR,
     _es_interactivo,
     elegir_opcion,
     pantalla_completa,
 )
-from . import configuracion
-from . import guardado
-from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
+from . import configuracion, guardado
 from . import legado as modulo_legado
+from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
 from .guardado import PartidaInvalida
 
@@ -100,7 +99,7 @@ class Juego:
         self._autoequipar()  # el héroe empieza con lo suyo puesto
         self.lugar: str = self.av.lugar_inicial
         self.lugar_previo: str = self.av.lugar_inicial
-        self.flags: dict[str, bool] = {}
+        self.flags: dict[str, bool | int] = {}
         # el legado de la serie: lo que otras aventuras recuerdan de ti
         # (issue 19); sus banderas canónicas se encienden al empezar
         self.legado = dict(legado) if legado else {}
@@ -500,7 +499,9 @@ class Juego:
             [len(enemigo.nombre), len(self.jugador.nombre)]
             + [len(c.nombre) for c in self.jugador.companeros]
         )
-        filas = [(enemigo.nombre, enemigo.vida, enemigo.vida_max, ROJO)]
+        filas: list[tuple[str, int, int, str | None]] = [
+            (enemigo.nombre, enemigo.vida, enemigo.vida_max, ROJO)
+        ]
         filas.append((self.jugador.nombre, self.jugador.vida, self.jugador.vida_max, VERDE))
         filas += [
             (c.nombre, c.vida, c.vida_max, None if c.viva else DIM)
@@ -514,7 +515,6 @@ class Juego:
             lineas.append(
                 self._c(
                     f"  Envenenado: −{self.jugador.veneno_dano} por turno ({self.jugador.veneno_turnos} turnos).",
-                    self.color,
                     AMARILLO,
                 )
             )
@@ -1108,7 +1108,7 @@ class Juego:
             return self.rng.choice(vivas)
         return self.jugador
 
-    def _recibe(self, objetivo: Combatiente | Jugador, dano: int) -> int:
+    def _recibe(self, objetivo: Combatiente, dano: int) -> int:
         """Aplica daño a un combatiente o al jugador (defensa según armadura)."""
         if isinstance(objetivo, Jugador):
             mitigacion = self.bonus_armadura() + self._modificador("dano_recibido_menos")
@@ -1183,14 +1183,14 @@ class Juego:
             enemigo.cargado = 0
             enemigo.texto_cargado = ""
             return
-        candidatos: list[object] = ["golpe"]
+        candidatos: list[str | int] = ["golpe"]
         pesos = [PESO_GOLPE]
         for i, hab in enumerate(enemigo.habilidades):
             if self._habilitada(enemigo, hab, usos.get(i, 0)):
                 candidatos.append(i)
                 pesos.append(hab.peso)
         eleccion = self.rng.choices(candidatos, pesos)[0]
-        if eleccion == "golpe":
+        if isinstance(eleccion, str):  # "golpe": el ataque normal gana la tómbola
             self._ataca_enemigo(enemigo)
         else:
             self._usa_habilidad(enemigo, enemigo.habilidades[eleccion], eleccion, usos)
@@ -1201,9 +1201,7 @@ class Juego:
             return False
         if hab.cond_vida is not None and enemigo.vida >= enemigo.vida_max * hab.cond_vida / 100:
             return False
-        if hab.cond_turnos is not None and enemigo.turno % hab.cond_turnos != 0:
-            return False
-        return True
+        return hab.cond_turnos is None or enemigo.turno % hab.cond_turnos == 0
 
     def _usa_habilidad(
         self, enemigo: Enemigo, hab: Habilidad, indice: int, usos: dict[int, int]
@@ -1527,7 +1525,7 @@ class Juego:
         color: bool | None = None,
         flechas: bool | None = None,
         audio: bool = True,
-    ) -> "Juego":
+    ) -> Juego:
         """Construye una partida a partir de un archivo de guardado."""
         estado = guardado.cargar(ruta)
         juego = cls(
@@ -1551,7 +1549,7 @@ def ayuda_combate(av: Aventura) -> str:
     return f"En combate: atacar · usar <cosa>{especial} · cuerno · huir · estado"
 
 
-def _escribir_legado(juego: "Juego", ruta: str, salida) -> None:
+def _escribir_legado(juego: Juego, ruta: str, salida) -> None:
     """Al terminar una aventura (final con nombre), escribe su legado.
 
     Las muertes, caídas y partidas suspendidas no dejan legado: la serie
@@ -1691,6 +1689,8 @@ def main(
                 flechas=flechas,
                 audio=audio,
             )
+        if eleccion.aventura is None:  # inalcanzable: una Eleccion «nueva» trae aventura
+            return None
         return Juego(
             aventura=eleccion.aventura,
             dificultad=eleccion.dificultad,
@@ -1711,6 +1711,7 @@ def main(
             presentacion.presentar(
                 entrada=entrada, salida=salida, color=color_menu, sonar=audio
             )
+        juego: Juego | None
         if args.cargar:
             juego = Juego.desde_archivo(
                 args.cargar,

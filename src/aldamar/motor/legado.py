@@ -18,7 +18,7 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # solo anotaciones
-    from .aventura import Aventura
+    from ..contenido.aventura import Aventura
     from .juego import Juego
 
 ARCHIVO_LEGADO = "legado.json"
@@ -41,7 +41,7 @@ def leer(ruta: str = ARCHIVO_LEGADO) -> dict | None:
     return datos if isinstance(datos, dict) else None
 
 
-def escribir(av: "Aventura", juego: "Juego", ruta: str = ARCHIVO_LEGADO) -> dict:
+def escribir(av: Aventura, juego: Juego, ruta: str = ARCHIVO_LEGADO) -> dict:
     """Escribe el legado que esta aventura exporta al terminar.
 
     Cada aventura gestiona solo sus banderas canónicas: las enciende si
@@ -69,7 +69,7 @@ def escribir(av: "Aventura", juego: "Juego", ruta: str = ARCHIVO_LEGADO) -> dict
     return legado
 
 
-def enciende(flags: dict[str, bool], importa: list[str], legado: dict | None) -> None:
+def enciende(flags: dict[str, bool | int], importa: list[str], legado: dict | None) -> None:
     """Enciende en `flags` las banderas canónicas que el legado traiga.
 
     Las banderas importadas quedan bajo su nombre canónico: los

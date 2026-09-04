@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import json
 
+from conftest import EntradaTipeada
+
 from aldamar.motor.estadisticas import Estadisticas
 from aldamar.motor.juego import main
-
-from conftest import EntradaTipeada
 
 # hasta el puente y su lobo, y de vuelta: dos dueños de duelo en un viaje
 HASTA_EL_LOBO = ["", "ir este", "tomar todo", "ir este", "atacar", "atacar", "atacar", "tomar todo"]

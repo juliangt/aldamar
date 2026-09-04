@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import json
 
-from aldamar.motor.dificultad import DIFICULTADES, obtener_dificultad
-from aldamar.motor.juego import Juego
-from aldamar.contenido.personajes import SUBIDA_ATAQUE, SUBIDA_VIDA, XP_NIVEL
-
 from conftest import AVENTURA, CAMINO, EntradaTipeada
+
+from aldamar.contenido.personajes import SUBIDA_ATAQUE, SUBIDA_VIDA, XP_NIVEL
+from aldamar.motor.dificultad import DIFICULTADES
+from aldamar.motor.juego import Juego
 
 
 def _juego(lineas: list[str] | None = None, semilla: int = 7, dificultad=None, personaje=None):

@@ -35,7 +35,7 @@ def test_enemigos_objetos_dialogos_y_tiendas_usan_claves_validas(av):
             assert e in av.enemigos, f"{lugar.id}: enemigo {e} no existe"
         for o in lugar.objetos:
             assert o in av.items, f"{lugar.id}: objeto {o} no existe"
-        for _npc, dialogo in lugar.npcs.items():
+        for dialogo in lugar.npcs.values():
             assert dialogo in av.dialogos, f"{lugar.id}: diálogo {dialogo} no existe"
         if lugar.tienda:
             assert lugar.id in av.tiendas, f"{lugar.id} es tienda pero no tiene stock"

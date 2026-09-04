@@ -75,7 +75,6 @@ def test_el_guardado_migrado_se_juega(tmp_path):
 # ── el guardado de la versión actual ────────────────────────────────────
 
 def test_guardar_escribe_la_version(tmp_path, fabrica):
-    from aldamar.motor.juego import Juego
 
     ruta = str(tmp_path / "partida.json")
     juego, _ = fabrica(["", f"guardar {ruta}", "salir"], semilla=5)

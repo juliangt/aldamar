@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 
+from conftest import AVENTURA, CAMINO, EntradaTipeada
+
 from aldamar.motor.dificultad import obtener_dificultad
 from aldamar.motor.juego import Juego, main
-
-from conftest import AVENTURA, CAMINO, EntradaTipeada
 
 RUTA_BASE = [
     "Tilo",
@@ -198,7 +198,7 @@ def test_partida_completa_con_ruy_el_errante(fabrica):
 # ── el Corazón a la altura del motor: decisiones, emboscadas y grieta ───
 
 def test_el_encargo_de_dorotea_deja_bandera_y_tercio(fabrica):
-    juego, salida = fabrica(["prometer"])
+    juego, _ = fabrica(["prometer"])
     juego.av.eventos["encargo"](juego, juego.aqui())
     assert juego.flags == {"encargo": True, "promesa": True}
     assert "tercio" in juego.jugador.inventario
@@ -207,7 +207,7 @@ def test_el_encargo_de_dorotea_deja_bandera_y_tercio(fabrica):
 
 
 def test_el_consejo_ofrece_jurar_o_deposito(fabrica):
-    juego, salida = fabrica(["alianza"])
+    juego, _ = fabrica(["alianza"])
     juego.av.eventos["consejo"](juego, juego.aqui())
     assert juego.flags == {"consejo": True, "alianza": True}
     assert "estandarte" in juego.jugador.inventario
@@ -231,7 +231,7 @@ def test_la_emboscada_de_la_aguja_castiga_el_deposito(fabrica):
 
 
 def test_la_corona_cuesta_grieta_y_se_cobra_en_los_yermos(fabrica):
-    juego, salida = fabrica(["tomarla"])
+    juego, _ = fabrica(["tomarla"])
     juego.av.eventos["corona"](juego, juego.aqui())
     assert juego.flags["coronado"] and "corona_plata" in juego.jugador.inventario
     assert juego.jugador.corrupcion == 6  # (+6 corrupción, dice el texto)

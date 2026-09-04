@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from aldamar.contenido.eventos import ataque_con_corrupcion
+
 
 def test_ataque_con_corrupcion_happy_path():
     ataque = ataque_con_corrupcion(

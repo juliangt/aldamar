@@ -11,14 +11,14 @@ import json
 from importlib import resources
 
 import pytest
+from conftest import AVENTURA, EntradaTipeada
+from test_cargador import AVENTURA_MINIMA
 
-from aldamar.contenido.aventura import obtener_aventura
 from aldamar.contenido import cargador
+from aldamar.contenido.aventura import obtener_aventura
 from aldamar.contenido.cargador import AventuraInvalida, cargar_aventura_dict, cargar_todas
 from aldamar.motor.juego import Juego, _escribir_legado
 from aldamar.motor.legado import escribir, leer
-from conftest import AVENTURA, EntradaTipeada
-from test_cargador import AVENTURA_MINIMA
 
 CORAZON = obtener_aventura("corazon_ceniza")
 BRASA = obtener_aventura("brasa_vegaverde")

@@ -18,7 +18,7 @@ import json
 from importlib import resources
 from typing import Any
 
-from .aventura import Legado, Aventura, PersonajeInicial, Secreto, registrar
+from .aventura import Aventura, Legado, PersonajeInicial, Secreto, registrar
 from .eventos import TIPOS_EVENTOS, ataque_especial_desde, evento_desde
 from .mundo import Lugar
 from .personajes import TIPOS_HABILIDAD, Companero
@@ -605,7 +605,7 @@ def _chequea_referencias(
         for enemigo in lugar.enemigos:
             if enemigo not in av.enemigos:
                 raise _mal(origen, f"lugares[{lid!r}]: el enemigo {enemigo!r} no existe en enemigos")
-        for _npc, dialogo in lugar.npcs.items():
+        for dialogo in lugar.npcs.values():
             if dialogo not in av.dialogos:
                 raise _mal(origen, f"lugares[{lid!r}]: el diálogo {dialogo!r} no existe en dialogos")
         for clave_evento in lugar.eventos:
@@ -700,7 +700,7 @@ def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:
         id=id_,
         titulo=titulo,
         descripcion=descripcion,
-        prologo=personajes[jugador_inicial].prologo,
+        prologo=personajes[jugador_inicial].prologo or prologo_base,
         texto_nombre=texto_nombre,
         lugares=lugares,
         lugar_inicial=lugar_inicial,

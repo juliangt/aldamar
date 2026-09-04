@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from conftest import AVENTURA, EntradaTipeada
+
 import aldamar.interfaz.opciones as opciones_mod
 from aldamar import __version__
 from aldamar.motor.juego import (
@@ -15,8 +17,6 @@ from aldamar.motor.juego import (
     USAR,
     Juego,
 )
-
-from conftest import AVENTURA, EntradaTipeada
 
 MENU_MINIMO = [
     ("mirar", "Mirar alrededor", ""),
@@ -363,7 +363,7 @@ def test_el_duelo_largo_ocupa_un_bloque_que_no_crece(monkeypatch):
         assert captura.count("Golpeas a ") == 1  # solo el último golpe, no la historia
     # y la pantalla no crece: mismos renglones usados y el bloque, siempre
     # en su fila (sin filas fantasma acumulándose entre el texto y las opciones)
-    usadas = lambda t: len([r for r in t.split("\n") if r.strip()])  # noqa: E731
+    usadas = lambda t: len([r for r in t.split("\n") if r.strip()])
     assert len({usadas(c) for c in capturas[1:-1]}) == 1
     fila_titulo = {
         next(i for i, r in enumerate(c.split("\n")) if "¿Qué haces?" in r)

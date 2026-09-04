@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import copy
 
+from conftest import EntradaTipeada
+
 from aldamar.contenido.aventura import Aventura, obtener_aventura
 from aldamar.contenido.cargador import cargar_aventura_dict
 from aldamar.motor.dificultad import obtener_dificultad
 from aldamar.motor.juego import Juego
-
-from conftest import AVENTURA, EntradaTipeada
 
 CAMINO = obtener_dificultad("camino")
 
@@ -233,7 +233,7 @@ def test_las_fases_cambian_la_ficha_y_no_vuelven_atras():
             }],
         }
     })
-    juego, salida = _juego(av)
+    _, _ = _juego(av)
     morvath = av.crear_enemigo("morvath", CAMINO)
     assert morvath.fase_actual == -1
     assert morvath.avanzar_fase() is None  # entero: no cruza
@@ -272,7 +272,7 @@ def test_los_umbrales_de_fase_se_cruzan_en_orden():
             ],
         }
     })
-    juego, _ = _juego(av)
+    _, _ = _juego(av)
     jefe = av.crear_enemigo("jefe", CAMINO)
     assert [f.umbral for f in jefe.fases] == [75, 30]  # de mayor a menor
 

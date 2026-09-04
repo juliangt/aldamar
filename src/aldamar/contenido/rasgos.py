@@ -88,7 +88,7 @@ def _efecto(clave: str, ficha: dict) -> tuple[int, int, int, int | None]:
         raise _mal("rasgos.json", f"{po}: declara 'condicion' pero ningún efecto al que aplicarla")
     condicion = crudo.get("condicion")
     if condicion is None:
-        return *valores, None
+        return valores[0], valores[1], valores[2], None
     pc = f"{po}.condicion"
     if not isinstance(condicion, dict):
         raise _mal("rasgos.json", f"{pc}: debe ser un objeto")
@@ -104,7 +104,7 @@ def _efecto(clave: str, ficha: dict) -> tuple[int, int, int, int | None]:
         raise _mal(
             "rasgos.json", f"{pc}: 'vida_enemigo_mayor_que' debe ser un porcentaje entre 1 y 99"
         )
-    return *valores, umbral
+    return valores[0], valores[1], valores[2], umbral
 
 
 def cargar_rasgos(datos: object, origen: str = "rasgos.json") -> dict[str, Rasgo]:
