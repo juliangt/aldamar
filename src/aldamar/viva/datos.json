@@ -1,0 +1,338 @@
+{
+  "premisas": [
+    {
+      "clave": "traicion_valoria",
+      "texto": "una traición en Valoria",
+      "titulo": "La Traición de Valoria",
+      "antagonista": "el traidor coronado",
+      "corte": "el Salón del Trono Pudrido",
+      "tono": "cortesano: promesas que se pudren bien planchadas"
+    },
+    {
+      "clave": "mar_que_calla",
+      "texto": "el mar que calla",
+      "titulo": "El Mar que Calla",
+      "antagonista": "la marea que no vuelve",
+      "corte": "el Malecón de la Marea Quieta",
+      "tono": "costero: sal, silencios y barcos que no llegan"
+    },
+    {
+      "clave": "campanas_muertas",
+      "texto": "las campanas que doblan solas",
+      "titulo": "Las Campanas Muertas",
+      "antagonista": "el doblez sin campanero",
+      "corte": "el Campanario sin Campanero",
+      "tono": "de campanarios y calles que se vacían a tiempo"
+    },
+    {
+      "clave": "semilla_negra",
+      "texto": "una semilla negra en los graneros",
+      "titulo": "La Semilla Negra",
+      "antagonista": "la cosecha que camina",
+      "corte": "el Granero Grande",
+      "tono": "rural: pan, polvo y miedo de silo"
+    },
+    {
+      "clave": "puente_fantasma",
+      "texto": "un puente que aparece con la niebla",
+      "titulo": "El Puente de la Niebla",
+      "antagonista": "el peaje de los ahogados",
+      "corte": "el Puente de la Niebla",
+      "tono": "brumoso: deudas viejas que cobran con neblina"
+    },
+    {
+      "clave": "estrella_caida",
+      "texto": "una estrella caída en el páramo",
+      "titulo": "La Estrella Caída",
+      "antagonista": "lo que llegó con la estrella",
+      "corte": "el Cráter de la Estrella",
+      "tono": "de páramo y metal frío que no deja de susurrar"
+    }
+  ],
+
+  "arquetipos": [
+    {
+      "clave": "espada",
+      "nombre": "Red Arenal",
+      "titulo": "espada sin bandera",
+      "presentacion": "Dejas la compañía donde pagaban tarde y peor, y el camino se ofrece solo: hay una historia empezándose y tú sabes estar donde empiezan.\nRasgo · Ojo de halcón: +1 de daño mientras el enemigo conserve más de la mitad de su vida.",
+      "vida": 46,
+      "ataque": 5,
+      "monedas": 8,
+      "inventario": ["espada_vieja"],
+      "rasgos": ["ojo_halcon"],
+      "prologo_extra": "Llevas la espada ajena desde los quince años y el tuyo propio desde que se acabó la guerra: una espada sin bandera come de lo que las historias pagan.\n\nDicen que esta no estaba en ningún cantar. Perfecto: los cantares nuevos pagan mejor.",
+      "texto_nombre": null,
+      "trato": "espada",
+      "quien": "la espada"
+    },
+    {
+      "clave": "pocero",
+      "nombre": "Tomás Zahúrda",
+      "titulo": "pocero de los bajos",
+      "presentacion": "Sales de los túneles con la maza al hombro y la lumbre en las manos: lo que se hunde, lo miras primero de cerca.\nRasgo · Piel de piedra: cada golpe te quita un punto menos de vida.",
+      "vida": 54,
+      "ataque": 4,
+      "monedas": 12,
+      "inventario": ["maza_inglete"],
+      "rasgos": ["piel_piedra"],
+      "prologo_extra": "Los pozos enseñan dos oficios: bajar y salir. Con los años te queda la costumbre de bajar a mirar lo que otros prefieren tapar.\n\nEsta historia huele a tapado. Bajas.",
+      "texto_nombre": null,
+      "trato": "pocero",
+      "quien": "el pocero"
+    },
+    {
+      "clave": "letrada",
+      "nombre": "Vela del Signo",
+      "titulo": "letrada de caminos",
+      "presentacion": "Doblas el mapa que no servirá y te lo guardas igual: los mapas no sirven para el camino, sirven para pelearse con él.\nRasgo · Lengua de mercado: pagas 1 moneda menos en cada compra.",
+      "vida": 40,
+      "ataque": 4,
+      "monedas": 14,
+      "inventario": ["baston_laminado"],
+      "rasgos": ["lengua_mercado"],
+      "prologo_extra": "Firmas guías, treguas y compras: tu palabra vale lo que cumple, y cumple. Una historia sin escribir es un contrato con el mundo.\n\nVas a firmarla abajo, con el nombre puesto.",
+      "texto_nombre": null,
+      "trato": "letrada",
+      "quien": "la letrada"
+    }
+  ],
+
+  "tramos": {
+    "recto": {
+      "descripcion": "el camino de siempre: encuentro, posada, ruina y cripta, en fila hacia la cima",
+      "lugares": {
+        "p1": ["camino", 1],
+        "p2": ["encuentro", 1],
+        "p3": ["pueblo", 1],
+        "p4": ["encuentro", 2],
+        "p5": ["ruina", 2],
+        "p6": ["cripta", 2],
+        "p7": ["camino", 3],
+        "cima": ["climax", 3]
+      },
+      "salidas": {
+        "p1": {"norte": "p2", "este": "p3"},
+        "p2": {"sur": "p1", "este": "p4"},
+        "p3": {"oeste": "p1", "norte": "p4"},
+        "p4": {"oeste": "p2", "sur": "p3", "norte": "p7", "este": "p5"},
+        "p5": {"oeste": "p4", "abajo": "p6"},
+        "p6": {"arriba": "p5"},
+        "p7": {"sur": "p4", "arriba": "cima"},
+        "cima": {}
+      }
+    },
+    "delta": {
+      "descripcion": "dos ramas que se juntan: posada al arranque, cripta en el cruce y posada de nuevo antes del final",
+      "lugares": {
+        "p1": ["camino", 1],
+        "p2": ["pueblo", 1],
+        "p3": ["encuentro", 1],
+        "p4": ["cripta", 2],
+        "p5": ["ruina", 2],
+        "p6": ["encuentro", 2],
+        "p7": ["camino", 3],
+        "cima": ["climax", 3]
+      },
+      "salidas": {
+        "p1": {"norte": "p2", "este": "p3"},
+        "p2": {"sur": "p1", "norte": "p4"},
+        "p3": {"oeste": "p1", "este": "p6"},
+        "p4": {"sur": "p2", "abajo": "p5", "este": "p7"},
+        "p5": {"arriba": "p4"},
+        "p6": {"oeste": "p3", "norte": "p7"},
+        "p7": {"oeste": "p4", "sur": "p6", "arriba": "cima"},
+        "cima": {}
+      }
+    }
+  },
+
+  "curva": {"1": [12, 3, 10], "2": [20, 4, 16], "3": [28, 6, 24]},
+
+  "criaturas": {
+    "1": [
+      "un mendigo hinchado",
+      "un bruto encapuchado",
+      "un perro del páramo",
+      "un carroñero de alas cortas"
+    ],
+    "2": [
+      "una sombra con dientes",
+      "un ahumado de las honduras",
+      "una roña que camina",
+      "un mendigo que ya no cae"
+    ],
+    "3": ["un heraldo de humo", "un guardián sin cara", "una penumbra armada"]
+  },
+
+  "reliquias": [
+    "la estela de sal",
+    "la campanilla de bronce",
+    "el dado de hueso",
+    "la moneda del río",
+    "la aguja de cristal"
+  ],
+  "reliquia_desc": "Algo que no sirve para pelear, y por eso importa.",
+
+  "decisiones": {
+    "camino": [
+      [
+        {"clave": "paso_largo", "pista": "tomar el camino seguro y largo"},
+        {"clave": "paso_corto", "pista": "atreverse con el atajo dudoso", "corrupcion": 2}
+      ],
+      [
+        {"clave": "huella", "pista": "seguir la huella fresca que nadie quiere nombrar", "corrupcion": 1},
+        {"clave": "ignorar", "pista": "no verla y seguir andando, que es lo cuerdo"}
+      ]
+    ],
+    "encuentro": [
+      [
+        {"clave": "robar", "pista": "quedarte lo que no es tuyo", "bandera": "robo", "corrupcion": 3},
+        {"clave": "respetar", "pista": "dejarlo donde está"},
+        {"clave": "marcar", "pista": "dejar tu señal para quien venga"}
+      ],
+      [
+        {"clave": "robar", "pista": "quedarte lo que no vigilaba nadie", "bandera": "robo", "corrupcion": 3},
+        {"clave": "enterrar", "pista": "enterrarlo y marcar el sitio"},
+        {"clave": "avisar", "pista": "dejar recado de lo que hay para quien venga detrás"}
+      ]
+    ],
+    "pueblo": [
+      [
+        {"clave": "preguntar", "pista": "preguntar por las noticias del camino"},
+        {"clave": "pagar", "pista": "pagar una cena caliente y una cama"},
+        {"clave": "callar", "pista": "no contar nada de lo que llevas entre manos"}
+      ],
+      [
+        {"clave": "escuchar", "pista": "escuchar sin hablar, en la puerta de la posada"},
+        {"clave": "invitar", "pista": "pagar rondas para soltar lenguas"},
+        {"clave": "mentir", "pista": "contar una versión que no es la tuya", "corrupcion": 2}
+      ]
+    ],
+    "cripta": [
+      [
+        {"clave": "ofrenda", "pista": "dejar una ofrenda al cuidado del lugar", "bandera": "ofrenda", "corrupcion": -2},
+        {"clave": "seguir", "pista": "seguir sin deber nada a nadie"}
+      ],
+      [
+        {"clave": "velar", "pista": "velar una noche al cuidado del lugar", "bandera": "ofrenda", "corrupcion": -2},
+        {"clave": "profanar", "pista": "llevarte lo que los muertos ya no usan", "corrupcion": 3}
+      ]
+    ]
+  },
+
+  "items": {
+    "espada_vieja": {
+      "nombre": "espada de alquiler",
+      "tipo": "arma",
+      "bonus": 2,
+      "precio": 14,
+      "desc": "Muescas de otras guerras; el filo todavía contesta."
+    },
+    "maza_inglete": {
+      "nombre": "maza de inglete",
+      "tipo": "arma",
+      "bonus": 1,
+      "precio": 10,
+      "desc": "Pesa lo que promete."
+    },
+    "baston_laminado": {
+      "nombre": "bastón laminado",
+      "tipo": "arma",
+      "bonus": 1,
+      "precio": 10,
+      "desc": "Madera y tiras de metal: mide, apoya y golpea."
+    },
+    "vendas": {
+      "nombre": "vendas hervidas",
+      "tipo": "consumible",
+      "curacion": 10,
+      "precio": 6,
+      "desc": "Lino limpio, enrollado como manda la casa."
+    },
+    "brebaje": {
+      "nombre": "brebaje del caminante",
+      "tipo": "consumible",
+      "curacion": 16,
+      "precio": 12,
+      "desc": "Amargo hasta el fondo; funciona hasta el fondo."
+    },
+    "hoja_valiente": {
+      "nombre": "hoja valiente",
+      "tipo": "arma",
+      "bonus": 2,
+      "precio": 16,
+      "desc": "Acero de ferrería que sus dueños anteriores estrenaron y no estrenaron dos veces."
+    },
+    "insignia": {
+      "nombre": "la insignia del camino",
+      "tipo": "reliquia",
+      "precio": null,
+      "desc": "Una chapa gastada sin blasón: la llevan los que andan historias sin escribir."
+    }
+  },
+
+  "tienda": ["vendas", "brebaje", "hoja_valiente"],
+
+  "nombres_lugares": {
+    "camino": ["el camino de tierra", "la cuesta de los sauces", "el paso de los carros"],
+    "encuentro": ["la hondonada gris", "el cruce de muladares", "el vado de las piedras"],
+    "pueblo": ["Vadillo", "Riociego", "Malandar"],
+    "ruina": ["la torre roída", "la atalaya caída"],
+    "cripta": ["la cripta de agua"],
+    "desconocido": ["un lugar del camino"]
+  },
+
+  "plantillas": {
+    "descripcion_vacia": "Aún no hay nada escrito aquí: el cronista lo hará al llegar.",
+    "cima": "El aire pesa distinto: {antagonista} espera al fondo de {corte}, y detrás de él, el sentido de todo el camino.",
+    "descripcion_aventura": "Una aventura viva, nacida de «{texto}»: sin guion, la escribe el camino que andas.",
+    "prologo": "Esta historia no estaba en ningún cantar: empezó cuando {texto}, y todavía nadie sabe cómo acaba.\n\nLo que se cuenta en las posadas es esto: en {corte} espera {antagonista}, y el camino hasta ahí se hace de senderos, pueblos y decisiones que nadie más va a tomar por ti.",
+    "epilogos": {
+      "muerte": "Caes a un día de {corte}, con la historia a medio contar, y Aldamar entero te entierra con el nombre bien dicho.\n\nEl camino queda abierto: otro pasará, y estará mejor armado por lo que tú anduviste.",
+      "caida": "La grieta se abre del todo a las puertas de {corte}. Ya no caminas tú: la grieta camina por ti.\n\nDentro, {antagonista} estrena un sitio a tu medida, y en las posadas se calla tu nombre de miedo."
+    },
+    "final": {
+      "tipo": "final",
+      "texto": "{quien} se yergue al fondo de {corte} y, con él, el sentido del camino entero. Toda la historia cabe ahora en una decisión.",
+      "pregunta": "¿Cómo termina tu cantar?",
+      "opciones": [
+        {
+          "clave": "frente",
+          "titulo": "Terminar de frente, como se empezó",
+          "detalle": "el desenlace que te has ganado"
+        },
+        {
+          "clave": "clemencia",
+          "titulo": "Ofrecer lo que dejaste en la cripta",
+          "detalle": "solo quien dejó ofrenda lo entiende",
+          "requiere_flag": "ofrenda",
+          "epilogo": "Lo que dejaste en la cripta pesa más que la espada: {antagonista} se aparta, y {corte} se queda quieta por primera vez en mucho.\n\nEn las posadas contarán este final como el raro: el que no se ganó peleando.",
+          "estilo": "epico",
+          "final": "la salida que nadie esperaba"
+        }
+      ],
+      "umbral_tentado": 60,
+      "epilogo_puro": "Se pelea, se gana y se vuelve: {corte} queda atrás y el camino adelante se hace largo y bueno.\n\nLo que pasó en este viaje es tuyo: nadie lo cantará como tú lo anduviste.",
+      "final_puro": "{titulo}, terminada de frente",
+      "epilogo_tentado": "Ganas — pero la grieta viaja contigo a casa. En tus sueños, {corte} te espera cada noche, un poco más cerca.\n\nApagaste el fuego de este viaje. La grieta que llevas encima es el viaje siguiente.",
+      "final_tentado": "ganada afuera, encendida por dentro"
+    },
+    "texto_companeros": "A tu espalda, con la faena hecha: {nombres}.",
+    "jefe_fase": "{quien} cambia: algo se mueve detrás de su cara.",
+    "hecho": "El héroe llegó a {nombre}",
+    "emboscada": "Te había visto la espalda: {nombre} cierra la salida. La cuenta de antes llega cobrada.",
+    "alivio": "El agua quieta y la sombra limpia curan lo andado.",
+    "corrupcion_aviso": "El aire de este lugar pesa: la grieta avanza sola.",
+    "descripcion": "El lugar te recibe sin prometer nada. Hay poco que mirar y mucho que decidir, como siempre que el camino se queda sin palabras.",
+    "situacion": "El momento pide una decisión, y no la va a pedir dos veces.",
+    "dialogo": "Te mira llegar y espera a que hables tú primero: aquí la charla la empieza el de fuera.",
+    "prosa_lugares": {
+      "camino": "{nombre} se abre largo y sin sombra. El polvo anda más que los pájaros, y al fondo el camino hace su pregunta de siempre: qué tanto quieres apurar el día.",
+      "encuentro": "En {nombre} el aire cambia antes que el paisaje: algo se mueve donde nada debía moverse. La mano va sola al arma, y el lugar espera, educado, a ver quién la saca primero.",
+      "pueblo": "{nombre} huele a leña y a noticias: casas bajas, una posada que hace de medio todo, y esa calma de los lugares que hablan cuando se les pregunta bien.",
+      "ruina": "Lo que queda de {nombre} se sostiene por terquedad: piedras que fueron torre, polvo que fue gente. Lo que sea que quedó aquí dentro lleva tiempo esperando a alguien con las manos limpias o con las sucias, da igual.",
+      "cripta": "El agua cae gota a gota en {nombre}, y cada gota suena a permiso. La sombra es limpia: hay sitios donde la grieta no entra, y este se lo tiene creído."
+    }
+  }
+}

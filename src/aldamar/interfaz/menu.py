@@ -33,9 +33,9 @@ def _c(texto: str, color: bool, *codigos: str) -> str:
 
 @dataclass
 class Eleccion:
-    """Lo que el menú principal decide: nueva partida, cargar o salir."""
+    """Lo que el menú principal decide: nueva partida, viva, cargar o salir."""
 
-    accion: str  # "nueva" | "cargar" | "salir"
+    accion: str  # "nueva" | "viva" | "cargar" | "salir"
     aventura: Aventura | None = None
     dificultad: Dificultad | None = None
     personaje: str | None = None
@@ -110,6 +110,7 @@ def menu_principal(
             "Menú principal",
             [
                 ("nueva", "Nueva partida", ""),
+                ("viva", "Aventura Viva…", "Una historia que se escribe al volar (modelo local)"),
                 ("cargar", "Cargar partida", f"Retoma un archivo guardado ({ARCHIVO_PARTIDA} por defecto)"),
                 ("ayuda", "Cómo jugar", "Los comandos del viaje"),
                 ("salir", "Salir", ""),
@@ -121,6 +122,11 @@ def menu_principal(
         )
         if clave is None or clave == "salir":
             return Eleccion("salir")
+
+        if clave == "viva":
+            # el modo vivo pregunta todo dentro: premisa, héroe
+            # y dificultad; el enrutado lo hace `main`
+            return Eleccion("viva")
 
         if clave == "ayuda":
             pantalla_completa(

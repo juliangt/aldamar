@@ -14,6 +14,7 @@ import json
 import os
 import random
 import sys
+from typing import TYPE_CHECKING
 
 from .. import __version__, datos  # noqa: F401  (datos: registra el contenido)
 from ..contenido.aventura import AVENTURAS, Aventura, Secreto, obtener_aventura
@@ -44,6 +45,9 @@ from . import legado as modulo_legado
 from .dificultad import DIFICULTADES, Dificultad, ajusta, obtener_dificultad
 from .estadisticas import ARCHIVO_ESTADISTICAS, Estadisticas
 from .guardado import PartidaInvalida
+
+if TYPE_CHECKING:  # solo anotaciones; el modo vivo se importa al usarse
+    from ..viva.sesion import SesionViva
 
 TITULO, VERDE, ROJO, AMARILLO, DIM = "1;36", "32", "31", "33", "2"
 
@@ -79,6 +83,7 @@ class Juego:
         nombre: str | None = None,
         legado: dict | None = None,
         audio: bool = True,
+        viva: SesionViva | None = None,
     ) -> None:
         self.av = aventura
         self.dificultad = dificultad or obtener_dificultad()
@@ -124,6 +129,10 @@ class Juego:
         self._turno_lineas: list[str] = []
         # lo que la partida va sabiendo de sí misma, por si la piden (--stats)
         self.stats = Estadisticas()
+        # el modo «Aventura Viva»: None en las partidas
+        # clásicas; su sesión rellena lugares al pisarlos y viaja en el
+        # guardado bajo la clave "viva"
+        self.viva = viva
 
     # ── salida con color ─────────────────────────────────────────────
     def _c(self, texto: str, *codigos: str) -> str:
@@ -818,6 +827,10 @@ class Juego:
             self.aviso(self.av.texto_especial_fuera)
         elif cmd in ("atacar", "huir", "cuerno"):
             self.escribir("No hay combate aquí. Viaja con  ir <destino>.")
+        elif self.viva is not None and (comando := self.viva.interpretar(linea)):
+            # el intérprete del modo vivo solo puede devolver una orden de
+            # esta misma tabla: se re-despacha una vez
+            self._ejecutar(comando)
         else:
             self.tenue("No entiendo eso. Escribe  ayuda  para ver los comandos.")
 
@@ -1083,6 +1096,11 @@ class Juego:
             self._limpiar()  # la escena nueva se ve sola (issue 36)
         else:
             self.tenue("\n" + "─" * 40)  # en el relato tipeado, la raya marca la escena
+        if self.viva is not None:
+            # el modo vivo rellena el lugar si aún era un borrador;
+            # puede reemplazar `self.av` entera: el lugar se vuelve a pedir
+            self.viva.al_entrar(self, destino.id)
+            destino = self.aqui()
         self.epico(f"\n{destino.nombre.capitalize()}")
         self.escribir(destino.descripcion)
         eventos = [self.av.eventos[c] for c in destino.eventos if c in self.av.eventos]
@@ -1453,6 +1471,8 @@ class Juego:
             "derrotados": self.derrotados,
             "visitados": self.visitados,
             "final": self.final,
+            # la sesión viva (dict acumulado, memoria, rellenados) o None
+            "viva": self.viva.estado() if self.viva is not None else None,
         }
         try:
             with open(ruta, "w", encoding="utf-8") as f:
@@ -1462,7 +1482,17 @@ class Juego:
             self.peligro(f"No se pudo guardar: {e}")
 
     def _aplicar_estado(self, estado: dict, ruta: str) -> None:
-        self.av = obtener_aventura(estado.get("aventura"))
+        viva_estado = estado.get("viva")
+        if viva_estado:
+            # la aventura viva viaja dentro del guardado: se reconstruye
+            # desde su dict (sin modelo instalado) y la sesión despierta
+            from ..viva.sesion import SesionViva
+
+            self.av = _aventura_del_guardado(estado, ruta)
+            self.viva = SesionViva.desde_estado(viva_estado)
+        else:
+            self.av = obtener_aventura(estado.get("aventura"))
+            self.viva = None
         self.dificultad = obtener_dificultad(estado.get("dificultad"))
         self.personaje = estado.get("personaje") or self.av.jugador_inicial
         self.jugador = self.av.crear_jugador(self.personaje, self.dificultad)
@@ -1529,7 +1559,7 @@ class Juego:
         """Construye una partida a partir de un archivo de guardado."""
         estado = guardado.cargar(ruta)
         juego = cls(
-            aventura=obtener_aventura(estado.get("aventura")),
+            aventura=_aventura_del_guardado(estado, ruta),
             dificultad=obtener_dificultad(estado.get("dificultad")),
             personaje=estado.get("personaje"),
             semilla=semilla,
@@ -1541,6 +1571,20 @@ class Juego:
         )
         juego._aplicar_estado(estado, ruta)
         return juego
+
+
+def _aventura_del_guardado(estado: dict, ruta: str) -> Aventura:
+    """La aventura que trae un guardado: la registrada, o la viva reconstruida.
+
+    Una partida viva lleva su aventura generada dentro del
+    propio archivo: `cargar_aventura_dict` sobre lo acumulado basta, sin
+    modelo instalado y sin depender del registro de aventuras.
+    """
+    if estado.get("viva"):
+        from ..viva.sesion import SesionViva
+
+        return SesionViva.aventura_de_estado(estado["viva"], ruta)
+    return obtener_aventura(estado.get("aventura"))
 
 
 def ayuda_combate(av: Aventura) -> str:
@@ -1667,34 +1711,54 @@ def main(
 
     def _partida_del_menu() -> Juego | None:
         """La partida que nace del menú principal; None si no se juega."""
-        eleccion = menu_principal(
-            entrada=entrada,
-            salida=salida,
-            color=color_menu,
-            flechas=flechas,
-            aventura=args.aventura,
-            dificultad=args.dificultad,
-            personaje=args.personaje,
-        )
-        if eleccion is None or eleccion.accion == "salir":
-            salida("Hasta pronto.")
-            return None
-        if eleccion.accion == "cargar":
-            return Juego.desde_archivo(
-                eleccion.archivo or ARCHIVO_PARTIDA,
-                semilla=semilla,
+        while True:
+            eleccion = menu_principal(
                 entrada=entrada,
                 salida=salida,
-                color=color,
+                color=color_menu,
                 flechas=flechas,
-                audio=audio,
+                aventura=args.aventura,
+                dificultad=args.dificultad,
+                personaje=args.personaje,
             )
-        if eleccion.aventura is None:  # inalcanzable: una Eleccion «nueva» trae aventura
-            return None
-        return Juego(
-            aventura=eleccion.aventura,
-            dificultad=eleccion.dificultad,
-            personaje=eleccion.personaje,
+            if eleccion is None or eleccion.accion == "salir":
+                salida("Hasta pronto.")
+                return None
+            if eleccion.accion == "cargar":
+                return Juego.desde_archivo(
+                    eleccion.archivo or ARCHIVO_PARTIDA,
+                    semilla=semilla,
+                    entrada=entrada,
+                    salida=salida,
+                    color=color,
+                    flechas=flechas,
+                    audio=audio,
+                )
+            if eleccion.accion == "viva":
+                # el modo vivo: premisa, héroe y arranque, todo
+                # suyo; import perezoso: sin modo vivo, ni se carga el
+                # paquete. Si no arranca (sin Ollama, sin modelo, o se
+                # arrepintió), el aviso se dio y el menú vuelve a mostrarse
+                from ..viva.interfaz import partida_viva
+
+                partida = partida_viva(
+                    entrada=entrada,
+                    salida=salida,
+                    color=color,
+                    flechas=flechas,
+                    semilla=semilla,
+                    audio=audio,
+                    debug=debug,
+                )
+                if partida is None:
+                    continue
+                return partida
+            if eleccion.aventura is None:  # inalcanzable: una Eleccion «nueva» trae aventura
+                return None
+            return Juego(
+                aventura=eleccion.aventura,
+                dificultad=eleccion.dificultad,
+                personaje=eleccion.personaje,
             semilla=semilla,
             entrada=entrada,
             salida=salida,
@@ -1750,7 +1814,9 @@ def main(
             _escribir_legado(juego, ruta_legado, salida)
             if eleccion == "otra":
                 # nueva partida al instante: misma aventura, héroe y
-                # dificultad, y el nombre puesto se conserva
+                # dificultad, y el nombre puesto se conserva. Una partida
+                # viva se rejuega estática: el mundo ya generado queda
+                # como contenido, sin cronista
                 juego = Juego(
                     aventura=juego.av,
                     dificultad=juego.dificultad,

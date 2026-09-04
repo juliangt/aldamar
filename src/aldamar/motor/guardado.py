@@ -18,7 +18,7 @@ import json
 from collections.abc import Callable
 
 # La versión del esquema que escribe esta edición del juego.
-VERSION = 1
+VERSION = 2
 
 
 class PartidaInvalida(ValueError):
@@ -46,7 +46,16 @@ _BASE = (
 
 # El esquema completo de la versión actual (`_BASE` más lo que añadieron
 # las versiones posteriores y las de siempre con valor opcional).
-_ESQUEMA = _BASE + ("version", "experiencia", "nivel", "equipado", "derrotados", "visitados", "final")
+_ESQUEMA = _BASE + (
+    "version",
+    "experiencia",
+    "nivel",
+    "equipado",
+    "derrotados",
+    "visitados",
+    "final",
+    "viva",
+)
 
 
 def _de_0_a_1(estado: dict) -> dict:
@@ -66,10 +75,24 @@ def _de_0_a_1(estado: dict) -> dict:
     return estado
 
 
+def _de_1_a_2(estado: dict) -> dict:
+    """1 → 2: la sesión del modo «Aventura Viva» viaja en `viva`.
+
+    En las partidas clásicas es `None` y no cambia nada; en las vivas
+    trae el dict de la aventura generada, la memoria de la sesión y los
+    lugares ya rellenados (cargarla vuelve a ser
+    `cargar_aventura_dict` sobre lo acumulado, sin modelo instalado).
+    """
+    estado["viva"] = None
+    estado["version"] = 2
+    return estado
+
+
 # El camino de migración: de cada versión, su paso. `migrar` los aplica
 # en orden hasta llegar a `VERSION`.
 _PASOS: dict[int, Callable[[dict], dict]] = {
     0: _de_0_a_1,
+    1: _de_1_a_2,
 }
 
 

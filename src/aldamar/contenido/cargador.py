@@ -627,6 +627,79 @@ def _chequea_referencias(
                 raise _mal(origen, f"personajes[{clave!r}]: lleva {item!r}, que no existe en items")
 
 
+# ── fragmentos (el modo «Aventura Viva» y el autor offline) ───────────────
+
+def valida_fragmento(
+    fragmento: Any,
+    conocidos: dict[str, set[str]] | None = None,
+    origen: str = "<fragmento>",
+) -> None:
+    """Valida las secciones de un fragmento de aventura de forma aislada.
+
+    Un fragmento es un pedazo de aventura — `items`, `enemigos`,
+    `dialogos`, `lugares` o `eventos`, en cualquier combinación — que
+    todavía no vive en un archivo entero. La validación de sección es
+    exactamente la de `cargar_aventura_dict`; la diferencia está en las
+    referencias: aquí se admite lo que `conocidos` declara ya existente
+    (los ids vivos de la partida en marcha), porque el fragmento completa
+    un mundo, no lo empieza.
+
+    `conocidos` es un diccionario por sección: `{"items": {...},
+    "enemigos": {...}, "dialogos": {...}, "eventos": {...},
+    "lugares": {...}}`. Ante cualquier culpa lanza `AventuraInvalida`
+    que nombra `origen` y el campo. La validación final y autoritaria es
+    siempre la de la aventura completa; esta es la pasada temprana que
+    atribuye el error al fragmento antes de fusionarlo.
+    """
+    if not isinstance(fragmento, dict):
+        raise _mal(origen, "el fragmento debe ser un objeto JSON")
+    conocidos = conocidos or {}
+    permitidas = ("items", "enemigos", "dialogos", "lugares", "eventos")
+    desconocidas = [c for c in fragmento if c not in permitidas]
+    if desconocidas:
+        raise _mal(
+            origen,
+            f"secciones desconocidas: {', '.join(sorted(desconocidas))}; "
+            f"válidas: {', '.join(permitidas)}",
+        )
+    items = set(conocidos.get("items", ()))
+    if "items" in fragmento:
+        items.update(_items({"items": fragmento["items"]}, origen))
+    enemigos = set(conocidos.get("enemigos", ()))
+    if "enemigos" in fragmento:
+        enemigos.update(_enemigos({"enemigos": fragmento["enemigos"]}, origen))
+    dialogos = set(conocidos.get("dialogos", ()))
+    if "dialogos" in fragmento:
+        dialogos.update(_dialogos({"dialogos": fragmento["dialogos"]}, origen))
+    eventos = set(conocidos.get("eventos", ()))
+    for clave, ev in fragmento.get("eventos", {}).items():
+        _evento(clave, ev, {k: {} for k in items}, enemigos, origen)
+        eventos.add(clave)
+    lugares = set(conocidos.get("lugares", ())) | set(fragmento.get("lugares", {}))
+    for lid, datos_lugar in fragmento.get("lugares", {}).items():
+        lugar = _lugar(lid, datos_lugar, origen)
+        po = f"lugares[{lid!r}]"
+        for palabra, destino in lugar.salidas.items():
+            if destino not in lugares:
+                raise _mal(origen, f"{po}: la salida {palabra!r} apunta a {destino!r}, que no existe")
+        for objeto in lugar.objetos:
+            if objeto not in items:
+                raise _mal(origen, f"{po}: el objeto {objeto!r} no existe en items")
+        for enemigo in lugar.enemigos:
+            if enemigo not in enemigos:
+                raise _mal(origen, f"{po}: el enemigo {enemigo!r} no existe en enemigos")
+        for dialogo in lugar.npcs.values():
+            if dialogo not in dialogos:
+                raise _mal(origen, f"{po}: el diálogo {dialogo!r} no existe en dialogos")
+        for clave_evento in lugar.eventos:
+            if clave_evento not in eventos:
+                raise _mal(origen, f"{po}: el evento {clave_evento!r} no existe en eventos")
+        if lugar.requiere and lugar.requiere not in items:
+            raise _mal(origen, f"{po}: exige el item {lugar.requiere!r}, que no existe")
+    # el stock de tiendas y el inventario de los héroes quedan para la
+    # validación de la aventura completa, que es la autoritaria.
+
+
 # ── carga propiamente dicha ──────────────────────────────────────────────
 
 def cargar_aventura_dict(datos: Any, origen: str = "<aventura>") -> Aventura:

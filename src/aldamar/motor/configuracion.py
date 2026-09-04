@@ -26,6 +26,19 @@ class Configuracion:
     flechas: bool = True  # menús navegables con ↑/↓ (como --sin-flechas, al revés)
     splash: bool = True  # pantalla de presentación con el sello y su jingle
     semilla: int | None = None  # semilla de cada partida, si se quiere repetible
+    modelo_viva: str | None = None  # modelo del modo «Aventura Viva»;
+    # si falta, manda ALDAMAR_MODELO y, sin ella, el primero instalado
+    contexto_viva: int | None = None  # num_ctx del modelo vivo (16384 por
+    # defecto); bajarlo (p. ej. 8192) alivia máquinas sin GPU
+    viva_proveedor: str | None = None  # «ollama» (el local de siempre) o
+    # «api» (cualquier servidor con el protocolo de OpenAI); si falta,
+    # se infiere: hay clave de API → «api»
+    viva_host: str | None = None  # el servidor del cronista: el Ollama de
+    # otra máquina o la base de una API («https://openrouter.ai/api/v1»);
+    # si falta, manda ALDAMAR_HOST y, sin ella, el Ollama local
+    viva_api_key: str | None = None  # la clave del cronista externo; si
+    # puede ser, mejor ALDAMAR_API_KEY en el entorno y nada de secretos
+    # en este archivo
 
 
 def defecto() -> Configuracion:
@@ -53,6 +66,15 @@ def cargar(ruta: str = ARCHIVO_CONFIGURACION) -> Configuracion:
         if campo.name == "semilla":
             if valor is None or (isinstance(valor, int) and not isinstance(valor, bool)):
                 config.semilla = valor
+        elif campo.name == "modelo_viva":
+            if valor is None or isinstance(valor, str):
+                config.modelo_viva = valor
+        elif campo.name == "contexto_viva":
+            if valor is None or (isinstance(valor, int) and not isinstance(valor, bool)):
+                config.contexto_viva = valor
+        elif campo.name in ("viva_proveedor", "viva_host", "viva_api_key"):
+            if valor is None or isinstance(valor, str):
+                setattr(config, campo.name, valor)
         elif isinstance(valor, bool):
             setattr(config, campo.name, valor)
     return config

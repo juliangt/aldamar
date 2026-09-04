@@ -35,16 +35,20 @@ def test_el_guardado_real_sin_version_migra_a_la_actual():
 
 def test_la_migracion_va_campo_a_campo():
     crudo = leejason(FIXTURE)
+    # el primer paso, visto solo: lo que la versión 1 trajo de nuevo,
+    # con su valor para un héroe que entonces no tenía progresión
+    paso_1 = guardado._de_0_a_1(dict(crudo))
+    assert paso_1["version"] == 1
+    assert paso_1["experiencia"] == 0
+    assert paso_1["nivel"] == 1
+    assert paso_1["equipado"] is None  # «vestía siempre lo mejor»
+    assert paso_1["derrotados"] == []
+    assert paso_1["visitados"] == ["rioclaro"]
+    # y el camino completo llega hasta la versión actual
     estado = migrar(dict(crudo), 0)
-    # lo que la versión 1 trae de nuevo, con su valor para un héroe
-    # que entonces no tenía progresión ni huella de viaje
-    assert estado["version"] == 1
-    assert estado["experiencia"] == 0
-    assert estado["nivel"] == 1
-    assert estado["equipado"] is None  # «vestía siempre lo mejor»
-    assert estado["derrotados"] == []
-    assert estado["visitados"] == ["rioclaro"]
-    # y lo que el guardado traía queda tal cual
+    assert estado["version"] == guardado.VERSION
+    assert estado["viva"] is None  # el modo vivo nace apagado
+    # lo que el guardado traía queda tal cual
     for campo in ("aventura", "dificultad", "personaje", "nombre", "vida",
                   "monedas", "corrupcion", "inventario", "companeros",
                   "lugar", "lugar_previo", "flags", "enemigos", "tomados",
@@ -80,7 +84,8 @@ def test_guardar_escribe_la_version(tmp_path, fabrica):
     juego, _ = fabrica(["", f"guardar {ruta}", "salir"], semilla=5)
     juego.ciclo()
     guardado_crudo = leejason(ruta)
-    assert guardado_crudo["version"] == guardado.VERSION == 1
+    assert guardado_crudo["version"] == guardado.VERSION == 2
+    assert guardado_crudo["viva"] is None
 
 
 def test_la_version_actual_migra_a_si_misma(tmp_path, fabrica):
