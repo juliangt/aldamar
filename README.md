@@ -2,18 +2,19 @@
 
 [![CI](https://github.com/juliangt/aldamar/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangt/aldamar/actions/workflows/ci.yml)
 
-Aventuras de fantasía épica original para la terminal, en español. Un
-motor multi-aventura en Python, sin dependencias: eliges un héroe,
-cruzas medio continente y devuelves el amuleto al fuego que lo vio
-nacer.
+Aldamar es un juego de aventuras de fantasía épica para la terminal,
+en español, construido sobre un motor multi-aventura en Python sin
+dependencias externas. Incluye cuatro historias completas: en cada
+partida se elige un héroe, se explora un mapa por lugares y se
+enfrenta a enemigos por turnos hasta el desenlace.
 
-> **La historia del juego** — el mundo, las cuatro aventuras, los
-> héroes y el resto del reparto — vive en
+> **La historia del juego** — el mundo, las aventuras, los personajes
+> y los detalles del universo — está en
 > [`docs/historia.md`](docs/historia.md).
 
 > **Nota sobre derechos.** Aldamar es una obra de fantasía original:
-> mundo, nombres, razas, textos y mecánicas son propios y están
-> inspirados en el género de la fantasía clásica en general, sin usar
+> el mundo, los nombres, las razas, los textos y las mecánicas son
+> propios, y se inspiran en la fantasía clásica en general, sin usar
 > nombres, lugares ni textos de franquicias o libros con derechos.
 
 ## Características
@@ -22,8 +23,8 @@ nacer.
   con la serie «Las Ascuas del Corazón» como hilo conductor.
 - **11 héroes jugables**, cada uno con estadísticas, inventario,
   prólogo y don propios.
-- **Combate por turnos con oficio**: habilidades enemigas (veneno,
-  curación, refuerzos, golpe anunciado) y jefes que pelean por fases.
+- **Combate por turnos con habilidades enemigas** (veneno, curación,
+  refuerzos, golpe anunciado) y jefes que cambian de fase.
 - **Progresión**: experiencia y niveles, equipo que se elige y se
   cambia, tiendas, monedas y llaves de paso.
 - **Corrupción con consecuencias** en el camino y **seis finales**.
@@ -68,11 +69,11 @@ uv run python -m aldamar  # también funciona sin instalar
 
 El menú de arranque pide **aventura**, **héroe** y **dificultad**, y
 también permite cargar una partida guardada o leer la ayuda. Dentro
-del juego, cada turno ofrece un menú con las acciones del mundo aquí y
-ahora — viajar, tomar, hablar, comprar, luchar… — y `ayuda` se abre a
-pantalla completa (**Esc** la cierra). No hay que memorizar verbos:
-el menú es la interfaz, y el modo tipeado («Escribir un comando…»)
-sigue disponible para quien prefiera escribir.
+del juego, cada turno presenta un menú con las acciones disponibles en
+el lugar actual — viajar, tomar objetos, hablar, comprar, luchar… — y
+`ayuda` se abre a pantalla completa (**Esc** la cierra). No es
+necesario memorizar comandos: el modo tipeado («Escribir un
+comando…») queda disponible para quien prefiera escribir.
 
 ### El teclado
 
@@ -135,7 +136,7 @@ Todas las flags se combinan entre sí:
 | Perfil | Para quién | Qué ajusta |
 | ------ | ---------- | ---------- |
 | **Paseo por el huerto** | disfrutar la historia | más vida y monedas, enemigos flojos, corrupción lenta |
-| **El camino** | el balance original | tal cual se escribió la aventura: ni más ni menos |
+| **El camino** | el balance original | los multiplicadores por defecto (todos a 1.0) |
 | **Yermos de Ceniza** | quien ya conoce el camino | menos vida, enemigos duros, corrupción ávida |
 
 La partida guardada recuerda aventura, héroe y dificultad.
@@ -156,8 +157,8 @@ La primera partida de verdad deja en el directorio un
 
 La precedencia es siempre la misma: **flag de CLI > variable de
 entorno > `configuracion.json` > valores por defecto**. El archivo solo
-nace en sesiones de verdad: tuberías y tests no dejan nada a su paso,
-y ante un archivo roto se juega igual, con los defaults.
+se crea en sesiones interactivas — tuberías y tests no lo generan — y,
+si está corrupto, el juego arranca con los valores por defecto.
 
 Para diagnosticar el arranque (si `uv` contó su build en pantalla, el
 juego la limpia al empezar; en modo debug se conserva):
@@ -177,11 +178,11 @@ uv run python -m aldamar --semilla 7
 ```
 
 La suite cubre mapa, combate, cargador, menús, habilidades, guardado,
-legado, configuración y easter eggs — e incluye **una partida completa
-scripted** de Vegaverde a la cumbre, posible porque el juego es
-determinista bajo semilla. La sanidad del mapa corre sobre cada
-aventura registrada, y en tuberías los menús responden a texto, así
-que toda la interfaz se prueba sin teclado.
+legado, configuración y easter eggs — incluida **una partida completa
+automatizada** de principio a fin, posible porque el juego es
+determinista bajo semilla. La sanidad del mapa recorre cada aventura
+registrada, y en tuberías los menús responden a texto, así que toda la
+interfaz se prueba sin teclado.
 
 ### Arquitectura
 
@@ -195,10 +196,10 @@ Tres capas, con el contenido fuera del código:
 - **`interfaz/`** — la entrada del usuario: menú principal, selector
   de opciones (flechas o texto), la presentación y el audio.
 
-La idea central: **el motor no sabe nada de ninguna aventura en
-concreto**. Lee el mapa, los objetos, los textos y los eventos desde
-un objeto `Aventura`. El contenido de cada aventura vive entero en su
-propio JSON; los eventos se declaran con el vocabulario de
+El motor es independiente del contenido: cada aventura aporta un
+objeto `Aventura` con el mapa, los objetos, los textos y los eventos,
+y el motor lo interpreta. El contenido de cada aventura vive entero en
+su propio JSON; los eventos se declaran con el vocabulario de
 `eventos.py` y el cargador los convierte en funciones del motor.
 Añadir una aventura no toca una línea de Python.
 
@@ -213,8 +214,8 @@ Añadir una aventura no toca una línea de Python.
    hace falta, se extiende el vocabulario de forma genérica —nunca con
    conocimiento de un caso concreto— y el JSON sigue siendo puro dato.
 3. **La semilla hace el juego reproducible.** Misma semilla, mismas
-   decisiones, misma pelea. De ahí nace la prueba más fuerte de la
-   suite: una partida completa scripted de Vegaverde a la cumbre.
+   decisiones, misma pelea: de ahí la partida automatizada de punta a
+   punta que incluye la suite.
 4. **Los errores nombran archivo y campo.** El cargador verifica
    referencias (salidas, objetos, enemigos, diálogos, tiendas,
    eventos) y ante un JSON roto dice exactamente dónde.
@@ -223,8 +224,8 @@ Añadir una aventura no toca una línea de Python.
 6. **El guardado está versionado y migra solo.** Los guardados viejos
    se actualizan al cargar, sin rituales.
 7. **La configuración tiene una precedencia única**: flag de CLI >
-   variable de entorno > `configuracion.json` > defaults. Y solo una
-   sesión de verdad estrena el archivo.
+   variable de entorno > `configuracion.json` > defaults. El archivo
+   solo se crea en sesiones interactivas.
 8. **El legado separa lo que hereda de lo que no.** Cruzan aventuras
    las decisiones y la fama; el inventario, los niveles y las monedas
    empiezan de cero, porque cada aventura está balanceada para eso.
@@ -234,8 +235,7 @@ Añadir una aventura no toca una línea de Python.
    memoria.
 10. **Terminal primero, pero terminal bien.** Flechas con teclado
     real, texto en tuberías, pantallas que se limpian solas y una
-    cabecera anclada: la interfaz cuida qué queda escrito, porque la
-    pantalla es el relato.
+    cabecera anclada: la interfaz cuida qué queda escrito en pantalla.
 
 ### Estructura
 
@@ -319,9 +319,9 @@ dispara cuando el lugar queda limpio de enemigos, el resto al entrar:
 | `emboscar`     | Suma `enemigos` al lugar si se cumple su `condicion` (`flag`/`no_flag`)   |
 | `final`        | Un texto, `opciones` de elección y el desenlace según corrupción          |
 
-Las **banderas** (`flags`) son lo que cose una aventura consigo misma:
-una `decision` deja una bandera encendida, un `emboscar` o un `narrar`
-con `condicion` la leen para cobrarse su precio y una opción de `final`
+Las **banderas** (`flags`) conectan las consecuencias dentro de una
+aventura: una `decision` deja una bandera encendida, un `emboscar` o
+un `narrar` con `condicion` la leen más tarde y una opción de `final`
 puede declarar `requiere_flag` para ofrecerse solo si aquella decisión
 ocurrió. Así se escriben las consecuencias tardías y los finales
 múltiples de la saga, sin una línea de código en el JSON.
@@ -334,7 +334,7 @@ sección opcional `secretos`: cada entrada define `comando`, `textos`
 (lista o texto único), `texto_combate` (opcional), `semillas` (respuestas
 especiales según `--semilla`) y `alias` alternativos.
 
-**Un enemigo con oficio.** Cada entrada de `enemigos` acepta, además
+**Un enemigo nuevo.** Cada entrada de `enemigos` acepta, además
 de `nombre`, `vida`, `ataque`, `defensa` y `sin_huida`:
 
 - `experiencia`: la XP que paga al caer (la curva de niveles es corta:
@@ -376,8 +376,8 @@ declara un `legado` junto a las secciones del JSON:
 - `exporta` mapea banderas canónicas de la serie → banderas locales
   que alguna `decision` de esta aventura deja encendidas (el cargador
   verifica que existan). Al terminar —evento `final` con nombre— se
-  escriben en `legado.json`, gestionando cada aventura solo sus claves:
-  la cadena entera sobrevive, no solo la última faena.
+  escriben en `legado.json`, gestionando cada aventura solo sus claves
+  para que la cadena entera sobreviva.
 - `importa` son las canónicas que se encienden al empezar si el legado
   las trae, bajo su propio nombre: tus `condicion` y `requiere_flag`
   ya saben leerlas.
@@ -448,20 +448,10 @@ partidas en curso, porque `cargar` necesita encontrarlas.
 ## Documentación
 
 - [`docs/historia.md`](docs/historia.md) — la historia del juego: el
-  mundo, las cuatro aventuras, los héroes y el resto del reparto.
+  mundo, las aventuras y los personajes.
 - [`docs/playtesting.md`](docs/playtesting.md) — el protocolo de
   playtesting y balance: estadísticas por partida, plantilla de
   sesión y cómo se ajusta el juego con datos.
-
-## Origen
-
-Este juego nació de una equivocación. Lo único que se le pidió a un
-LLM fue un resumen de un libro —sin infringir copyright, pues serviría
-como ejemplo en otro proyecto— y, en lugar del resumen, devolvió un
-juego creado desde cero. Aldamar es ese accidente hecho obra.
-
-Veremos qué camino sigue tomando: la partida, por ahora, apenas
-comienza.
 
 ## Licencia
 
