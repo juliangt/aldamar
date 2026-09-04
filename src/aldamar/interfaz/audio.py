@@ -99,7 +99,7 @@ def _borrar_al_acabar(proceso: subprocess.Popen, ruta: str) -> None:
 
 
 def _sonar() -> None:
-    if os.name == "nt":
+    if sys.platform == "win32":
         import winsound
 
         winsound.PlaySound(
@@ -137,5 +137,5 @@ def reproducir(*, entrada=input, salida=print) -> None:
         return
     try:
         _sonar()
-    except Exception:  # noqa: BLE001  (el audio jamás corta una partida)
+    except Exception:  # noqa: S110, BLE001  (el audio jamás corta una partida)
         pass

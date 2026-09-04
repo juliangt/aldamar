@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import pytest
-
-import aldamar.motor.juego as juego_mod
-from aldamar.motor.juego import Juego, main
-from aldamar.contenido.personajes import Companero
-
 from conftest import AVENTURA, EntradaTipeada
 from test_flujo import RUTA_BASE
+
+import aldamar.motor.juego as juego_mod
+from aldamar.contenido.personajes import Companero
+from aldamar.motor.juego import Juego, main
 
 
 def _jugar(lineas: list[str], personaje: str | None = None):
@@ -64,7 +63,7 @@ def test_el_remate_segun_como_acabo(fabrica, final, remate):
 
 
 def test_el_cierre_presenta_epilogo_y_nombre_del_final():
-    juego, salida, eleccion = _jugar(RUTA_BASE + ["destruir", "3"])
+    _, salida, eleccion = _jugar(RUTA_BASE + ["destruir", "3"])
     assert eleccion == "salir"  # «Salir» en el menú de cierre acaba la sesión
     texto = "\n".join(salida)
     plano = " ".join(texto.split())

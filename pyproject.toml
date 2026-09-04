@@ -15,7 +15,11 @@ keywords = ["fantasia", "aventura", "terminal", "juego", "texto"]
 dependencies = []
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "mypy>=1.19",
+    "pytest>=8.0",
+    "ruff>=0.14",
+]
 
 [project.scripts]
 aldamar = "aldamar.motor.juego:main"
@@ -25,3 +29,16 @@ packages = ["src/aldamar"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+# acorde al código actual: la prosa de los JSON y los textos supera 100
+# columnas, pero el código Python se escribe a ~100 (E501 queda apagada)
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+# sin --strict el día uno (issue 14): primero los errores baratos
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true

@@ -82,7 +82,7 @@ class Estadisticas:
         self.monedas_recogidas += monedas
 
     # ── el informe ───────────────────────────────────────────────────
-    def resumen(self, juego: "Juego") -> dict:
+    def resumen(self, juego: Juego) -> dict:
         """El informe completo de la sesión: lo contado aquí más lo que
         el estado final de la partida ya sabía por sí solo."""
         j = juego.jugador
@@ -118,7 +118,7 @@ class Estadisticas:
             },
         }
 
-    def escribir(self, juego: "Juego", ruta: str = ARCHIVO_ESTADISTICAS) -> dict:
+    def escribir(self, juego: Juego, ruta: str = ARCHIVO_ESTADISTICAS) -> dict:
         """Escribe el informe en JSON y devuelve lo escrito."""
         informe = self.resumen(juego)
         with open(ruta, "w", encoding="utf-8") as f:

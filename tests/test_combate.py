@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import pytest
+from conftest import AVENTURA, CAMINO
 
 from aldamar.contenido.personajes import Combatiente
-
-from conftest import AVENTURA, CAMINO
 
 
 def crear_enemigo(clave: str):

@@ -1,0 +1,34 @@
+{
+  "por_defecto": "camino",
+  "dificultades": {
+    "paseo": {
+      "nombre": "Paseo por el huerto",
+      "descripcion": "Para disfrutar la historia: más vida y monedas, enemigos flojos, corrupción lenta.",
+      "vida_jugador": 1.3,
+      "ataque_jugador": 1.15,
+      "monedas": 1.4,
+      "vida_enemigos": 0.75,
+      "ataque_enemigos": 0.7,
+      "corrupcion": 0.6,
+      "curacion": 1.25,
+      "experiencia": 1.25,
+      "nota": "crecer más rápido compensa al héroe suave"
+    },
+    "camino": {
+      "nombre": "El camino",
+      "descripcion": "El balance con el que se escribió la aventura. Ni más ni menos."
+    },
+    "ceniza": {
+      "nombre": "Yermos de Ceniza",
+      "descripcion": "Para quien ya conoce el camino: menos vida, enemigos duros y corrupción ávida.",
+      "vida_jugador": 0.8,
+      "monedas": 0.8,
+      "vida_enemigos": 1.35,
+      "ataque_enemigos": 1.25,
+      "corrupcion": 1.25,
+      "curacion": 0.85,
+      "experiencia": 0.85,
+      "nota": "crecer cuesta más donde la ceniza muerde"
+    }
+  }
+}

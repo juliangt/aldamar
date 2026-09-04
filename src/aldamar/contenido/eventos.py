@@ -31,7 +31,8 @@ declaran dentro de cada enemigo del JSON y viven en `personajes.py`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from ..interfaz.opciones import elegir_opcion
 from .mundo import Lugar
@@ -49,7 +50,7 @@ TIPOS_EVENTOS = {"otorgar", "curar_grupo", "corrupcion", "narrar", "decision", "
 
 
 def evento_otorgar(item: str, texto: str, una_vez: str | None = None) -> Evento:
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if una_vez and j.flags.get(una_vez):
             return
         if una_vez:
@@ -61,7 +62,7 @@ def evento_otorgar(item: str, texto: str, una_vez: str | None = None) -> Evento:
 
 
 def evento_curar_grupo(texto: str, corrupcion: int = 0, una_vez: str | None = None) -> Evento:
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if una_vez and j.flags.get(una_vez):
             return
         if una_vez:
@@ -78,7 +79,7 @@ def evento_curar_grupo(texto: str, corrupcion: int = 0, una_vez: str | None = No
 
 
 def evento_corrupcion(puntos: int, aviso: str | None = None) -> Evento:
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if aviso:
             j.aviso(aviso)
         j.corruptear(puntos)
@@ -102,7 +103,7 @@ def evento_narrar(
     desde el mundo, no solo del epílogo.
     """
 
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if una_vez and j.flags.get(una_vez):
             return
         if condicion:
@@ -129,7 +130,7 @@ def evento_decision(texto: str, pregunta: str, opciones: list[dict], una_vez: st
     Cancelar la elección no decide: la escena espera otra visita.
     """
 
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if j.flags.get(una_vez):
             return
         j.epico("\n" + j._texto_heroe(texto))
@@ -173,7 +174,7 @@ def evento_emboscar(
     repite, pero tampoco se olvida.
     """
 
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         if flag and not j.flags.get(flag):
             return
         if no_flag and j.flags.get(no_flag):
@@ -207,7 +208,7 @@ def evento_final(
     El epílogo no se imprime aquí: queda en `juego.epilogo` y la pantalla
     de cierre lo presenta con aire (así no aparece dos veces)."""
 
-    def evento(j: "Juego", lugar: "Lugar") -> None:
+    def evento(j: Juego, lugar: Lugar) -> None:
         j.escribir("\n" + texto)
         visibles = [
             op for op in opciones
@@ -250,7 +251,7 @@ def ataque_con_corrupcion(
 ) -> AtaqueEspecial:
     """Un golpe fuerte que deja grieta: el daño crece con la corrupción."""
 
-    def ataque(j: "Juego", enemigo: "Enemigo") -> None:
+    def ataque(j: Juego, enemigo: Enemigo) -> None:
         dano = dano_base + j.jugador.corrupcion // dano_por_corrupcion
         efectivo = enemigo.recibir(dano)
         j.aviso(mensaje.format(efectivo=efectivo))

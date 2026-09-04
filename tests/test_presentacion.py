@@ -7,6 +7,8 @@ import io
 import os
 import wave
 
+from conftest import EntradaTipeada
+
 import aldamar.interfaz.presentacion as presentacion_mod
 import aldamar.motor.juego as juego_mod
 from aldamar.interfaz import audio
@@ -14,16 +16,13 @@ from aldamar.interfaz.opciones import LIMPIAR
 from aldamar.motor.configuracion import ARCHIVO_CONFIGURACION, Configuracion
 from aldamar.motor.juego import main
 
-from conftest import EntradaTipeada
-
-
 # ── el jingle ────────────────────────────────────────────────────────────
 
 def test_el_jingle_es_un_wav_de_ocho_bits_y_dos_segundos():
-    onda = wave.open(io.BytesIO(audio.bytes_jingle()))
-    assert onda.getnchannels() == 1
-    assert onda.getsampwidth() == 1  # 8 bits, el sonido de la época
-    assert 1.9 <= onda.getnframes() / onda.getframerate() <= 2.1
+    with wave.open(io.BytesIO(audio.bytes_jingle())) as onda:
+        assert onda.getnchannels() == 1
+        assert onda.getsampwidth() == 1  # 8 bits, el sonido de la época
+        assert 1.9 <= onda.getnframes() / onda.getframerate() <= 2.1
 
 
 def test_el_jingle_es_siempre_el_mismo_archivo():

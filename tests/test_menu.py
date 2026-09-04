@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from aldamar.motor.dificultad import obtener_dificultad
-from aldamar.interfaz.menu import Eleccion, elegir_opcion, menu_principal
-
 from conftest import EntradaTipeada
+
+from aldamar.interfaz.menu import Eleccion, elegir_opcion, menu_principal
+from aldamar.motor.dificultad import obtener_dificultad
 
 OPCIONES = [
     ("nueva", "Nueva partida", ""),

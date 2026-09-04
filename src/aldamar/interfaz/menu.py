@@ -13,7 +13,12 @@ from dataclasses import dataclass
 from .. import datos  # noqa: F401  (garantiza el registro del contenido)
 from ..contenido.aventura import AVENTURAS, Aventura, obtener_aventura
 from ..motor.dificultad import DIFICULTADES, Dificultad, obtener_dificultad
-from .opciones import LIMPIAR, _es_interactivo, elegir_opcion, pantalla_completa  # noqa: F401  (elegir_opcion re-exportado)
+from .opciones import (
+    LIMPIAR,
+    _es_interactivo,
+    elegir_opcion,
+    pantalla_completa,
+)
 
 ARCHIVO_PARTIDA = "partida.json"
 

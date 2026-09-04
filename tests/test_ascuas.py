@@ -8,16 +8,13 @@ y que las tres se ganan de verdad, de punta a punta.
 
 from __future__ import annotations
 
-import copy
-import json
-
 import pytest
+from conftest import EntradaTipeada
 
 from aldamar.contenido.aventura import obtener_aventura
+from aldamar.contenido.personajes import CORRUPCION_TENTADO
 from aldamar.motor.dificultad import DIFICULTADES, obtener_dificultad
 from aldamar.motor.juego import Juego
-from aldamar.contenido.personajes import CORRUPCION_TENTADO, Companero
-from conftest import EntradaTipeada
 
 BRASA = obtener_aventura("brasa_vegaverde")
 SAL = obtener_aventura("sal_y_ceniza")

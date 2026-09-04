@@ -9,14 +9,15 @@
 from __future__ import annotations
 
 import copy
+
 import pytest
+from conftest import AVENTURA, EntradaTipeada
+from test_cargador import AVENTURA_MINIMA
 
 from aldamar.contenido.aventura import obtener_aventura
 from aldamar.contenido.cargador import AventuraInvalida, cargar_aventura_dict
 from aldamar.motor.dificultad import obtener_dificultad
 from aldamar.motor.juego import Juego
-from conftest import AVENTURA, EntradaTipeada
-from test_cargador import AVENTURA_MINIMA
 
 
 def test_dialogos_en_capas_revela_leyenda_del_escribano(fabrica):
@@ -430,7 +431,7 @@ def test_juego_combate_secreto_sin_texto_combate(fabrica):
     """Un secreto sin texto_combate no se intercepta en el turno de combate."""
     from aldamar.contenido.aventura import Secreto
 
-    juego, salida = fabrica(["ayuda", "salir"])
+    juego, _ = fabrica(["ayuda", "salir"])
     juego.av.secretos["mudo"] = Secreto(comando="mudo", textos=["shh"])
 
     sec = juego._buscar_secreto("mudo")

@@ -102,6 +102,8 @@ def _tecla_posix() -> str:
 
 
 def _tecla_windows() -> str:
+    if sys.platform != "win32":  # el despacho de _tecla solo llega aquí en Windows
+        return ""
     import msvcrt
 
     tecla = msvcrt.getwch()

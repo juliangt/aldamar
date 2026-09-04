@@ -1,5 +1,7 @@
 # Aldamar
 
+[![CI](https://github.com/juliangt/aldamar/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangt/aldamar/actions/workflows/ci.yml)
+
 Aventuras de fantasía épica original para la terminal, en español.
 El amuleto que durmió veinte generaciones acaba de despertar: elígete
 un héroe, crúzate medio continente y devuélvelo al fuego que lo vio
@@ -11,6 +13,19 @@ nacer. Y cuando el fuego se apague, quedará mucho humo que recoger.
 > nombres, lugares ni textos de franquicias o libros con derechos.
 
 ## Cómo jugar
+
+Sin clonar nada, desde cualquier sitio (requiere [`uv`](https://docs.astral.sh/uv/)):
+
+```bash
+uv tool install git+https://github.com/juliangt/aldamar.git
+aldamar
+```
+
+(o descarga el wheel de una
+[release](https://github.com/juliangt/aldamar/releases) y ejecuta
+`uv tool install aldamar-*.whl`.)
+
+Para jugar con el código delante, clona el repositorio y:
 
 ```bash
 uv sync
@@ -207,7 +222,8 @@ siguiente.
   cumbre tampoco: debajo del guarda hay una montaña.
 - **Dificultades**: tres ritmos de viaje — *Paseo por el huerto*, *El
   camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas,
-  corrupción y experiencia sin tocar la historia.
+  corrupción y experiencia sin tocar la historia. El catálogo vive en
+  `datos/dificultades.json`, como los dones y las aventuras.
 - **Seis finales**: victoria pura, la victoria compartida (si llevas
   una deuda chica que pagar), victoria con cicatriz, la Sombra nueva,
   la caída en pleno camino… y la muerte.
@@ -237,8 +253,22 @@ En combate: `atacar`, `usar <cosa>`, `corazon`, `cuerno`, `huir`, `estado`.
 
 ```bash
 uv run pytest          # suite completa, incluida una partida scripted
+uv run ruff check .    # estilo y errores baratos
+uv run mypy src        # tipos
 uv run python -m aldamar --semilla 7
 ```
+
+El pipeline no corre solo: con cada PR queda detenido a la puerta del
+entorno `ci` (que exige revisor) y no ejecuta nada hasta que alguien
+lo aprueba a mano — Actions → CI → «Review deployments» → Approve and
+deploy. Sus checks son requisito para mergear a `main`: sin una
+corrida aprobada y en verde sobre el último commit, el merge queda
+bloqueado. La corrida trae las tres piezas: ruff y mypy, y la suite
+completa sobre Ubuntu, macOS y Windows con Python 3.13 — donde además
+se construye el wheel, se instala solo en un entorno
+limpio y se comprueba que arranca con sus aventuras, dones y
+dificultades dentro (los tres SO, que es donde vive el código de
+teclado y audio, dejan de ser terra incógnita).
 
 La semilla hace el juego reproducible: los tests usan una partida
 completa scripted de Vegaverde a la cumbre, y la sanidad del mapa corre
@@ -258,7 +288,7 @@ src/aldamar/
 │   └── eventos.py            # vocabulario declarativo de eventos y golpes especiales
 ├── motor/                    # las reglas y el estado del juego
 │   ├── juego.py              # motor: bucle, comandos, combate, guardado
-│   ├── dificultad.py         # presets de balance (paseo / camino / ceniza)
+│   ├── dificultad.py         # lee y valida datos/dificultades.json: la Dificultad que aplica el motor
 │   ├── guardado.py           # partida.json: versionado y migración
 │   ├── legado.py             # el hilo de la serie: legado.json, fama y banderas canónicas
 │   ├── estadisticas.py       # estadisticas.json para el playtesting
@@ -270,6 +300,7 @@ src/aldamar/
 │   └── opciones.py           # selector de opciones: flechas ↑/↓ o texto
 └── datos/                    # el contenido del juego, en JSON y fuera del código
     ├── rasgos.json           # los dones de héroe: nombre, descripción y efecto en datos
+    ├── dificultades.json     # los perfiles de balance: multiplicadores por perfil
     └── aventuras/
         ├── corazon_ceniza.json    # la campaña original, en datos
         ├── brasa_vegaverde.json   # Las Ascuas · I (corta)
@@ -429,9 +460,31 @@ Si un don futuro necesita una mecánica que el vocabulario no alcanza,
 se extiende el vocabulario de forma genérica —un campo nuevo y su
 interpretación en el motor—, nunca con conocimiento de un don concreto.
 
-**Una dificultad nueva.** Agrega una entrada a `DIFICULTADES` en
-`dificultad.py` con sus multiplicadores (vida, ataque, monedas,
-corrupción, curación, experiencia): el menú y la CLI la listan solas.
+**Una dificultad nueva.** Agrega una entrada a `datos/dificultades.json`
+—junto a un campo `por_defecto` que diga con cuál se juega si nadie
+elige— con su `nombre`, su `descripcion` y los multiplicadores que
+quieras (los que faltan valen 1.0):
+
+```json
+"brasa": {
+  "nombre": "Brasa temprana",
+  "descripcion": "una escala intermedia para primeras campañas",
+  "vida_enemigos": 1.15,
+  "ataque_enemigos": 1.1,
+  "experiencia": 1.1
+}
+```
+
+Los multiplicadores disponibles son `vida_jugador`, `ataque_jugador`,
+`monedas`, `vida_enemigos`, `ataque_enemigos`, `corrupcion`,
+`curacion` y `experiencia`; un campo `nota` opcional guarda el porqué
+del balance para quien edite el archivo después. El orden del menú es
+el del archivo, y el cargador valida todo: multiplicadores numéricos
+mayores a cero, nombre y descripción presentes, y un `por_defecto`
+que exista — el error nombra archivo y campo, como siempre. Las
+claves de los perfiles viven dentro de la partida guardada: no las
+renombres si hay partidas en curso, porque `cargar` necesita
+encontrarlas.
 
 ## El error que lo empezó todo
 

@@ -1,0 +1,75 @@
+# CI de Aldamar (issue 14): ruff, mypy y pytest en los tres sistemas,
+# más la prueba de empaquetado del issue 20 (el wheel se construye, se
+# instala solo y arranca con sus JSON de datos, en cada SO).
+#
+# El pipeline no corre solo: al abrir o actualizar un PR queda
+# detenido en el entorno `ci` —que exige revisor— y no ejecuta nada
+# hasta que alguien lo aprueba a mano (Actions → «Review deployments»
+# → Approve and deploy, o gh api …/runs/<id>/pending_deployments).
+# Sus checks son requisito de la protección de `main`: sin corrida
+# aprobada y en verde sobre el último commit, el merge queda
+# bloqueado. (Los checks de una corrida workflow_dispatch pura no
+# cuentan para el merge de un PR: es la limitación de GitHub que este
+# entorno sortea.)
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  arranque:
+    name: arranque (espera tu aprobación)
+    runs-on: ubuntu-latest
+    environment: ci  # revisor requerido: nada se ejecuta sin el click
+    steps:
+      - run: 'echo "Aprobado a mano: sigue ruff + mypy, pytest en los tres SO y la prueba del wheel."'
+
+  calidad:
+    name: ruff + mypy
+    needs: arranque
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run mypy src
+
+  pruebas:
+    name: pytest + wheel · ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    needs: arranque
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest
+      # issue 20: instalar el wheel en un entorno limpio (solo él, sin el
+      # repo) y confirmar que el entry point vive y los datos viajan dentro
+      - run: uv build
+      - name: El wheel se instala solo y trae sus datos
+        shell: bash
+        run: |
+          uv run --no-project --with dist/aldamar-*.whl aldamar --version
+          uv run --no-project --with dist/aldamar-*.whl python -c "
+          import aldamar.datos
+          from aldamar.contenido.aventura import AVENTURAS
+          from aldamar.contenido.rasgos import RASGOS
+          from aldamar.motor.dificultad import DIFICULTADES, DIFICULTAD_POR_DEFECTO
+          assert len(AVENTURAS) >= 1, 'las aventuras no viajaron con el wheel'
+          assert set(DIFICULTADES) == {'paseo', 'camino', 'ceniza'}
+          assert DIFICULTAD_POR_DEFECTO == 'camino'
+          assert len(RASGOS) >= 1, 'los dones no viajaron con el wheel'
+          print('wheel ok:', len(AVENTURAS), 'aventuras ·', len(DIFICULTADES), 'dificultades ·', len(RASGOS), 'dones')
+          "

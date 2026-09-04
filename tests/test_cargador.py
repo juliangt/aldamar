@@ -12,16 +12,21 @@ import json
 from importlib import resources
 
 import pytest
-
-from aldamar import datos  # noqa: F401  (descubre y registra las de datos/)
-from aldamar.contenido import cargador
-from aldamar.contenido.aventura import AVENTURAS, obtener_aventura, registrar
-from aldamar.contenido.cargador import AventuraInvalida, cargar_aventura, cargar_aventura_dict, cargar_todas
-from aldamar.motor.dificultad import obtener_dificultad
-from aldamar.motor.juego import Juego
-from aldamar.contenido.personajes import CORRUPCION_TENTADO, Companero
 from conftest import EntradaTipeada
 from test_flujo import RUTA_BASE
+
+import aldamar.datos  # noqa: F401  (descubre y registra las de datos/)
+from aldamar.contenido import cargador
+from aldamar.contenido.aventura import AVENTURAS, obtener_aventura, registrar
+from aldamar.contenido.cargador import (
+    AventuraInvalida,
+    cargar_aventura,
+    cargar_aventura_dict,
+    cargar_todas,
+)
+from aldamar.contenido.personajes import CORRUPCION_TENTADO, Companero
+from aldamar.motor.dificultad import obtener_dificultad
+from aldamar.motor.juego import Juego
 
 CAMINO = obtener_dificultad("camino")
 TEXTO_CORAZON = (
@@ -436,7 +441,7 @@ def test_la_niebla_de_las_cienagas_corrompe_cada_vez():
 
 
 def test_el_final_destruir_limpio_nombra_a_los_companeros():
-    juego, salida = _juego(["destruir"])
+    juego, _ = _juego(["destruir"])
     juego.jugador.companeros.append(
         Companero(clave="sylvana", nombre="Sylvana de los Faroles", vida=10,
                   vida_max=18, ataque=5)

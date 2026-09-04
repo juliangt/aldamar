@@ -15,7 +15,7 @@ camino de migración explícito, y ninguna partida se rompe en silencio.
 from __future__ import annotations
 
 import json
-from typing import Callable
+from collections.abc import Callable
 
 # La versión del esquema que escribe esta edición del juego.
 VERSION = 1

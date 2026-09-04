@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from aldamar import datos  # noqa: F401  (registra el contenido)
+import aldamar.datos  # noqa: F401  (registra el contenido)
 from aldamar.contenido.aventura import obtener_aventura
 from aldamar.motor.dificultad import obtener_dificultad
 from aldamar.motor.juego import Juego

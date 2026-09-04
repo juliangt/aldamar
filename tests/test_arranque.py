@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import aldamar.motor.juego as juego_mod
-from aldamar.motor.juego import main
-from aldamar.interfaz.opciones import LIMPIAR
-
 from conftest import EntradaTipeada
+
+import aldamar.motor.juego as juego_mod
+from aldamar.interfaz.opciones import LIMPIAR
+from aldamar.motor.juego import main
 
 
 def arrancar(monkeypatch, interactivo: bool, argv: list[str]) -> list[str]:
