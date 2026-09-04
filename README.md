@@ -12,9 +12,18 @@ nacer. Y cuando el fuego se apague, quedará mucho humo que recoger.
 > inspirados en el género de la fantasía clásica en general, sin usar
 > nombres, lugares ni textos de franquicias o libros con derechos.
 
-## Cómo jugar
+**Índice** — [El juego](#el-juego) (historia, personajes, cómo se
+juega, instalación) · [El proyecto](#el-proyecto) (arquitectura,
+archivos, decisiones, tests, cómo extender)
 
-Sin clonar nada, desde cualquier sitio (requiere [`uv`](https://docs.astral.sh/uv/)):
+---
+
+## El juego
+
+### Empezar en tres líneas
+
+Sin clonar nada, desde cualquier sitio (requiere
+[`uv`](https://docs.astral.sh/uv/)):
 
 ```bash
 uv tool install git+https://github.com/juliangt/aldamar.git
@@ -31,96 +40,18 @@ Para jugar con el código delante, clona el repositorio y:
 uv sync
 uv run aldamar            # arranca el menú principal
 uv run aldamar --cargar   # retomar partida.json sin pasar por el menú
+uv run python -m aldamar  # también funciona sin instalar
 ```
 
-El menú de arranque te deja elegir **aventura**, **héroe** (si hay
-varios) y **dificultad**, cargar una partida guardada o leer la ayuda.
-Con teclado y pantalla reales, las listas se navegan con **↑/↓** y se
-confirman con **Enter** (los dígitos eligen al vuelo y **Esc** vuelve
-atrás); en tuberías o tests, el mismo menú se responde a texto, como
-siempre. Dentro del juego ocurre lo mismo: cada turno ofrece un menú
-con las acciones del mundo aquí y ahora — viajar, tomar, hablar,
-comprar, luchar… — y `ayuda` se abre a pantalla completa; **Esc** la
-cierra y devuelve la vista anterior. Las gestiones (estado,
-inventario, guardar y cargar, ayuda) viven en el submenú **«Otras
-acciones…»**, de donde sí se vuelve con **Esc**; su opción «Escribir
-un comando…» abre el modo tipeado de siempre. La partida se lee por
-vistas: **mirar alrededor**, una conversación (**hablar**) y el viaje
-a otro lugar presentan su contenido con la pantalla limpia —se ve solo
-lo que acaba de pasar—; el resto (tomar, usar, comprar…) se anota
-debajo de lo anterior hasta que llegue la vista siguiente. Los menús
-viven en ese mismo flujo: navegar entre ellos no suma ni una línea
-(el submenú reemplaza al menú en su sitio) y al elegir se borran sin
-dejar rastro, porque el resultado ya narra lo que hiciste. En combate,
-encima del menú va un bloque con la vida de todos —en barras— y el
-último turno, que se actualiza en su sitio: los duelos largos no
-apilan líneas, y del combate queda en el relato el arranque y el
-desenlace. El nombre, la vida y las monedas viven siempre en la
-primera fila de la pantalla —anclada, con la historia corriendo
-debajo— y se actualizan en el sitio cuando algo cambia. La ayuda, el
-prólogo y la pantalla de
-cierre tienen la pantalla entera para sí. En modo tipeado no hay
-limpiezas: el relato se apila completo y el viaje marca la escena con
-una raya.
+El menú de arranque pide **aventura**, **héroe** y **dificultad**;
+dentro del juego, cada turno ofrece un menú con lo que el mundo
+permite hacer aquí y ahora. Con teclado y pantalla reales los menús se
+navegan con las flechas; sin teclado real (tuberías, tests), los
+mismos menús se responden escribiendo el número. Todo lo demás —teclas,
+atajos, preferencias— está más abajo, y nada de ello hace falta leer
+para empezar a jugar.
 
-También el arranque: si `uv` (o el lanzador de turno) contó su build
-en pantalla —«Building aldamar…», «Installed N packages…»—, el juego
-limpia la terminal al empezar y ese informe no queda en medio del
-relato. En modo debug sí se conserva, para diagnosticar el arranque:
-
-```bash
-uv run aldamar --debug            # no limpiar: deja visible el informe del build
-ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
-```
-
-Antes del menú —si hay teclado y pantalla de verdad— el juego se
-presenta: el **sello de Aldamar** en ASCII —el héroe de la historia,
-el Corazón de Ceniza al pecho y la espada clavada a su costado—, un **jingle 8-bit** de dos segundos y
-«Presiona cualquier tecla para comenzar…». El mismo jingle suena en la
-pantalla de cierre al terminar una aventura, victoria o desgracia. Los
-atajos que saltan el menú (`--cargar`, aventura y dificultad por CLI)
-van directos a lo suyo, sin presentación; con `--sin-splash` o
-`--sin-audio` se quita a mano.
-
-Atajos para saltar el menú:
-
-```bash
-uv run aldamar --semilla 7 --sin-color
-uv run aldamar --aventura corazon_ceniza --dificultad ceniza
-uv run aldamar --sin-flechas      # menús respondiendo a texto
-uv run aldamar --sin-splash       # directo al menú, sin presentación
-uv run aldamar --sin-audio        # sin el jingle de entrada y de salida
-uv run aldamar --stats            # al terminar, escribe estadisticas.json
-uv run python -m aldamar          # también funciona sin instalar
-```
-
-Dificultades: **Paseo por el huerto** (fácil), **El camino** (normal, el
-balance original) y **Yermos de Ceniza** (difícil). La partida guardada
-recuerda aventura, héroe y dificultad.
-
-### Preferencias: `configuracion.json`
-
-La primera partida de verdad deja en el directorio un
-`configuracion.json` listo para editar a mano. Cada clave prende o
-apaga lo suyo, y sobre el archivo mandan la variable de entorno y el
-flag de la CLI:
-
-| Clave     | Default | Qué hace                                                       |
-| --------- | ------- | -------------------------------------------------------------- |
-| `audio`   | `true`  | el jingle de la presentación y del cierre                       |
-| `splash`  | `true`  | la pantalla de presentación con el sello y «cualquier tecla…»   |
-| `color`   | `true`  | códigos ANSI (lo contrario de `--sin-color`)                    |
-| `flechas` | `true`  | menús navegables con ↑/↓ (lo contrario de `--sin-flechas`)      |
-| `debug`   | `false` | conservar el informe del lanzador (como `--debug`)              |
-| `semilla` | `null`  | semilla de cada partida, para una campaña repetible por defecto |
-
-La precedencia es siempre la misma: **flag de CLI > variable de entorno
-> `configuracion.json` > valores por defecto** (por ejemplo: `--debug`
-le gana a `ALDAMAR_DEBUG`, y este al `debug` del archivo). El archivo
-solo nace en sesiones de verdad: tuberías y tests no dejan nada a su
-paso, y ante un archivo roto se juega igual, con los defaults.
-
-## El mundo
+### La historia
 
 - **Aldamar** es el continente donde las cuatro razas libres —humanos,
   **sylvos** del bosque, **goran** de las montañas y **falros** de los
@@ -128,25 +59,78 @@ paso, y ante un archivo roto se juega igual, con los defaults.
 - Lo que no pudieron fue destruir su obra: **el Corazón de Ceniza**,
   forjado en la Forja Eterna del **Monte Umbak**. Solo allí puede
   volver al fuego.
-- El amuleto durmió veinte generaciones en un baúl de Vegaverde.
-  Esta noche despertó. Y llamó a los cuervos.
+- El amuleto durmió veinte generaciones en un baúl de Vegaverde. Esta
+  noche despertó. Y llamó a los cuervos.
 
-### Lugares
+**El camino**: Vegaverde → Camino del Molino → Puente de Piedra →
+(Bosque Umbrío o Ríoclaro) → Valoria, la Ciudad Dorada → Profundidades
+de Barrok → Ciénagas del Olvido → Torre de Belthar → Yermos de Ceniza
+→ (desvío a la Aguja Pálida) → Monte Umbak.
 
-Vegaverde → Camino del Molino → Puente de Piedra → (Bosque Umbrío o
-Ríoclaro) → Valoria, la Ciudad Dorada → Profundidades de Barrok →
-Ciénagas del Olvido → Torre de Belthar → Yermos de Ceniza → (desvío a
-la Aguja Pálida) → Monte Umbak.
+**Y después del fuego**, cuando el Corazón ardió, «el monte escupió el
+humo hacia el mar» — y la obra de Morvath no supo morir. El humo volvió
+del mar cargado de **ascuas** que van cayendo por Aldamar: la brasa de
+Vegaverde, la sal grisa de la costa, la llamada de la Aguja. De esa
+caída de ceniza vive la serie «Las Ascuas del Corazón» (ver
+[aventuras](#las-aventuras)).
 
-## Aventuras
+### Los personajes
+
+**Los héroes.** Cada aventura trae su propio reparto de héroes
+jugables, con estadísticas, inventario, prólogo y —casi todos— un
+**don** propio. Los tres dones del catálogo (`datos/rasgos.json`)
+recorren toda la serie:
+
+- **Ojo de halcón**: +1 de daño mientras el enemigo conserve más de la
+  mitad de su vida. Golpes certeros, viajeros ligeros.
+- **Piel de piedra**: cada golpe te quita un punto menos de vida.
+- **Lengua de mercado**: pagas 1 moneda menos en cada compra.
+
+| Héroe | Quién es | Vida · Ataque | Don |
+| ----- | -------- | ------------- | --- |
+| **El Corazón de Ceniza** | | | |
+| Tilo | falro jardinero de Vegaverde | 45 · 4 | ninguno: el equilibrado |
+| Ithel | arquera sylva del Bosque Umbrío | 36 · 4 | Ojo de halcón |
+| Dagna Escudagris | guerrera goran de las Profundidades de Barrok | 60 · 3 | Piel de piedra |
+| Ruy | errante proscrito de Valoria | 45 · 4 | Lengua de mercado |
+| **La Brasa de Vegaverde** | | | |
+| Enebro Panverde | falro huertero de Vegaverde | 45 · 4 | Piel de piedra |
+| **La Sal y la Ceniza** | | | |
+| Bruna de la Colmena | pastora falra de Vegaverde | 55 · 4 | Piel de piedra |
+| Gala Mar Serena | buza sylva de la Costa de los Faroles | 38 · 4 | Ojo de halcón |
+| Támara | moza de la posada de Ríoclaro | 42 · 5 | Lengua de mercado |
+| **La Aguja sin Sombra** | | | |
+| Renco del Vado | guardián del puente de Ríoclaro | 50 · 4 | Lengua de mercado |
+| Vela Farolera | farolera sylva del Bosque Umbrío | 38 · 4 | Ojo de halcón |
+| Bram Hachagris | goran de las Profundidades de Barrok | 58 · 3 | Piel de piedra |
+
+*Belthar y los textos saben a quién le hablan*: cada héroe tiene su
+presentación propia y los NPC lo reconocen.
+
+**Los compañeros.** Además del héroe, hay aliados que se reclutan con
+`reclutar` y pelean a tu lado —reciben golpes y pueden caer—:
+
+- **El Corazón de Ceniza**: Sylvana de los Faroles (arquera sylva),
+  Sir Aldric de Valoria (caballero) y Torkan Hachagris (herrera goran).
+- **La Brasa de Vegaverde**: Bruna de la Colmena.
+- **La Sal y la Ceniza**: Iseo el Farero y Maruxa la Salinera.
+- **La Aguja sin Sombra**: Enebro Panverde, Tilo Panverde —el héroe de
+  la primera campaña, de vuelta— y Maruxa la Salinera.
+
+**El resto del reparto.** Belthar el Errante, el que llega con la
+noticia y no pide permiso para entrar; Oldo Panverde, el guardián del
+baúl de Vegaverde; Dorotea, la posadera que llena el cuenco hasta el
+borde; el Custodio Pálido, que guarda la cumbre del Umbak y esconde
+una montaña debajo del guarda; y Morvath, que en la saga vuelve
+tejido de humo.
+
+### Las aventuras
 
 Cuatro campañas, ordenadas en el menú de menor a mayor aliento. Las
 tres últimas forman la serie **«Las Ascuas del Corazón»**: cada
 historia mantiene hilo con la anterior —personajes, lugares y
 consecuencias se citan de una a otra— pero se entiende y se gana por
-separado; la conexión es de continuidad, no de prerrequisito. Y desde
-el legado, tus decisiones cruzan aventuras: lo que juraste, robaste o
-te quedaste en la garras de una historia lo recuerda la siguiente.
+separado; la conexión es de continuidad, no de prerrequisito.
 
 | # | Aventura | Tamaño | Qué es |
 | - | -------- | ------ | ------ |
@@ -155,78 +139,100 @@ te quedaste en la garras de una historia lo recuerda la siguiente.
 | 3 | **La Sal y la Ceniza** | campaña | La marea devuelve otra ascua a las salinas de Ríoclaro. |
 | 4 | **La Aguja sin Sombra** | saga | La Aguja Pálida teje el humo en Morvath: decisiones que pesan, jefe por fases y más de un final. |
 
-Hilo conductor: cuando el Corazón ardió, «el monte escupió el humo
-hacia el mar» — y la obra de Morvath no supo morir. El humo volvió
-del mar cargado de **ascuas** que van cayendo por Aldamar: la brasa
-de Vegaverde (2), la sal grisa de la costa (3) y la llamada de la
-Aguja (4). Belthar el Errante, Dorotea, Oldo Panverde, el estandarte
-del consejo, héroes y compañeros de una campaña reaparecen en la
-siguiente.
+**El legado de la serie.** Al terminar una aventura se escribe
+`legado.json` con banderas canónicas —el juramento, la grieta— y al
+empezar otra, las que aquella importa se encienden solas: NPCs que
+reconocen la cadena, textos alternativos para quien viene tocado y un
+«Tu fama te precede…» en el prólogo. Se heredan decisiones y fama;
+**no** se hereda inventario, niveles ni monedas: cada aventura está
+balanceada para empezar de cero.
 
-## Mecánicas
+### Cómo se juega
 
-- **Héroes**: cuatro héroes jugables, cada uno con estadísticas,
-  inventario, prólogo y **rasgo** propios. **Tilo**, falro jardinero de
-  Vegaverde (equilibrado); **Ithel**, arquera sylva del Bosque Umbrío
-  (*Ojo de halcón*: +1 de daño contra enemigos enteros, pero frágil);
-  **Dagna Escudagris**, guerrera goran de Barrok (*Piel de piedra*:
-  recibe 1 punto menos de daño; mucha vida, poco ataque) y **Ruy**,
-  errante proscrito de Valoria (*Lengua de mercado*: paga 1 moneda
-  menos en cada compra; viaja con provisiones y antorcha). Belthar y
-  los textos saben a quién le hablan. Los dones viven en
-  `datos/rasgos.json`: cada uno declara nombre, descripción y su efecto con
-  un vocabulario de modificadores que el motor aplica sin conocer
-  ningún don en concreto.
-- **Grupo**: puedes reclutar a **Sylvana** (arquera sylva), **Sir
-  Aldric** (caballero valoriano) y **Torkan Hachagris** (herrera goran).
-  Pelean solos, reciben golpes y pueden caer.
-- **Corrupción**: usar el Corazón en combate golpea muy fuerte… y deja
-  una grieta. Las Ciénagas también la agravan; la corona de la Aguja
-  Pálida cobra la suya. La Torre de Belthar la alivia una vez, y el
-  camino la lee: un NPC que huele el humo, un umbral que te reconoce.
-  El epílogo cambia según cuánta grieta lleves al alba.
-- **Legado**: la serie recuerda. Al terminar una aventura se escribe
-  `legado.json` con banderas canónicas —el juramento, la grieta— y al
-  empezar otra, las que aquella importa se encienden solas: NPCs que
-  reconocen la cadena, textos alternativos para quien viene tocado y
-  un «Tu fama te precede…» en el prólogo. Se heredan decisiones y
-  fama; **no** se hereda inventario, niveles ni monedas: cada aventura
-  está balanceada para empezar de cero. Con `--legado <archivo>` se
-  escribe en otro sitio.
-- **Comercio y campaña**: monedas repartidas por el mapa, tiendas en
-  Ríoclaro y Valoria, y dos llaves de paso: antorcha para las minas,
-  estandarte del consejo para los Yermos. El estandarte, ahora, se
-  pide jurando la Alianza — o se toma en depósito, y la ceniza lo
-  sabe.
-- **Progresión**: cada enemigo caído paga **experiencia** (campo
-  `experiencia` del enemigo) y la curva —corta y explícita— sube tu
-  **nivel** hasta 5: +1 de ataque y +8 de vida máxima por nivel. Las
-  dificultades ajustan la experiencia (más en *Paseo*, menos en
-  *Yermos de Ceniza*). El guardado recuerda nivel y experiencia; los
-  guardados viejos migran solos.
-- **Equipo elegido**: nada de «llevas lo mejor del inventario»: con
-  `equipar <cosa>` y `desequipar <cosa>` decides qué empuñas y qué te
-  ciñes (hay opciones en el submenú de gestiones y en las tiendas).
-  Al conseguir la primera arma o armadura se viste sola; a partir de
-  ahí, decidir entre dos piezas es el juego.
-- **Combate con decisiones**: los enemigos pueden declarar
-  **habilidades** en su JSON — `veneno` (daño por turno durante N
-  turnos), `curarse`, `refuerzo` (suma otro enemigo al lugar) y
-  `golpe_fuerte` (se anuncia un turno y pega fuerte al siguiente: si
-  lees el aviso, puedes curarte a tiempo). Cada habilidad lleva su
-  texto, peso y condiciones (`vida_menor_que`, `cada_n_turnos`), y la
-  elección es determinista bajo la semilla.
-- **Jefes por fases**: los jefes declaran `fases` —al cruzar un
-  umbral de vida cambian nombre, estadísticas y habilidades, con su
-  texto de transición. Morvath no finge — y el Custodio Pálido de la
-  cumbre tampoco: debajo del guarda hay una montaña.
-- **Dificultades**: tres ritmos de viaje — *Paseo por el huerto*, *El
-  camino* y *Yermos de Ceniza* — que ajustan vida, golpes, monedas,
-  corrupción y experiencia sin tocar la historia. El catálogo vive en
-  `datos/dificultades.json`, como los dones y las aventuras.
-- **Seis finales**: victoria pura, la victoria compartida (si llevas
-  una deuda chica que pagar), victoria con cicatriz, la Sombra nueva,
-  la caída en pleno camino… y la muerte.
+**Un turno, un menú.** Cada turno el juego ofrece las acciones del
+mundo aquí y ahora — viajar, tomar, hablar, comprar, luchar… — y el
+relato cuenta lo que pasa. No hay que memorizar verbos: el menú es la
+interfaz, y `ayuda` (a pantalla completa, **Esc** para cerrarla) está
+siempre a mano.
+
+**La pantalla se lee por vistas.** El juego cuida qué queda escrito:
+
+- **Mirar alrededor**, una conversación (**hablar**) y el viaje a otro
+  lugar presentan su contenido con la pantalla limpia: se ve solo lo
+  que acaba de pasar.
+- El resto (tomar, usar, comprar…) se anota debajo de lo anterior
+  hasta que llegue la vista siguiente.
+- **Los menús no ensucian**: navegar entre ellos no suma ni una línea,
+  y al elegir se borran sin dejar rastro, porque el resultado ya narra
+  lo que hiciste.
+- **La cabecera** —nombre, vida, monedas— vive siempre en la primera
+  fila, anclada, con la historia corriendo debajo; se actualiza en el
+  sitio cuando algo cambia.
+- **En combate**, encima del menú va un bloque con la vida de todos
+  (en barras) y el último turno, que se actualiza en su sitio: los
+  duelos largos no apilan líneas, y del combate queda en el relato el
+  arranque y el desenlace.
+- **La ayuda, el prólogo y la pantalla de cierre** tienen la pantalla
+  entera para sí.
+- **Modo tipeado** (opción «Escribir un comando…» en el submenú de
+  gestiones): sin limpiezas, el relato se apila completo y el viaje
+  marca la escena con una raya.
+
+**El teclado:**
+
+| Tecla | Dónde | Qué hace |
+| ----- | ----- | -------- |
+| ↑ / ↓ | menús | mover la selección |
+| Enter | menús | confirmar la opción marcada |
+| 1–9 | menús | elegir al vuelo, sin navegar |
+| Esc | menús y ayudas | volver atrás / cerrar |
+| cualquier tecla | presentación y cierre | avanzar |
+
+Las gestiones (estado, inventario, equipar, guardar y cargar, ayuda)
+viven en el submenú **«Otras acciones…»**, de donde se vuelve con
+**Esc**.
+
+**El combate** también va por menús: `atacar`, `usar <cosa>`
+(provisiones y hierbas curan), `corazon` —si la aventura te dejó el
+amuleto: golpea muy fuerte y deja una grieta—, `cuerno` (pone en fuga
+a las criaturas menores), `huir` y `estado`. Los enemigos no golpean
+solamente a ciegas: algunos tienen **habilidades** — veneno, curarse,
+refuerzos que suman otra bestia al lugar, y el golpe fuerte, que se
+anuncia un turno antes de caer: si lees el aviso, puedes curarte a
+tiempo. Los **jefes pelean por fases**: al cruzar un umbral de vida
+cambian nombre, armas y modo, con su texto de transición. Morvath no
+finge.
+
+**Crecer y equiparse.**
+
+- Cada enemigo caído paga **experiencia**; la curva sube tu **nivel**
+  hasta 5: +1 de ataque y +8 de vida máxima por nivel.
+- Nada de «llevas lo mejor del inventario»: con `equipar` y
+  `desequipar` decides qué empuñas y qué te ciñes. La primera arma o
+  armadura se viste sola; a partir de ahí, decidir entre dos piezas es
+  el juego.
+- **Monedas y tiendas**: hay botín por el mapa y tiendas en Ríoclaro y
+  Valoria. Dos llaves de paso: la antorcha abre las minas, el
+  estandarte del consejo abre los Yermos — y el estandarte se pide
+  jurando la Alianza… o se toma en depósito, y la ceniza lo sabe.
+
+**La corrupción y los finales.** Usar el Corazón en combate, cruzar
+las Ciénagas, cierta corona: todo deja **grieta**. El camino la lee —
+un NPC que huele el humo, un umbral que te reconoce— y la Torre de
+Belthar la alivia una vez. El epílogo cambia según cuánta grieta
+lleves al alba. Seis finales: victoria pura, la victoria compartida
+(si llevas una deuda chica que pagar), victoria con cicatriz, la
+Sombra nueva, la caída en pleno camino… y la muerte.
+
+**Dificultades** (se eligen en el menú de arranque):
+
+| Perfil | Para quién | Qué ajusta |
+| ------ | ---------- | ---------- |
+| **Paseo por el huerto** | disfrutar la historia | más vida y monedas, enemigos flojos, corrupción lenta |
+| **El camino** | el balance original | tal cual se escribió la aventura: ni más ni menos |
+| **Yermos de Ceniza** | quien ya conoce el camino | menos vida, enemigos duros, corrupción ávida |
+
+La partida guardada recuerda aventura, héroe y dificultad.
 
 ### Comandos
 
@@ -247,75 +253,171 @@ siguiente.
 | `guardar` / `cargar`| Partidas en JSON (`partida.json`)           |
 | `ayuda` / `salir`   | Ayuda y salida                              |
 
-En combate: `atacar`, `usar <cosa>`, `corazon`, `cuerno`, `huir`, `estado`.
+En combate: `atacar`, `usar <cosa>`, `corazon`, `cuerno`, `huir`,
+`estado`.
 
-## Desarrollo
+### Ajustes y atajos
+
+**El arranque de verdad.** Antes del menú —si hay teclado y pantalla de
+verdad— el juego se presenta: el **sello de Aldamar** en ASCII —el
+héroe de la historia, el Corazón de Ceniza al pecho y la espada
+clavada a su costado—, un **jingle 8-bit** de dos segundos y «Presiona
+cualquier tecla para comenzar…». El mismo jingle suena en la pantalla
+de cierre al terminar una aventura, victoria o desgracia.
+
+**Atajos para saltar el menú** (todos combinables entre sí):
+
+| Flag | Qué hace |
+| ---- | -------- |
+| `--aventura <id>` | arranca directo en una aventura (`--aventura corazon_ceniza`) |
+| `--dificultad <id>` | fija la dificultad (`paseo`, `camino`, `ceniza`) |
+| `--personaje <id>` | elige el héroe sin pasar por el menú |
+| `--cargar [archivo]` | retoma una partida guardada (`partida.json` por defecto) |
+| `--semilla N` | semilla aleatoria: misma partida, mismas sorpresas |
+| `--sin-color` | apaga los colores ANSI |
+| `--sin-flechas` | menús respondiendo a texto, sin flechas |
+| `--sin-splash` | directo al menú, sin presentación |
+| `--sin-audio` | sin el jingle de entrada y de salida |
+| `--stats [archivo]` | al terminar, escribe estadísticas de la partida (`estadisticas.json`) |
+| `--legado <archivo>` | escribe el legado de la serie en otra ruta |
+| `--debug` | conserva lo que el lanzador escribió antes del juego |
+| `--version` | la versión instalada |
 
 ```bash
-uv run pytest          # suite completa, incluida una partida scripted
+uv run aldamar --semilla 7 --sin-color
+uv run aldamar --aventura corazon_ceniza --dificultad ceniza
+```
+
+**Preferencias: `configuracion.json`.** La primera partida de verdad
+deja en el directorio un `configuracion.json` listo para editar a
+mano. Cada clave prende o apaga lo suyo:
+
+| Clave     | Default | Qué hace                                                       |
+| --------- | ------- | -------------------------------------------------------------- |
+| `audio`   | `true`  | el jingle de la presentación y del cierre                       |
+| `splash`  | `true`  | la pantalla de presentación con el sello y «cualquier tecla…»   |
+| `color`   | `true`  | códigos ANSI (lo contrario de `--sin-color`)                    |
+| `flechas` | `true`  | menús navegables con ↑/↓ (lo contrario de `--sin-flechas`)      |
+| `debug`   | `false` | conservar el informe del lanzador (como `--debug`)              |
+| `semilla` | `null`  | semilla de cada partida, para una campaña repetible por defecto |
+
+La precedencia es siempre la misma: **flag de CLI > variable de
+entorno > `configuracion.json` > valores por defecto** (por ejemplo:
+`--debug` le gana a `ALDAMAR_DEBUG`, y este al `debug` del archivo).
+El archivo solo nace en sesiones de verdad: tuberías y tests no dejan
+nada a su paso, y ante un archivo roto se juega igual, con los
+defaults.
+
+---
+
+## El proyecto
+
+### Arquitectura
+
+Tres capas, con el contenido fuera del código:
+
+- **`contenido/`** — el modelo y la carga: el contrato `Aventura`,
+  el cargador que lee y valida los JSON, los personajes, el mundo y
+  el vocabulario de eventos.
+- **`motor/`** — las reglas y el estado: el bucle de juego, el
+  combate, el guardado, el legado, la dificultad y las preferencias.
+- **`interfaz/`** — la entrada del usuario: menú principal, selector
+  de opciones (flechas o texto), la presentación y el audio.
+
+La idea central: **el motor no sabe nada de ninguna aventura en
+concreto**. Lee el mapa, los objetos, los textos y los eventos desde
+un objeto `Aventura`. El contenido de «El Corazón de Ceniza» — y el
+de las cuatro — vive entero en su propio JSON; los eventos se
+declaran con el vocabulario de `eventos.py` y el cargador los
+convierte en funciones del motor. Añadir una aventura no toca una
+línea de Python.
+
+
+### Decisiones de diseño
+
+Las reglas que el código respeta y el porqué de cada una:
+
+1. **El contenido vive en datos, no en código.** Aventuras, dones y
+   dificultades son JSON descubiertos, validados y registrados al
+   soltarlos en su directorio. El motor es genérico: no conoce
+   Morvath, conoce «jefe con fases».
+2. **Los eventos son un vocabulario declarativo.** Una escena, una
+   decisión, una emboscada se escriben en el JSON con el vocabulario
+   de `eventos.py`; si un efecto nuevo hace falta, se extiende el
+   vocabulario de forma genérica —nunca con conocimiento de un caso
+   concreto— y el JSON sigue siendo puro dato.
+3. **La semilla hace el juego reproducible.** Misma semilla, mismas
+   decisiones, misma pelea. De ahí nace la prueba más fuerte de la
+   suite: una partida completa scripted de Vegaverde a la cumbre.
+4. **Los errores nombran archivo y campo.** El cargador verifica
+   referencias (salidas, objetos, enemigos, diálogos, tiendas,
+   eventos) y ante un JSON roto dice exactamente dónde.
+5. **Cero dependencias en tiempo de ejecución.** Solo la stdlib de
+   Python: los colores son ANSI a mano y el jingle es un WAV generado
+   al vuelo. `uv sync` de un juego jugable no descarga nada.
+6. **El guardado está versionado y migra solo.** `partida.json` lleva
+   versión; los guardados viejos se actualizan al cargar, sin rituales.
+7. **La configuración tiene una precedencia única**: flag de CLI >
+   variable de entorno > `configuracion.json` > defaults. Y solo una
+   sesión de verdad (con teclado y pantalla) estrena el archivo.
+8. **El legado separa lo que hereda de lo que no.** Cruzan aventuras
+   las decisiones y la fama; el inventario, los niveles y las monedas
+   empiezan de cero, porque cada aventura está balanceada para eso.
+9. **El balance se ajusta con datos, no a ojo.** `--stats` escribe el
+   informe de la partida y el [protocolo de
+   playtesting](docs/playtesting.md) convierte sesiones en ajustes con
+   memoria.
+10. **Terminal primero, pero terminal bien.** Flechas con teclado
+    real, texto en tuberías, pantallas que se limpian solas y una
+    cabecera anclada: la interfaz cuida qué queda escrito, porque la
+    pantalla es el relato.
+
+### Tests
+
+```bash
+uv run pytest          # suite completa: 443 tests
 uv run ruff check .    # estilo y errores baratos
 uv run mypy src        # tipos
 uv run python -m aldamar --semilla 7
 ```
+
+La suite cubre mapa, combate, cargador, menús, habilidades, guardado,
+legado, configuración y easter eggs — e incluye **una partida completa
+scripted** de Vegaverde a la cumbre, posible porque el juego es
+determinista bajo semilla. La sanidad del mapa corre sobre cada
+aventura registrada: ninguna salida rota llega a main. En tuberías y
+tests los menús responden a texto, así que toda la interfaz se prueba
+sin teclado.
+
+### Integración continua
 
 El pipeline no corre solo: con cada PR queda detenido a la puerta del
 entorno `ci` (que exige revisor) y no ejecuta nada hasta que alguien
 lo aprueba a mano — Actions → CI → «Review deployments» → Approve and
 deploy. Sus checks son requisito para mergear a `main`: sin una
 corrida aprobada y en verde sobre el último commit, el merge queda
-bloqueado. La corrida trae las tres piezas: ruff y mypy, y la suite
-completa sobre Ubuntu, macOS y Windows con Python 3.13 — donde además
-se construye el wheel, se instala solo en un entorno
-limpio y se comprueba que arranca con sus aventuras, dones y
-dificultades dentro (los tres SO, que es donde vive el código de
-teclado y audio, dejan de ser terra incógnita).
+bloqueado.
 
-La semilla hace el juego reproducible: los tests usan una partida
-completa scripted de Vegaverde a la cumbre, y la sanidad del mapa corre
-sobre cada aventura registrada.
+La corrida trae las tres piezas: ruff y mypy, y la suite completa sobre
+Ubuntu, macOS y Windows con Python 3.13 — donde además se construye el
+wheel, se instala solo en un entorno limpio y se comprueba que arranca
+con sus aventuras, dones y dificultades dentro (los tres SO, que es
+donde vive el código de teclado y audio, dejan de ser terra
+incógnita).
 
-### Estructura
+### Depuración del arranque
 
-```
-src/aldamar/
-├── __main__.py               # punto de entrada: python -m aldamar
-├── contenido/                # el modelo y la carga del contenido
-│   ├── aventura.py           # el contrato Aventura + registro de aventuras
-│   ├── cargador.py           # lee y valida los JSON de aventura
-│   ├── rasgos.py             # el catálogo de dones: lee y valida rasgos.json
-│   ├── personajes.py         # jugador, compañeros, enemigos, corrupción, progresión, habilidades y fases
-│   ├── mundo.py              # primitivas: Lugar, normaliza, alcanzables
-│   └── eventos.py            # vocabulario declarativo de eventos y golpes especiales
-├── motor/                    # las reglas y el estado del juego
-│   ├── juego.py              # motor: bucle, comandos, combate, guardado
-│   ├── dificultad.py         # lee y valida datos/dificultades.json: la Dificultad que aplica el motor
-│   ├── guardado.py           # partida.json: versionado y migración
-│   ├── legado.py             # el hilo de la serie: legado.json, fama y banderas canónicas
-│   ├── estadisticas.py       # estadisticas.json para el playtesting
-│   └── configuracion.py      # configuracion.json: preferencias del jugador
-├── interfaz/                 # la entrada del usuario
-│   ├── menu.py               # menú principal interactivo y ayuda
-│   ├── presentacion.py       # el sello de arranque: arte ASCII, jingle y una tecla
-│   ├── audio.py              # el jingle 8-bit: WAV generado al vuelo, sin dependencias
-│   └── opciones.py           # selector de opciones: flechas ↑/↓ o texto
-└── datos/                    # el contenido del juego, en JSON y fuera del código
-    ├── rasgos.json           # los dones de héroe: nombre, descripción y efecto en datos
-    ├── dificultades.json     # los perfiles de balance: multiplicadores por perfil
-    └── aventuras/
-        ├── corazon_ceniza.json    # la campaña original, en datos
-        ├── brasa_vegaverde.json   # Las Ascuas · I (corta)
-        ├── sal_y_ceniza.json      # Las Ascuas · II (media)
-        └── aguja_sin_sombra.json  # Las Ascuas · III (saga)
-tests/                         # mapa, combate, cargador, menú y partidas completas
+Si `uv` (o el lanzador de turno) contó su build en pantalla —«Building
+aldamar…», «Installed N packages…»—, el juego limpia la terminal al
+empezar y ese informe no queda en medio del relato. En modo debug sí se
+conserva, para diagnosticar el arranque:
+
+```bash
+uv run aldamar --debug            # no limpiar: deja visible el informe del build
+ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
 ```
 
-El motor no sabe nada de ninguna aventura en concreto: lee el mapa, los
-objetos, los textos y los eventos desde un objeto `Aventura`. El
-contenido de "El Corazón de Ceniza" vive entero en su propio JSON y los
-eventos se declaran con el vocabulario de `eventos.py` (el cargador los
-convierte en funciones del motor).
-
-## Cómo sumar contenido
+### Extender el juego
 
 **Una aventura nueva.** Crea `src/aldamar/datos/aventuras/mi_aventura.json`:
 un objeto con `id`, `titulo`, `descripcion`, `prologo_base`,
@@ -357,8 +459,6 @@ puede declarar `requiere_flag` para ofrecerse solo si aquella decisión
 ocurrió. Así se escriben las consecuencias tardías y los finales
 múltiples de la saga, sin una línea de código en el JSON.
 
-Cada lugar referencia su evento por clave; el evento llamado `final` se
-dispara cuando el lugar queda limpio de enemigos, el resto al entrar.
 El **golpe especial** de combate (si la aventura quiere uno) se declara
 en `comando_especial`: comando, `texto_fuera` y un `efecto` con
 `dano_base`, `dano_por_corrupcion`, `corrupcion_coste` y `mensaje`.
@@ -366,8 +466,6 @@ Los **secretos** (comandos ocultos y easter eggs) se declaran en la
 sección opcional `secretos`: cada entrada define `comando`, `textos`
 (lista o texto único), `texto_combate` (opcional), `semillas` (respuestas
 especiales según `--semilla`) y `alias` alternativos.
-Si algún día hace falta un efecto nuevo, se suma al vocabulario en
-`eventos.py`: el JSON sigue siendo puro dato.
 
 **Un enemigo con oficio.** Cada entrada de `enemigos` acepta, además
 de `nombre`, `vida`, `ataque`, `defensa` y `sin_huida`:
@@ -394,8 +492,7 @@ de `nombre`, `vida`, `ataque`, `defensa` y `sin_huida`:
   delante: curarse no deshace una fase.
 
 La elección de habilidad es determinista bajo la semilla: mismas
-decisiones, misma pelea. Toda esta sintaxis se valida en `cargador.py`
-y el error nombra archivo y campo, como siempre.
+decisiones, misma pelea.
 
 **El legado de una serie.** Si tu aventura pertenece a una serie,
 declara un `legado` junto a las secciones del JSON:
@@ -416,27 +513,24 @@ declara un `legado` junto a las secciones del JSON:
   la cadena entera sobrevive, no solo la última faena.
 - `importa` son las canónicas que se encienden al empezar si el legado
   las trae, bajo su propio nombre: tus `condicion` y `requiere_flag`
-  ya saben leerlas. `cargar_todas` rechaza una canónica importada que
-  no exporte nadie.
+  ya saben leerlas.
 - `heroe` exporta, además, el nombre puesto por el jugador y el rasgo
   del héroe; `texto_fama` es el gesto del prólogo cuando hay legado y
   admite `{nombre}`, `{trato}` y `{quien}`.
-- Qué se hereda: decisiones y fama. Qué no: inventario, niveles ni
-  monedas — cada aventura está balanceada para empezar de cero.
 
 **Un héroe nuevo.** Agrega una entrada a `personajes` de la aventura:
 nombre, título, estadísticas, inventario, presentación y, si quieres,
-un `rasgo` (clave del catálogo de dones `datos/rasgos.json`), `prologo_extra`
-y `texto_nombre` propios y los apodos con los que los textos le hablan
-(`trato`, `quien`). El menú lo ofrece automáticamente cuando hay más de
-un héroe. Para acompañantes reclutables, otra entrada en `reclutas` más
-su diálogo y su lugar en el mapa.
+`rasgos` (claves del catálogo `datos/rasgos.json`), `prologo_extra`,
+`texto_nombre` propios y los apodos con los que los textos le hablan
+(`trato`, `quien`). El menú lo ofrece automáticamente cuando hay más
+de un héroe. Para acompañantes reclutables, otra entrada en `reclutas`
+más su diálogo y su lugar en el mapa.
 
-**Un don (rasgo) nuevo.** Agrega una entrada a `datos/rasgos.json` con su
-`nombre`, su `descripcion` (la que muestra `estado`) y su `efecto`, y
-referénciala desde la ficha de un héroe: el motor lo aplica sin tocar
-Python. El vocabulario de efectos son modificadores genéricos que se
-suman entre dones:
+**Un don (rasgo) nuevo.** Agrega una entrada a `datos/rasgos.json` con
+su `nombre`, su `descripcion` (la que muestra `estado`) y su `efecto`,
+y referénciala desde la ficha de un héroe: el motor lo aplica sin
+tocar Python. El vocabulario de efectos son modificadores genéricos
+que se suman entre dones:
 
 ```json
 "escudo_runico": {
@@ -463,7 +557,10 @@ interpretación en el motor—, nunca con conocimiento de un don concreto.
 **Una dificultad nueva.** Agrega una entrada a `datos/dificultades.json`
 —junto a un campo `por_defecto` que diga con cuál se juega si nadie
 elige— con su `nombre`, su `descripcion` y los multiplicadores que
-quieras (los que faltan valen 1.0):
+quieras (los que faltan valen 1.0). El orden del menú es el del
+archivo, y el cargador valida todo: multiplicadores numéricos mayores
+a cero, nombre y descripción presentes, y un `por_defecto` que exista
+— el error nombra archivo y campo, como siempre.
 
 ```json
 "brasa": {
@@ -478,23 +575,18 @@ quieras (los que faltan valen 1.0):
 Los multiplicadores disponibles son `vida_jugador`, `ataque_jugador`,
 `monedas`, `vida_enemigos`, `ataque_enemigos`, `corrupcion`,
 `curacion` y `experiencia`; un campo `nota` opcional guarda el porqué
-del balance para quien edite el archivo después. El orden del menú es
-el del archivo, y el cargador valida todo: multiplicadores numéricos
-mayores a cero, nombre y descripción presentes, y un `por_defecto`
-que exista — el error nombra archivo y campo, como siempre. Las
-claves de los perfiles viven dentro de la partida guardada: no las
-renombres si hay partidas en curso, porque `cargar` necesita
-encontrarlas.
+del balance para quien edite el archivo después. Las claves de los
+perfiles viven dentro de la partida guardada: no las renombres si hay
+partidas en curso, porque `cargar` necesita encontrarlas.
 
-## El error que lo empezó todo
+### Playtesting
 
-Este juego nació de una equivocación. Lo único que se le pidió a un
-LLM fue un resumen de un libro —sin infringir copyright, pues serviría
-como ejemplo en otro proyecto— y, en lugar del resumen, devolvió un
-juego creado desde cero. Aldamar es ese accidente hecho obra.
-
-Veremos qué camino sigue tomando: la partida, por ahora, apenas
-comienza.
+Los tests demuestran que las mecánicas **funcionan**; nadie ha dicho
+todavía que sean *divertidas*. El [protocolo de
+playtesting](docs/playtesting.md) ajusta el balance con datos y no a
+ojo: `--stats` escribe el informe de cada partida (combates, economía,
+huella del viaje) y cada sesión jugada termina en ajustes concretos
+que citan su sesión. Todo local, nada sale de la máquina.
 
 ## Licencia
 
