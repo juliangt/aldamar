@@ -1,6 +1,9 @@
 # Aldamar
 
 [![CI](https://github.com/juliangt/aldamar/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangt/aldamar/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org)
+[![Release](https://img.shields.io/github/v/release/juliangt/aldamar)](https://github.com/juliangt/aldamar/releases)
+[![Licencia](https://img.shields.io/github/license/juliangt/aldamar)](LICENSE)
 
 Aldamar es un juego de aventuras de fantasía épica para la terminal,
 en español, construido sobre un motor multi-aventura en Python sin
@@ -247,7 +250,7 @@ ALDAMAR_DEBUG=1 uv run aldamar    # lo mismo, sin tocar el comando
 ## Desarrollo
 
 ```bash
-uv run pytest          # suite completa: 546 tests
+uv run pytest          # suite completa: 565 tests
 uv run ruff check .    # estilo y errores baratos
 uv run mypy src        # tipos
 uv run python -m aldamar --semilla 7
@@ -323,13 +326,25 @@ src/aldamar/
 ├── __main__.py               # punto de entrada: python -m aldamar
 ├── contenido/                # el modelo y la carga del contenido
 │   ├── aventura.py           # el contrato Aventura + registro de aventuras
-│   ├── cargador.py           # lee y valida los JSON de aventura
+│   ├── cargador/             # lee y valida los JSON de aventura
+│   │   ├── carga.py          # del JSON a la Aventura registrada: completa, fragmentos y descubrimiento
+│   │   ├── secciones.py      # la validación por sección: items, enemigos, lugares, eventos…
+│   │   └── campos.py         # primitivas de validación: tipos exigidos y errores que nombran archivo y campo
 │   ├── rasgos.py             # el catálogo de dones: lee y valida rasgos.json
 │   ├── personajes.py         # jugador, compañeros, enemigos, corrupción, progresión, habilidades y fases
 │   ├── mundo.py              # primitivas: Lugar, normaliza, alcanzables
 │   └── eventos.py            # vocabulario declarativo de eventos y golpes especiales
 ├── motor/                    # las reglas y el estado del juego
-│   ├── juego.py              # motor: bucle, comandos, combate, guardado
+│   ├── juego/                # el bucle de juego: una sola clase, Juego, repartida en módulos
+│   │   ├── nucleo.py         # la clase Juego: estado y ciclo; el comportamiento vive en los módulos de abajo
+│   │   ├── arranque.py       # main(): argparse, preferencias, presentación, menú y sesión
+│   │   ├── navegacion.py     # la orden del jugador: menús por verbo con Esc, o línea tipeada
+│   │   ├── acciones.py       # los verbos: mirar, tomar, hablar, viajar… y la corrupción
+│   │   ├── combate.py        # duelos por turnos, menú de combate, venenos y XP
+│   │   ├── equipo.py         # lo puesto y sus bonus; la gestión del inventario
+│   │   ├── persistencia.py   # el estado de Juego a JSON y de vuelta (el esquema, en guardado.py)
+│   │   ├── salida.py         # colores, marcos, cabecera anclada y pantallas fijas
+│   │   └── constantes.py     # colores ANSI, claves de menú y balance del turno
 │   ├── dificultad.py         # lee y valida datos/dificultades.json: la Dificultad que aplica el motor
 │   ├── guardado.py           # partida.json: versionado y migración
 │   ├── legado.py             # el hilo de la serie: legado.json, fama y banderas canónicas
