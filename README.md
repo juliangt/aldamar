@@ -4,7 +4,6 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org)
 [![Release](https://img.shields.io/github/v/release/juliangt/aldamar)](https://github.com/juliangt/aldamar/releases)
 [![Licencia](https://img.shields.io/github/license/juliangt/aldamar)](LICENSE)
-[![Cronista local](https://img.shields.io/badge/cronista%20local-ollama-black?logo=ollama&logoColor=white)](https://ollama.com)
 
 Aldamar es un juego de aventuras de fantasía épica para la terminal,
 en español, construido sobre un motor multi-aventura en Python sin
