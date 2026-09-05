@@ -83,7 +83,7 @@ def test_un_json_nuevo_en_el_directorio_se_descubre_solo(tmp_path, monkeypatch):
     (tmp_path / "notas.txt").write_text("esto no es una aventura y no molesta")
 
     capturadas = []
-    monkeypatch.setattr(cargador, "registrar", capturadas.append)
+    monkeypatch.setattr(cargador.carga, "registrar", capturadas.append)
     cargar_todas(raiz=tmp_path)
 
     assert [av.id for av in capturadas] == ["aventura_de_prueba"]
@@ -399,7 +399,7 @@ def test_el_orden_de_registro_lo_fija_el_campo_orden(tmp_path, monkeypatch):
     (tmp_path / "b_ultima.json").write_text(json.dumps(ultima, ensure_ascii=False), encoding="utf-8")
 
     capturadas = []
-    monkeypatch.setattr(cargador, "registrar", capturadas.append)
+    monkeypatch.setattr(cargador.carga, "registrar", capturadas.append)
     cargar_todas(raiz=tmp_path)
 
     assert [av.id for av in capturadas] == ["primera", "segunda", "ultima"]

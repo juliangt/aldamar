@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from conftest import EntradaTipeada
 
-import aldamar.motor.juego as juego_mod
+import aldamar.motor.juego.arranque as juego_mod
 from aldamar.interfaz.opciones import LIMPIAR
 from aldamar.motor.juego import main
 

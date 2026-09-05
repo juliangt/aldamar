@@ -388,10 +388,6 @@ está en [`docs/extender.md`](docs/extender.md).
 - [`docs/playtesting.md`](docs/playtesting.md) — el protocolo de
   playtesting y balance: estadísticas por partida, plantilla de
   sesión y cómo se ajusta el juego con datos.
-- [`docs/spec_aventura_viva.md`](docs/spec_aventura_viva.md) — la
-  especificación del modo «Aventura Viva»: decisiones de diseño,
-  contratos de datos y qué escribe el cronista frente a lo que decide
-  el director.
 
 ## Licencia
 

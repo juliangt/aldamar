@@ -267,7 +267,7 @@ def test_una_canonica_importada_con_exportador_se_acepta(tmp_path, monkeypatch):
     (tmp_path / "b_importadora.json").write_text(json.dumps(segunda), encoding="utf-8")
 
     capturadas = []
-    monkeypatch.setattr(cargador, "registrar", capturadas.append)
+    monkeypatch.setattr(cargador.carga, "registrar", capturadas.append)
     cargar_todas(raiz=tmp_path)
     assert {av.id for av in capturadas} == {"exportadora", "importadora"}
 

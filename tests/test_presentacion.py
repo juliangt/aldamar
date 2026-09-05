@@ -10,7 +10,7 @@ import wave
 from conftest import EntradaTipeada
 
 import aldamar.interfaz.presentacion as presentacion_mod
-import aldamar.motor.juego as juego_mod
+import aldamar.motor.juego.arranque as juego_mod
 from aldamar.interfaz import audio
 from aldamar.interfaz.opciones import LIMPIAR
 from aldamar.motor.configuracion import ARCHIVO_CONFIGURACION, Configuracion
