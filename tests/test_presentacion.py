@@ -123,11 +123,23 @@ def test_en_sesion_de_verdad_hay_sello_jingle_y_tecla(monkeypatch):
     presentacion_mod.presentar(entrada=input, salida=salida.append)
     texto = "\n".join(salida)
     assert salida[0] == LIMPIAR  # el sello se ve solo
-    assert "el amuleto que durmió veinte generaciones" in texto
+    assert "el amuleto que durmió" in texto  # el lema, en partes al costado
+    assert "veinte generaciones" in texto and "acaba de despertar" in texto
     assert "####" in texto  # el título en letras grandes
     assert "Presiona cualquier tecla para comenzar" in texto
     assert sonados == [True]  # el jingle suena con el sello en pantalla
     assert salida[-1] == LIMPIAR  # al continuar, lo que sigue se ve solo
+
+
+def test_el_sello_no_malgasta_renglones_y_la_cabeza_entra():
+    # el cartel arranca en la primera fila, sin renglones vacíos ni
+    # espacios colgantes: en una terminal de 26 filas, la cabeza del
+    # guerrero entra entera junto con el pedido de tecla
+    lineas = presentacion_mod._cartel(color=False).replace("\x1b[H", "").split("\n")
+    assert lineas[0].lstrip().startswith(".-'''''-.")  # la cabeza, primera
+    assert len(lineas) + 1 <= 26  # cartel + pedido de tecla, sin pasarse
+    assert all(linea.strip() for linea in lineas)  # ni un renglón vacío
+    assert all(linea == linea.rstrip() for linea in lineas)  # sin colgones
 
 
 def test_sin_audio_la_presentacion_es_muda(monkeypatch):

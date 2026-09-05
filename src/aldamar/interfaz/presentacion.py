@@ -34,7 +34,6 @@ _SELO = r"""
          _|      |_       |
         (_|      |_)______|
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
   ###  #     ####   ###  #   #  ###  ####
  #   # #     #   # #   # ## ## #   # #   #
  ##### #     #   # ##### # # # ##### ####
@@ -42,14 +41,22 @@ _SELO = r"""
  #   # #####  ####  #   # #   # #   # #   #
 """
 
-_LEMA = "el amuleto que durmió veinte generaciones acaba de despertar"
+# El lema, en partes, al costado del casco: el dibujo deja libre la
+# pantalla a su derecha, y así ningún renglón propio se lleva puesto
+# la cabeza del guerrero en terminales chicas.
+_LEMA = ("el amuleto que durmió", "veinte generaciones", "acaba de despertar")
+
+_COSTADO = 33  # columna donde arrancan el lema y la versión
 
 
 def _cartel(color: bool) -> str:
-    """El sello completo: arte, título, lema y versión."""
-    lema = _c(f"\n  {_LEMA}", color, DIM)
-    version = _c(f" · v{__version__}\n", color, DIM)
-    return "\x1b[H" + _c(_SELO, color, TITULO) + lema + version
+    """El sello completo: arte con el lema al costado y la versión en el suelo."""
+    lineas = _SELO.strip("\n").splitlines()
+    for i, parte in enumerate(_LEMA):
+        lineas[i] = _c(lineas[i].ljust(_COSTADO), color, TITULO) + _c(parte, color, DIM)
+    version = _c(f"  · v{__version__}", color, DIM)
+    lineas[18] = _c(lineas[18], color, TITULO) + version  # el suelo de tildes
+    return "\x1b[H" + "\n".join(lineas)
 
 
 def presentar(*, entrada, salida, color: bool = False, sonar: bool = True) -> None:
